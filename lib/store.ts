@@ -1,6 +1,8 @@
 // Client persistence: localStorage is the source of truth (survives refresh),
 // with best-effort sync to Neon via /api/state when DATABASE_URL is configured.
 
+import type { LanguageCode } from "@/lib/i18n/languages";
+
 export type Profile = {
   name: string;
   oneLiner: string;
@@ -9,6 +11,7 @@ export type Profile = {
   competitors: string[];
   voice: string;
   description: string;
+  language?: LanguageCode;
 };
 
 export type Draft = {

@@ -8,6 +8,8 @@ import { composeWithAi } from "@/lib/content/ai";
 import { recordGeneration } from "@/lib/content/generation-log";
 import type { SocialPlatform } from "@/lib/social/types";
 import { readAssets } from "@/lib/social/api-helpers";
+import { db } from "@/lib/db";
+import { isLanguageCode, getWorkspaceLanguage } from "@/lib/i18n/languages";
 
 export const runtime = "nodejs";
 
@@ -48,6 +50,10 @@ export async function POST(req: NextRequest) {
     const connected = [...new Set(accounts.filter((a) => a.status === "connected").map((a) => a.platform))];
     const platforms: SocialPlatform[] = requested?.length ? requested : connected;
 
+    const sql = db();
+    const rawLang = body.language;
+    const language = isLanguageCode(rawLang) ? rawLang : await getWorkspaceLanguage(sql, tenant);
+
     // Generation runs through the existing multi-provider LLM orchestration. The request
     // is cancellable: if the client disconnects, we stop rather than finish work nobody
     // is waiting for.
@@ -56,6 +62,7 @@ export async function POST(req: NextRequest) {
       audience: String(body.audience || "founders").slice(0, 120),
       platforms,
       now: Date.now(),
+      language,
       // "Give me another one" has to reach the cache key or it is not another one. Clamped
       // because this is the only thing a caller can vary freely to force fresh model calls.
     }, { signal: req.signal, attempt: Math.min(20, Math.max(0, Number(body.attempt) || 0)) });
