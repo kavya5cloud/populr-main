@@ -29,6 +29,8 @@ export const FORMAT_META: Record<ContentFormat, { label: string; blurb: string; 
   carousel: { label: "Carousel", blurb: "Slide-by-slide, built to be swiped.", longForm: false },
 };
 
+import type { LanguageCode } from "@/lib/i18n/languages";
+
 export type ComposeInput = {
   tenant: string;
   /** The founder's own sentence. Everything is derived from this. */
@@ -38,6 +40,7 @@ export type ComposeInput = {
   /** Platforms with a connected account — variants are only built for these. */
   platforms: SocialPlatform[];
   now: number;
+  language?: LanguageCode;
 };
 
 export type PlatformVariant = {

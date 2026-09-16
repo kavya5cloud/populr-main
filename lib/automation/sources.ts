@@ -4,6 +4,8 @@ import { socialEngine } from "@/lib/social/shared";
 import { ugcRepo } from "@/lib/ugc/shared";
 import type { SocialPlatform } from "@/lib/social/types";
 import type { ContentSource, QueueItem } from "./types";
+import { db } from "@/lib/db";
+import { getWorkspaceLanguage } from "@/lib/i18n/languages";
 
 // Where a slot's content actually comes from.
 //
@@ -120,6 +122,8 @@ async function fromContentLibrary(slot: QueueItem): Promise<ResolvedContent | nu
  * and so a failed publish can be retried without regenerating (and paying) again.
  */
 async function fromAiQueue(slot: QueueItem, deps: ResolveDeps): Promise<ResolvedContent | null> {
+  const sql = db();
+  const language = await getWorkspaceLanguage(sql, slot.tenant);
   const result = await composeWithAi({
     tenant: slot.tenant,
     prompt: deps.topic,
@@ -127,6 +131,7 @@ async function fromAiQueue(slot: QueueItem, deps: ResolveDeps): Promise<Resolved
     audience: deps.audience,
     platforms: [slot.platform as SocialPlatform],
     now: deps.now,
+    language,
   }).catch(() => null);
 
   if (!result) return null;

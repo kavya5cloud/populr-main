@@ -14,6 +14,9 @@ import { humanError, humanThrow } from "@/lib/ui/errors";
 //
 // No functionality was removed. Every control that existed still exists.
 
+import { LANGUAGE_CODES, LANGUAGE_LABELS, DEFAULT_LANGUAGE, isLanguageCode, type LanguageCode } from "@/lib/i18n/languages";
+import { loadState, saveState, type Saved } from "@/lib/store";
+
 type Variant = { platform: SocialPlatform; text: string; length: number; limit: number; fits: boolean; requiresAsset: boolean; note: string };
 type Composed = {
   id: string; format: ContentFormat; title: string; body: string;
@@ -42,6 +45,8 @@ export default function Composer({ initialFormat = "post" as ContentFormat, head
   const [prompt, setPrompt] = useState("");
   const [format, setFormat] = useState<ContentFormat>(initialFormat);
   const [audience, setAudience] = useState("seed-stage founders");
+  const [language, setLanguageState] = useState<LanguageCode>(DEFAULT_LANGUAGE);
+  const savedRef = useRef<Saved | null>(null);
   const [advanced, setAdvanced] = useState(false);
 
   const [composed, setComposed] = useState<Composed | null>(null);
@@ -70,6 +75,34 @@ export default function Composer({ initialFormat = "post" as ContentFormat, head
     fetch("/api/social/dashboard").then((r) => r.json())
       .then((d) => { if (d?.ok) setConnected([...new Set((d.accounts as { platform: string; status: string }[]).filter((a) => a.status === "connected").map((a) => a.platform))]); })
       .catch(() => {});
+
+    loadState().then(({ saved }) => {
+      if (saved) {
+        savedRef.current = saved;
+        if (saved.profile?.language && isLanguageCode(saved.profile.language)) {
+          setLanguageState(saved.profile.language);
+        }
+      }
+    }).catch(() => {});
+  }, []);
+
+  const changeLanguage = useCallback((nextLang: LanguageCode) => {
+    setLanguageState(nextLang);
+    const current = savedRef.current || {
+      url: "", profile: null, competitors: [], chat: [], drafts: []
+    };
+    const profile = current.profile || {
+      name: "", oneLiner: "", audience: "", positioning: "", competitors: [], voice: "", description: ""
+    };
+    const updatedSaved: Saved = {
+      ...current,
+      profile: {
+        ...profile,
+        language: nextLang,
+      },
+    };
+    savedRef.current = updatedSaved;
+    saveState(updatedSaved);
   }, []);
 
   const call = useCallback(async (body: Record<string, unknown>, tag: string) => {
@@ -77,7 +110,7 @@ export default function Composer({ initialFormat = "post" as ContentFormat, head
     try {
       const r = await fetch("/api/content/compose", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, format, audience, ...body }),
+        body: JSON.stringify({ prompt, format, audience, language, ...body }),
       });
       const d = await r.json();
       if (!r.ok || d.error) { setErr(humanError(d, r.status)); return null; }
@@ -193,6 +226,14 @@ export default function Composer({ initialFormat = "post" as ContentFormat, head
         {advanced && (
           <div className="cmp-adv">
             <label className="cmp-adv-field">
+              <span>Language</span>
+              <select className="lwa-select" value={language} onChange={(e) => changeLanguage(e.target.value as LanguageCode)}>
+                {LANGUAGE_CODES.map((code) => (
+                  <option key={code} value={code}>{LANGUAGE_LABELS[code]}</option>
+                ))}
+              </select>
+            </label>
+            <label className="cmp-adv-field">
               <span>Format</span>
               <select className="lwa-select" value={format} onChange={(e) => setFormat(e.target.value as ContentFormat)}>
                 {CONTENT_FORMATS.map((f) => <option key={f} value={f}>{FORMAT_META[f].label}</option>)}
@@ -203,7 +244,7 @@ export default function Composer({ initialFormat = "post" as ContentFormat, head
               <input className="mkt-input" value={audience} onChange={(e) => setAudience(e.target.value)} placeholder="who is this for?" />
             </label>
             <p className="cmp-adv-note">
-              Left alone, Populr infers both from your site and what has performed before.
+              Left alone, Populr infers these from your site and stored brand preferences.
               {connected.length === 0 && " No platforms are connected yet — connect one in Cross-Post for sized variants and one-click publishing."}
             </p>
           </div>

@@ -1,4 +1,5 @@
 import { generateText, configuredProviderNames } from "@/lib/services/llm";
+import { isEnglish, DEFAULT_LANGUAGE } from "@/lib/i18n/languages";
 import { CRAFT_RULES, CRAFT_BANS, POST_SHAPES, INTERACTION, DISCOVERY, formFor, scoreDraft, rewriteNote } from "./craft";
 import { extractJson, LlmJsonError } from "@/lib/llm-json";
 import { createAdapterRegistry } from "@/lib/social/registry";
@@ -189,7 +190,14 @@ export async function composeWithAi(
   // would still hand back the same post to two people asking on the same afternoon, so the
   // attempt rides along with it.
   const cacheSalt = `compose:${dayKey(input.now)}:${opts.attempt ?? 0}`;
-  const result = await generateText({ prompt: buildPrompt(input, ctx), cacheSalt, temperature: COMPOSE_TEMPERATURE });
+
+  // Non-English Indian languages prefer Sarvam for native generation. The preference
+  // sorts the chain — Sarvam first — without filtering it, so a Sarvam outage still falls
+  // through to Gemini/Groq/OpenAI rather than failing the post.
+  const language = input.language ?? DEFAULT_LANGUAGE;
+  const preferProvider = !isEnglish(language) ? "sarvam" : undefined;
+
+  const result = await generateText({ prompt: buildPrompt(input, ctx), cacheSalt, temperature: COMPOSE_TEMPERATURE, preferProvider });
   if (!result.ok) {
     return deterministicResult(input, `Every AI provider failed (${result.error}). This draft is from the built-in composer.`);
   }
@@ -263,6 +271,7 @@ export async function composeWithAi(
       // is the step whose output actually ships.
       cacheSalt: `${cacheSalt}:rewrite`,
       temperature: COMPOSE_TEMPERATURE,
+      preferProvider,
     });
     if (retry.ok && retry.text.trim()) {
       const after = scoreDraft(retry.text.trim());

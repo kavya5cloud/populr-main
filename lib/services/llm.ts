@@ -23,8 +23,8 @@ import {
 
 
 type ProviderConfig = {
-  name: "groq" | "gemini" | "openai";
-  env: "GROQ_API_KEY" | "GEMINI_API_KEY" | "OPENAI_API_KEY";
+  name: "groq" | "gemini" | "openai" | "sarvam";
+  env: "GROQ_API_KEY" | "GEMINI_API_KEY" | "OPENAI_API_KEY" | "SARVAM_API_KEY";
   prefix: string;
   url: string;
   // Ordered list of models to try for this provider. On an "unsupported model"
@@ -205,6 +205,22 @@ export const PROVIDERS: ProviderConfig[] = [
     models: dedupe([
       override("GROQ_MODEL", process.env.GROQ_MODEL) || "openai/gpt-oss-120b",
       "openai/gpt-oss-20b",
+    ]),
+    authHeader: "Authorization",
+    kind: "openai_compatible",
+  },
+  {
+    // Sarvam AI — native Indian-language generation. Only active when SARVAM_API_KEY is
+    // set. The provider is OpenAI-compatible. When a workspace is set to a non-English
+    // Indian language, composeWithAi asks for preferProvider: "sarvam" so it is tried first,
+    // but it stays in the fallback chain either way: a Sarvam outage falls through to
+    // Gemini/Groq/OpenAI rather than failing the post.
+    name: "sarvam",
+    env: "SARVAM_API_KEY",
+    prefix: "",
+    url: "https://api.sarvam.ai/v1/chat/completions",
+    models: dedupe([
+      override("SARVAM_MODEL", process.env.SARVAM_MODEL) || "sarvam-m4",
     ]),
     authHeader: "Authorization",
     kind: "openai_compatible",
@@ -690,6 +706,12 @@ export async function generateText(opts: {
    * for both.
    */
   temperature?: number;
+  /**
+   * Sort a named provider to the front of the fallback chain without filtering the others.
+   * Used by composeWithAi to prefer Sarvam for non-English Indian languages: Sarvam is
+   * tried first, but every other configured provider remains reachable if it fails.
+   */
+  preferProvider?: string;
 }): Promise<GenerateResult> {
   const requestId = opts.requestId || randomUUID();
   const started = Date.now();
@@ -706,8 +728,20 @@ export async function generateText(opts: {
     }
   }
 
-  const configuredProviders = PROVIDERS.map((provider) => ({ provider, key: envValue(provider.env) }))
+  let configuredProviders = PROVIDERS.map((provider) => ({ provider, key: envValue(provider.env) }))
     .filter(({ provider, key }) => isConfigured(provider, key));
+
+  // Sort, not filter: the preferred provider floats to the front of the chain so it is
+  // tried first, but every other configured provider stays reachable as a fallback. A
+  // Sarvam outage must still fall through to Gemini/Groq/OpenAI, not fail the post.
+  if (opts.preferProvider) {
+    const pref = opts.preferProvider;
+    configuredProviders = [
+      ...configuredProviders.filter(({ provider }) => provider.name === pref),
+      ...configuredProviders.filter(({ provider }) => provider.name !== pref),
+    ];
+  }
+
   logEvent("llm_generate_request", {
     requestId,
     appUrlConfigured: Boolean(process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL),
