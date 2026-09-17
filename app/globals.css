@@ -35,36 +35,7 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(-
 .landing .btn{display:inline-flex;align-items:center;gap:12px;background:linear-gradient(135deg,#f8fff0 0%,#d5ff72 100%);color:#101408;text-decoration:none;font-weight:650;font-size:13.5px;padding:14px 18px;border-radius:10px;transition:transform .2s,box-shadow .2s;box-shadow:0 12px 30px rgba(190,255,99,.14),inset 0 1px rgba(255,255,255,.6)}
 .landing .btn:hover{transform:translateY(-2px);box-shadow:0 18px 36px rgba(190,255,99,.22),inset 0 1px rgba(255,255,255,.6)}
 .landing .btn .kbd{font-family:'Geist Mono',monospace;font-size:11.5px;background:#ececf1;color:#7d7d88;padding:5px 8px;border-radius:6px;border:1px solid rgba(0,0,0,.06)}
-.landing .agrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:44px}
-@media(max-width:960px){.landing .agrid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:640px){.landing .agrid{grid-template-columns:1fr}}
-.landing .acell{min-height:174px;padding:0;border:0;border-radius:14px;background:none;text-align:left;perspective:900px;transition:transform .2s;box-shadow:inset 0 1px rgba(255,255,255,.03)}
-.landing .acell:hover{transform:translateY(-4px)}
-.landing .acell:focus-visible{outline:2px solid var(--green);outline-offset:3px}
-.landing .aflip{position:relative;display:block;width:100%;height:100%;min-height:174px;transform-style:preserve-3d;transition:transform .52s cubic-bezier(.2,.75,.2,1)}
-.landing .acell.is-flipped .aflip{transform:rotateY(180deg)}
-.landing .aface{position:absolute;inset:0;display:flex;flex-direction:column;background:rgba(21,26,22,.9);border:1px solid rgba(210,255,145,.13);border-radius:14px;padding:24px;backface-visibility:hidden;box-shadow:inset 0 1px rgba(255,255,255,.03)}
-.landing .acell:hover .aface{border-color:rgba(213,255,114,.48)}
-.landing .aback{transform:rotateY(180deg);background:radial-gradient(circle at 90% 0%,rgba(213,255,114,.13),transparent 42%),linear-gradient(145deg,rgba(30,40,29,.96),rgba(13,18,14,.96))}
-.landing .ahead{display:flex;align-items:center;gap:13px;margin-bottom:14px}
-.landing .aic{--ac:#CDA6F2;color:var(--ac);display:inline-grid;place-items:center;width:36px;height:36px;flex:0 0 auto;background:color-mix(in srgb,var(--ac) 11%,transparent);border:1px solid color-mix(in srgb,var(--ac) 22%,transparent);border-radius:10px}
-.landing .aic svg{width:17px;height:17px;display:block}
-.landing .agent-name{font-size:15px;font-weight:600;color:var(--fg);line-height:1.25}
-.landing .agent-copy{font-size:13.5px;color:var(--dim);line-height:1.55}
-.landing .flip-hint{margin-top:auto;padding-top:12px;font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
 .landing .soon{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.1em;color:var(--dim);border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:2px 7px;margin-left:2px}
-.landing .cmp{margin-top:44px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
-.landing .cmp-row{display:grid;grid-template-columns:1.4fr 1fr .8fr;padding:14px 20px;border-bottom:1px solid var(--line);font-size:15px;align-items:center}
-.landing .cmp-row:last-child{border-bottom:0}
-.landing .cmp-row span:nth-child(2){color:var(--dim)}
-.landing .cmp-head{font-family:'Geist Mono',monospace;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);background:var(--panel)}
-.landing .cmp-head span:nth-child(2){color:var(--faint)}
-.landing .cmp .hi{color:var(--green);text-align:right;font-weight:500}
-.landing .cmp .na{color:var(--faint);font-style:italic}
-.landing .cmp-total{background:var(--panel);font-weight:600;font-size:15px}
-.landing .cmp-total .strike{text-decoration:line-through;color:var(--faint);font-weight:400}
-.landing .cmp-total .hi{font-size:18px}
-@media(max-width:560px){.landing .cmp-row{grid-template-columns:1.2fr .9fr .6fr;padding:12px 14px;font-size:12.5px}}
 .landing header{padding:82px 0 80px;text-align:center;border-bottom:1px solid rgba(213,255,114,.13);position:relative;overflow:hidden;background:none}
 .landing header::before{content:"";position:absolute;width:min(65vw,760px);aspect-ratio:1;left:calc(50% - min(32.5vw,380px));top:62px;border-radius:50%;background:conic-gradient(from 100deg,rgba(213,255,114,.14),rgba(213,255,114,.05),rgba(213,255,114,.02),rgba(213,255,114,.14));filter:blur(94px);opacity:.38;animation:aurora 13s ease-in-out infinite;z-index:0}
 .landing .dots{position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:.55;-webkit-mask-image:radial-gradient(ellipse 86% 70% at 50% 30%, black 25%, transparent 78%);mask-image:radial-gradient(ellipse 86% 70% at 50% 30%, black 25%, transparent 78%)}
@@ -479,15 +450,11 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(-
   .landing section{padding:68px 0}
   .landing h2{font-size:clamp(20px,2.55vw,29px)}
   .landing .label{font-size:10px}
-  .landing .cell h3,.landing .agent-name{font-size:12.5px}
-  .landing .cell p,.landing .agent-copy{font-size:11.5px}
-  .landing .flip-hint{font-size:10px}
   .landing .price{padding:24px;gap:22px}
   .landing .amt{font-size:34px}
   .landing .inc{font-size:10px}
   .landing footer{font-size:10px}
   .landing .price .btn{width:100%;justify-content:center}
-  .landing .acell,.landing .aflip{min-height:188px}
 
   .appui .onboard{padding:20px 16px}
   .appui .ob-in{max-width:460px}
@@ -1295,13 +1262,8 @@ html{scroll-padding-top:var(--eab-h,0px)}
 @media(max-width:720px){.lwa-feed-row{grid-template-columns:auto 1fr}.lwa-feed-row .job-state{grid-row:1}}
 
 /* ---- Product Hunt badge ---- */
-.landing .launch-badge{display:inline-block;margin-top:20px;line-height:0;border-radius:10px;
-  transition:transform .15s ease,opacity .15s ease}
-.landing .launch-badge:hover{transform:translateY(-1px);opacity:.9}
 /* height:auto keeps the aspect ratio if their asset changes shape; the width/height
    attributes on the tag still reserve the box before it loads. */
-.landing .launch-badge img{width:195px;height:auto;max-width:100%}
-.landing .launch-badge:focus-visible{outline:2px solid var(--acc);outline-offset:4px}
 
 /* ---- AI Team panel (Milestone 15) ---- */
 .lwa-h2-note{font-size:12.5px;font-weight:400;margin-left:12px;letter-spacing:0}
@@ -1320,19 +1282,9 @@ html{scroll-padding-top:var(--eab-h,0px)}
 @media(max-width:620px){.agt-graph{gap:4px}.agt-node{padding:5px 10px;font-size:11.5px}}
 
 /* ---- Content composer + UGC workflow ---- */
-.cmp{display:flex;flex-direction:column;gap:24px;margin-bottom:32px}
-.cmp-form{display:flex;flex-direction:column;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 17px}
-.cmp-prompt{width:100%;resize:vertical;line-height:1.5}
-.cmp-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.cmp-audience{flex:1;min-width:180px}
-.cmp-hint{font-size:12.5px;margin:0}
-.cmp-out{display:flex;flex-direction:column;gap:14px}
-.cmp-h3{margin-top:8px}
-.cmp-grid{margin:0}
-.cmp-body{white-space:pre-wrap;font-family:inherit;font-size:13.5px;line-height:1.6;color:var(--dim);margin:8px 0 0;
-  background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 13px;overflow-x:auto}
-.cmp-body-sm{font-size:12.5px}
-.cmp-actions{margin-top:4px}
+
+
+
 .lw-chip.lwa-chip-btn.on{border-color:var(--acc);color:var(--fg);background:rgba(213,255,114,.1)}
 .ugc-scenes{display:flex;flex-direction:column;gap:10px;margin-top:6px}
 .ugc-scene{display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:start}
@@ -1387,12 +1339,10 @@ html{scroll-padding-top:var(--eab-h,0px)}
 .st-shead h1{font-size:var(--t-2xl);letter-spacing:-.02em;line-height:1.15}
 .st-shead p{max-width:68ch;line-height:1.6}
 .lw-hyp,.lw-list{max-width:78ch}
-.cmp-body{max-width:80ch}
 
 /* Section spacing on one rhythm instead of five different margins. */
 .lw-block{margin-top:var(--s-7)}
 .lw-h2{font-size:var(--t-xl);letter-spacing:-.015em}
-.cmp-h3{font-size:var(--t-lg);letter-spacing:-.01em;margin-top:var(--s-5);margin-bottom:calc(var(--s-2) * -1)}
 
 /* Generation provenance. Quiet by default — it matters, but it is not the content. */
 .cmp-meta{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--s-2) var(--s-3);
@@ -1400,15 +1350,16 @@ html{scroll-padding-top:var(--eab-h,0px)}
 .cmp-src{font-family:'Geist Mono',monospace;font-size:var(--t-xs);letter-spacing:.06em;
   text-transform:uppercase;color:var(--acc)}
 .cmp-conf{font-family:'Geist Mono',monospace;font-size:var(--t-xs);color:var(--dim)}
+/* The language of the copy, shown only when it is not the default. Accent rather than
+   dim: it is the one fact on this line that changes what the reader is looking at. */
+.cmp-lang{font-family:'Geist Mono',monospace;font-size:var(--t-xs);letter-spacing:.06em;color:var(--acc)}
 .cmp-reason{flex:1 1 340px;color:var(--dim);line-height:1.5}
 .cmp-degraded{flex:1 1 100%;color:var(--amberr);font-size:var(--t-sm);line-height:1.5}
 
 /* Results arrive, they don't pop. One entrance, used everywhere, disabled for
    anyone who asked for less motion. */
 @keyframes settle{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.cmp-out>*,.lwa-cmdout,.lwa-notif{animation:settle .22s var(--ease) both}
 @media(prefers-reduced-motion:reduce){
-  .cmp-out>*,.lwa-cmdout,.lwa-notif{animation:none}
   *{scroll-behavior:auto}
 }
 
@@ -1428,40 +1379,14 @@ html{scroll-padding-top:var(--eab-h,0px)}
 .mkt-input::placeholder{color:var(--faint)}
 .mkt-input:hover:not(:focus),.lwa-select:hover{border-color:#33403a}
 
-/* Composer empty state — examples, not "no data". */
-.cmp-empty{display:flex;flex-direction:column;gap:var(--s-3);padding:var(--s-2) 0}
-.cmp-seeds{display:flex;flex-direction:column;gap:var(--s-1)}
-.cmp-seed{text-align:left;font-family:inherit;font-size:var(--t-base);color:var(--dim);
-  background:none;border:0;border-left:2px solid var(--line);padding:var(--s-2) 0 var(--s-2) var(--s-3);
-  cursor:pointer;transition:border-color var(--dur) var(--ease),color var(--dur) var(--ease)}
-.cmp-seed:hover{border-left-color:var(--acc);color:var(--fg)}
-
 /* ---- Home: the three ways in ----
    A numbered list, not cards. Cards imply peers competing for a click; a numbered
    list implies an order, which is what a first-time user actually needs. One
    hairline between rows instead of four borders per card. */
 .landing .start{border-bottom:1px solid var(--line)}
-.landing .start-grid{margin-top:36px;border-top:1px solid rgba(213,255,114,.12)}
-.landing .start-row{display:grid;grid-template-columns:auto 1fr auto;align-items:baseline;gap:20px;
-  padding:28px 4px;border-bottom:1px solid rgba(213,255,114,.12);text-decoration:none;
-  transition:background .16s var(--ease),padding-left .16s var(--ease)}
-.landing .start-row:hover{background:rgba(213,255,114,.03);padding-left:12px}
-.landing .start-n{font-family:'Geist Mono',monospace;font-size:11.5px;color:var(--faint);letter-spacing:.08em}
-.landing .start-b{display:flex;flex-direction:column;gap:8px}
-.landing .start-t{font-size:22px;font-weight:500;letter-spacing:-.02em;color:var(--fg);line-height:1.2}
-.landing .start-primary .start-t{color:var(--acc)}
-.landing .start-d{font-size:15px;color:var(--dim);line-height:1.6;max-width:64ch}
-.landing .start-a{color:var(--faint);font-size:15px;transition:color .16s var(--ease),transform .16s var(--ease)}
-.landing .start-row:hover .start-a{color:var(--acc);transform:translateX(3px)}
 @media(prefers-reduced-motion:reduce){
-  .landing .start-row,.landing .start-a{transition:none}
-  .landing .start-row:hover{padding-left:4px}
-  .landing .start-row:hover .start-a{transform:none}
 }
 @media(max-width:560px){
-  .landing .start-row{grid-template-columns:auto 1fr;gap:14px;padding:22px 2px}
-  .landing .start-a{display:none}
-  .landing .start-t{font-size:18px}
 }
 
 /* ---- Content workspace: writing is the hero ----
@@ -1469,79 +1394,54 @@ html{scroll-padding-top:var(--eab-h,0px)}
    That is a dashboard. Writing wants a page: one measure, generous leading, and
    nothing drawing a box around it. Everything the piece implies still exists — it
    moved below the writing and lost its containers. */
-.cmp-piece{max-width:68ch}
-.cmp-title{font-size:28px;font-weight:500;letter-spacing:-.022em;line-height:1.2;color:var(--fg);margin-bottom:12px}
+
+
 .cmp-piece .cmp-meta{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 12px;margin-bottom:20px}
-.cmp-body{white-space:pre-wrap;font-size:15px;line-height:1.75;color:#d7ded4;background:none;border:0;padding:0;
-  max-width:68ch;font-family:inherit}
-.cmp-body-sm{font-size:13.5px;line-height:1.65;color:var(--dim)}
-.cmp-tags{margin-top:20px;font-family:'Geist Mono',monospace;font-size:11.5px;color:var(--faint);letter-spacing:.02em}
+
+
 .cmp-degraded{color:var(--amberr);font-size:12.5px;line-height:1.5;margin-bottom:16px;max-width:68ch}
 
 /* Publishing sits with the writing. One primary; the rest are text. */
-.cmp-publish{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding-top:20px;
-  border-top:1px solid var(--line);max-width:68ch}
-.cmp-go{font-family:inherit;font-size:13.5px;font-weight:600;color:#0e1206;background:var(--acc);
-  border:0;border-radius:10px;padding:10px 18px;cursor:pointer;transition:background .16s var(--ease)}
-.cmp-go:hover:not(:disabled){background:#e2ff96}
-.cmp-go:disabled{opacity:.55;cursor:default}
-.cmp-alt{font-family:inherit;font-size:13.5px;color:var(--dim);background:none;border:0;
-  padding:10px 12px;cursor:pointer;text-decoration:none;border-radius:10px;transition:color .16s var(--ease)}
-.cmp-alt:hover:not(:disabled){color:var(--fg)}
-.cmp-alt:disabled{opacity:.5;cursor:default}
-.cmp-result{max-width:68ch;font-size:13.5px;color:var(--dim);line-height:1.7}
-.cmp-result b{color:var(--fg);font-weight:500}
+
+
+
+
+
+
+
+
 
 /* Secondary detail: hairlines, no cards, no nesting. */
-.cmp-sub{max-width:68ch;padding-top:28px;border-top:1px solid var(--line)}
-.cmp-sub-h{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--faint);font-weight:400;margin-bottom:18px}
-.cmp-variant+.cmp-variant{margin-top:22px;padding-top:22px;border-top:1px solid var(--line)}
-.cmp-variant-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:8px}
-.cmp-variant-p{font-size:13.5px;color:var(--fg)}
-.cmp-count{font-family:'Geist Mono',monospace;font-size:10px;color:var(--faint)}
-.cmp-count.over{color:var(--amberr)}
-.cmp-note{font-size:12.5px;color:var(--amberr);margin-top:6px;line-height:1.5}
-.cmp-dl{display:grid;grid-template-columns:120px 1fr;gap:12px 20px;font-size:13.5px;line-height:1.6}
-.cmp-dl dt{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--faint);padding-top:3px}
-.cmp-dl dd{color:var(--dim)}
-.cmp-dl a{color:var(--acc);text-decoration:none}
-.cmp-slot{display:block}
+
+
+
+
+
+
+
 @media(max-width:620px){.cmp-dl{grid-template-columns:1fr;gap:4px 0}.cmp-dl dd{margin-bottom:12px}}
 
 /* ---- Launch-polish fixes ---- */
 
 /* 1. Headings clipped under the sticky studio nav on mobile. The nav is sticky at the
       top of the scroll container, so any heading scrolled to needs to clear it. */
-.cmp-h3,.st-shead,.cmp-sub-h{scroll-margin-top:calc(var(--eab-h,0px) + 84px)}
 @media(max-width:820px){
   .st-main{padding-top:8px}
-  .cmp-h3{margin-top:32px;padding-top:8px;position:relative;z-index:1;background:var(--bg)}
 }
 
 /* 2. Errors: no salmon edge. An error is information, not an alarm — amber text on the
       same surface as everything else, with the border weight the rest of the UI uses. */
 .lwa-note.lwa-sev-critical{border-left:0;border-color:var(--line);color:var(--amberr)}
 .lwa-sev-critical{border-left-color:var(--line)}
-.cmp-err{border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13.5px;
-  line-height:1.55;color:var(--amberr);background:var(--panel);max-width:68ch}
 
 /* 3. The arrow on the home rows. It was a bare glyph at default weight — now it sits in a
       fixed box so the three rows align on it, and it is the thing that moves on hover. */
-.landing .start-a{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;
-  border-radius:100px;font-size:13.5px;color:var(--faint);
-  transition:color .16s var(--ease),transform .16s var(--ease),background .16s var(--ease)}
-.landing .start-row:hover .start-a{color:#0e1206;background:var(--acc);transform:translateX(2px)}
 .landing .start-lede{margin-top:14px;font-size:15px;color:var(--dim);line-height:1.65;max-width:64ch}
 
 /* The arrow rule above re-enabled the arrow on narrow screens, where the row is a
    two-column grid — so it wrapped onto its own line. Restate the narrow-screen rules
    after it: on small screens the whole row is the tap target and the arrow is noise. */
 @media(max-width:560px){
-  .landing .start-row{grid-template-columns:auto 1fr;gap:14px;padding:22px 2px}
-  .landing .start-a{display:none}
-  .landing .start-t{font-size:18px}
 }
 
 /* Resume hand-off: the moment analysis finishes and we continue to what was clicked. */
@@ -1556,31 +1456,22 @@ html{scroll-padding-top:var(--eab-h,0px)}
    The question is the headline, the textarea is the page, and Generate is the only
    thing that looks like an action. Format and audience still exist behind Options —
    hidden, not removed. */
-.cmp-write{max-width:68ch}
-.cmp-ask{display:block;font-size:22px;font-weight:500;letter-spacing:-.02em;color:var(--fg);margin-bottom:14px}
-.cmp-prompt{width:100%;font-family:inherit;font-size:18px;line-height:1.55;color:var(--fg);
-  background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:0 0 14px;
-  resize:vertical;transition:border-color .16s var(--ease)}
-.cmp-prompt:focus{outline:none;border-bottom-color:var(--acc)}
-.cmp-prompt::placeholder{color:var(--faint)}
-.cmp-go-row{display:flex;align-items:center;gap:6px;margin-top:20px}
-.cmp-adv-toggle{font-family:inherit;font-size:13.5px;color:var(--faint);background:none;border:0;
-  padding:10px 12px;cursor:pointer;border-radius:10px;transition:color .16s var(--ease)}
-.cmp-adv-toggle:hover{color:var(--fg)}
-.cmp-adv{display:flex;flex-wrap:wrap;gap:14px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
-.cmp-adv-field{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--faint)}
-.cmp-adv-note{flex:1 1 100%;font-size:12.5px;color:var(--faint);line-height:1.55;margin:0}
-.cmp-note-line{font-size:13.5px;color:var(--dim);max-width:68ch}
+
+
+
+
+
+
+
+
 
 /* Review: one document, platforms as tabs. */
-.cmp-doc{display:flex;flex-direction:column;gap:20px;max-width:68ch}
-.cmp-tabs{display:flex;flex-wrap:wrap;gap:2px;border-bottom:1px solid var(--line)}
-.cmp-tab{display:inline-flex;align-items:center;gap:7px;font-family:inherit;font-size:13.5px;
-  color:var(--faint);background:none;border:0;border-bottom:1px solid transparent;
-  padding:10px 12px;margin-bottom:-1px;cursor:pointer;transition:color .16s var(--ease),border-color .16s var(--ease)}
-.cmp-tab:hover{color:var(--dim)}
+
+
+
+
 .cmp-tab.on{color:var(--fg);border-bottom-color:var(--acc)}
-.cmp-tab-n{font-family:'Geist Mono',monospace;font-size:10px;color:var(--faint)}
+
 .cmp-tab-n.over{color:var(--amberr)}
 
 /* The asset-type shortcuts sit below the composer. They were accent-filled, so a page
@@ -1593,29 +1484,20 @@ html{scroll-padding-top:var(--eab-h,0px)}
    The document is a textarea styled to look like prose: same measure, same leading, no
    box. Native undo/redo and selection come free, which is what a hand-rolled
    contentEditable spends its life reimplementing badly. */
-.cmp-editor{position:relative}
-.cmp-editable{width:100%;background:none;border:0;padding:0;resize:none;overflow:hidden;
-  font-family:inherit;color:#d7ded4;caret-color:var(--acc)}
-.cmp-editable:focus{outline:none}
+
+
 
 /* The toolbar comes to the selection rather than opening a panel. */
-.cmp-float{position:absolute;left:0;z-index:20;display:flex;flex-wrap:wrap;gap:2px;
-  background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px;
-  box-shadow:0 12px 32px -12px rgba(0,0,0,.8);max-width:100%;
-  animation:settle .12s var(--ease) both}
-.cmp-float-b{font-family:inherit;font-size:12px;color:var(--dim);background:none;border:0;
-  padding:6px 9px;border-radius:7px;cursor:pointer;white-space:nowrap;
-  transition:background .12s var(--ease),color .12s var(--ease)}
-.cmp-float-b:hover:not(:disabled){background:rgba(213,255,114,.12);color:var(--fg)}
-.cmp-float-b:disabled{opacity:.5;cursor:default}
+
+
+
 
 /* A pending AI edit is visible and reversible until it is kept. */
-.cmp-pending{display:flex;align-items:center;gap:6px;margin-top:14px;font-size:13px;color:var(--dim)}
-.cmp-accept{color:var(--acc)}
-.cmp-edited{margin-top:12px;font-size:12.5px;color:var(--faint)}
-.cmp-linkbtn{font-family:inherit;font-size:12.5px;color:var(--dim);background:none;border:0;
-  padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
-.cmp-linkbtn:hover{color:var(--fg)}
+
+
+
+
+
 @media(prefers-reduced-motion:reduce){.cmp-float{animation:none}}
 
 /* ---- Daily Brief ----
@@ -2212,7 +2094,6 @@ html{scroll-padding-top:var(--eab-h,0px)}
 
 /* ── Cards and panels ─────────────────────────────────────────────────────── */
 .landing .cell,
-.landing .acell,
 .landing .plancard,
 .appui .gsc-card,
 .appui .plancard,
@@ -2228,7 +2109,6 @@ html{scroll-padding-top:var(--eab-h,0px)}
 
 /* Interactive cards earn a brighter edge on hover — the edge is the affordance,
    so it should be the thing that responds. */
-.landing .cell:hover, .landing .acell:hover, .appui .gsc-card:hover { border-color: var(--edge-strong); }
 
 /* ── Column headers ───────────────────────────────────────────────────────
    These were 11.5px mono in --faint sitting above 12.5px body text: nearly the
@@ -2668,10 +2548,19 @@ html{scroll-padding-top:var(--eab-h,0px)}
   flex: 1 1 auto; min-width: 0;
   background: none; border: 0; outline: none;
   color: var(--fg); font-size: 16px; font-family: inherit;
+  /* The caret inherited currentColor — near-white — and sits at the text origin, directly
+     over the first placeholder glyph. White bar on a dim letter reads as a rendering fault,
+     not a cursor. Accent separates the two by hue instead of position. */
+  caret-color: var(--acc);
 }
 /* 16px is not a style choice: anything smaller makes iOS Safari zoom the page
    on focus, which throws the layout sideways at the exact moment of intent. */
 .landing .hero-form input::placeholder { color: #5c6a5e; }
+/* The caret sits at the text origin, which is the same x as the placeholder's first letter —
+   so an empty focused field drew a thin bar inside the "y" of "yourcompany.com" and the
+   cursor read as a rendering artefact rather than a cursor. Clearing the hint on focus gives
+   it an empty field to sit in. The hint has done its job by then anyway. */
+.landing .hero-form input:focus::placeholder { color: transparent; }
 
 .landing .hero-form button {
   flex: 0 0 auto;
@@ -2884,64 +2773,10 @@ html{scroll-padding-top:var(--eab-h,0px)}
    Opens on hover for a mouse and on :focus-within for a keyboard. The panel
    stays in the DOM and is hidden with visibility rather than display, so it can
    transition and so its links stay tabbable in the right order. */
-.landing .nav-menu { position: relative; display: flex; align-items: center }
-.landing .nav-trigger {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 8px 12px; border: 0; border-radius: 10px;
-  background: none; color: var(--dim); cursor: pointer;
-  font: inherit; font-size: 14px;
-  transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
-}
-.landing .nav-trigger svg { width: 13px; height: 13px; transition: transform var(--dur-fast) var(--ease-out) }
-.landing .nav-menu:hover .nav-trigger,
-.landing .nav-menu:focus-within .nav-trigger { color: var(--fg); background: rgba(255,255,255,.055) }
-.landing .nav-menu:hover .nav-trigger svg,
-.landing .nav-menu:focus-within .nav-trigger svg { transform: rotate(180deg) }
-
-.landing .nav-panel {
-  position: absolute; top: calc(100% + 16px); left: 50%;
-  width: min(660px, calc(100vw - 40px));
-  display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
-  padding: 10px;
-  background: rgba(13,17,14,.94);
-  backdrop-filter: blur(28px) saturate(140%);
-  -webkit-backdrop-filter: blur(28px) saturate(140%);
-  border: 1px solid var(--edge-strong);
-  border-radius: 18px;
-  box-shadow: var(--lift), 0 30px 70px -25px rgba(0,0,0,.95);
-  /* Closed state. The 6px lift is what makes it drop rather than appear. */
-  opacity: 0; visibility: hidden;
-  transform: translate(-50%, -6px);
-  transition: opacity .16s var(--ease-out), transform .16s var(--ease-out), visibility .16s;
-}
-.landing .nav-menu:hover .nav-panel,
-.landing .nav-menu:focus-within .nav-panel {
-  opacity: 1; visibility: visible; transform: translate(-50%, 0);
-}
-/* The gap between trigger and panel is dead space a mouse crosses. Without this
-   bridge the panel closes mid-travel and the menu feels broken. */
-.landing .nav-panel::before { content: ""; position: absolute; inset: -18px 0 auto; height: 18px }
-
-.landing .nav-col { display: flex; flex-direction: column; gap: 2px; padding: 12px 10px }
-.landing .nav-col-alt { background: rgba(255,255,255,.028); border-radius: 12px }
-.landing .nav-col .label { padding: 0 10px 8px }
-.landing .nav-item {
-  display: flex; flex-direction: column; gap: 2px;
-  padding: 9px 10px; border-radius: 10px; text-decoration: none;
-  transition: background var(--dur-fast) var(--ease-out);
-}
-.landing .nav-item:hover { background: rgba(213,255,114,.07) }
-.landing .nav-item-t { font-size: 14px; font-weight: 500; color: var(--fg) }
-.landing .nav-item:hover .nav-item-t { color: var(--acc) }
-.landing .nav-item-d { font-size: 12.5px; line-height: 1.45; color: var(--faint) }
-
-/* The menu and its stand-in are mutually exclusive: exactly one of them is in the
-   nav at any width, so "How it works" never disappears. */
-.landing .nav-compact { display: none }
-@media (max-width: 900px) {
-  .landing .nav-menu { display: none }
-  .landing .nav-compact { display: inline-flex }
-}
+/* Was the hover menu's stand-in, shown only below 900px where a pointer-driven panel
+   cannot work. The menu is gone — one door, not eight — so this is now simply the link,
+   at every width. Left hidden it took "How it works" off the desktop nav entirely. */
+.landing .nav-compact { display: inline-flex }
 
 /* ── Integrations ─────────────────────────────────────────────────────────
    The darkest card on the page. Arcade drops to near-black for this section and
@@ -3200,18 +3035,6 @@ html{scroll-padding-top:var(--eab-h,0px)}
    You cannot buy a citation in an AI answer, but you can make the question
    trivial to ask — and the people evaluating an AI CMO are the same people who
    ask an assistant before they ask Google. */
-.landing .aisum {
-  margin-top: 22px; display: flex; flex-wrap: wrap; align-items: center;
-  justify-content: center; gap: 10px;
-  font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--faint);
-}
-.landing .aisum-links { display: flex; gap: 7px; }
-.landing .aisum-links a {
-  padding: 5px 11px; border: 1px solid var(--edge); border-radius: 999px;
-  color: var(--dim); text-decoration: none;
-  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
-}
-.landing .aisum-links a:hover { color: var(--acc); border-color: rgba(213,255,114,.32); }
 
 /* ── Skeleton dashboard ───────────────────────────────────────────────────
    The layout, before it has anything in it.
@@ -3707,3 +3530,543 @@ html{scroll-padding-top:var(--eab-h,0px)}
 .home-result-more{font-size:12.5px;color:var(--faint);text-decoration:none;
   border-bottom:1px solid var(--line);padding-bottom:1px}
 .home-result-more:hover{color:var(--acc);border-color:color-mix(in srgb,var(--acc) 45%,var(--line))}
+
+/* ---- The team, as a studio lists it -------------------------------------
+   Rows, not cards. Thirteen brand-coloured flip tiles read as a trading-card set;
+   four lines of accountability read as a firm. No icons: a coloured glyph per role
+   is decoration that has to be maintained and adds nothing a reader needs. */
+.landing .team{list-style:none;margin:34px 0 0;padding:0;
+  border-top:1px solid var(--edge, rgba(255,255,255,.08))}
+.landing .team-row{display:grid;grid-template-columns:190px 1fr;gap:28px;
+  padding:22px 0;border-bottom:1px solid var(--edge, rgba(255,255,255,.08))}
+.landing .team-role{font-size:15px;font-weight:500;letter-spacing:-.01em;color:var(--fg)}
+.landing .team-does{max-width:60ch;font-size:14.5px;line-height:1.65;color:var(--dim)}
+
+@media (max-width:720px){
+  .landing .team-row{grid-template-columns:1fr;gap:6px;padding:18px 0}
+  .landing .team-role{font-size:13px;color:var(--acc)}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   POPULR STUDIO  (/studio/create)
+   ───────────────────────────────────────────────────────────────────────────
+   Sits inside the existing .studio grid — same rail, same tokens, no second
+   design system. Everything here is spacing, weight and restraint; there is not
+   one new colour.
+
+   The composer comes first and gets the room. The deck is a browse below it, not
+   a chooser above it — a grid of eight competing with the prompt for the eye is
+   how "tell us what you want" becomes "pick a template". */
+
+.stu{max-width:1180px}
+.stu-head{margin-bottom:26px}
+.stu-h1{margin:12px 0 8px;font-size:34px;font-weight:600;letter-spacing:-.03em;line-height:1.1}
+.stu-sub{max-width:56ch;font-size:14.5px;line-height:1.65;color:var(--dim)}
+
+/* What Populr already knows, said before the box. This line is the difference between
+   a prompt and a brief, so it sits above the composer rather than inside a panel. */
+.stu-ctx{display:flex;flex-wrap:wrap;align-items:center;gap:22px;margin-bottom:14px;
+  padding:12px 16px;border:1px solid var(--line);border-radius:11px;background:var(--panel)}
+.stu-ctx-i{display:flex;flex-direction:column;gap:2px;font-size:13px;color:var(--fg)}
+.stu-ctx-i em{font-family:'Geist Mono',monospace;font-style:normal;font-size:9.5px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.stu-ctx-empty{font-size:13px;color:var(--faint);line-height:1.5}
+.stu-ctx-empty a{color:var(--acc)}
+
+.stu-composer{margin-bottom:44px}
+/* The composer's own heading is suppressed — this page already has one, and two titles
+   stacked is the shape of a component dropped in rather than designed in.
+
+   Its seed prompts go too. The deck below already answers "what could I ask for", and two
+   sets of starting points on one screen means neither reads as the way in. Elsewhere in the
+   product the composer stands alone and keeps them. */
+.stu-composer .cmp-head,
+.stu-composer .cmp-seeds{display:none}
+
+.stu-deck-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;margin-bottom:14px}
+.stu-deck-note{font-size:12.5px;color:var(--faint)}
+
+/* Horizontal at every width. Scrollbar hidden with a fade at the edge — the same treatment
+   as the settings rail, so "there is more this way" is learned once. */
+.stu-deck{display:flex;gap:14px;overflow-x:auto;padding:2px 0 8px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
+  mask-image:linear-gradient(to right,#000 calc(100% - 40px),transparent)}
+.stu-deck::-webkit-scrollbar{display:none}
+.stu-deck > *{scroll-snap-align:start}
+
+.stu-card{flex:0 0 232px;display:flex;flex-direction:column;gap:0;padding:0;text-align:left;
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  transition:border-color .18s ease,transform .18s ease,background .18s ease}
+.stu-card:hover{border-color:color-mix(in srgb,var(--acc) 38%,var(--line));
+  background:var(--panel2);transform:translateY(-2px)}
+.stu-card:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.stu-card-pv{display:block;height:124px;padding:14px;border-bottom:1px solid var(--line);
+  background:linear-gradient(160deg,rgba(213,255,114,.05),transparent 62%)}
+.stu-card-t{padding:13px 14px 0;font-size:14px;font-weight:500;color:var(--fg)}
+.stu-card-d{padding:4px 14px 14px;font-size:12.5px;line-height:1.5;color:var(--dim)}
+
+/* ── Previews ───────────────────────────────────────────────────────────────
+   Drawn from divs. No screenshots and no stock imagery: those carry licences, and a
+   photograph of software is not a preview of anything. These show the SHAPE of the
+   artefact — enough to tell eight things apart at a glance, and deliberately too
+   abstract to read as a promise about what the copy will say. */
+.stu-pv{display:flex;flex-direction:column;gap:6px;height:100%;width:100%}
+.stu-pv-line{display:block;height:6px;border-radius:3px;background:var(--line)}
+.stu-pv-line.w40{width:40%} .stu-pv-line.w50{width:50%} .stu-pv-line.w60{width:60%}
+.stu-pv-line.w70{width:70%} .stu-pv-line.w80{width:80%} .stu-pv-line.w85{width:85%}
+.stu-pv-line.w88{width:88%} .stu-pv-line.w90{width:90%} .stu-pv-line.w92{width:92%}
+.stu-pv-line.w95{width:95%}
+
+.stu-pv-avatar{width:22px;height:22px;border-radius:50%;background:var(--line);margin-bottom:2px}
+.stu-pv-tags{display:flex;gap:5px;margin-top:auto}
+.stu-pv-tags i{width:34px;height:12px;border-radius:100px;
+  border:1px solid color-mix(in srgb,var(--acc) 26%,var(--line))}
+
+.stu-pv-day{font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:.12em;color:var(--faint)}
+.stu-pv-bars{display:flex;align-items:flex-end;gap:6px;height:52px;margin:4px 0}
+.stu-pv-bars i{flex:1;border-radius:3px 3px 0 0;
+  background:color-mix(in srgb,var(--acc) 34%,var(--line))}
+
+.stu-pv-h{width:58%;height:12px;border-radius:3px;background:var(--dim);opacity:.55;margin-bottom:4px}
+
+.stu-pv-frame{height:44px;border-radius:7px;border:1px dashed var(--line);
+  background:linear-gradient(135deg,rgba(213,255,114,.09),transparent 70%)}
+.stu-pv-cta{width:64px;height:16px;border-radius:100px;background:var(--acc);opacity:.85;margin-top:auto}
+
+.stu-pv-subject{width:76%;height:9px;border-radius:3px;background:var(--dim);opacity:.6}
+
+.stu-pv-lang{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;place-items:center}
+.stu-pv-lang span{font-size:20px;line-height:1;color:var(--dim)}
+.stu-card:hover .stu-pv-lang span{color:var(--acc)}
+
+.stu-pv-shot{display:flex;align-items:center;gap:9px}
+.stu-pv-shot i{font-family:'Geist Mono',monospace;font-style:normal;font-size:9px;
+  color:var(--faint);flex:0 0 auto}
+.stu-pv-shot em{flex:1;height:20px;border-radius:4px;border:1px solid var(--line)}
+
+.stu-pv-rank{display:flex;align-items:center;gap:9px}
+.stu-pv-rank i{font-family:'Geist Mono',monospace;font-style:normal;font-size:10px;
+  color:var(--acc);flex:0 0 12px}
+.stu-pv-rank em{height:7px;border-radius:3px;background:var(--line)}
+.stu-pv-rank em.w70{width:70%} .stu-pv-rank em.w55{width:55%} .stu-pv-rank em.w45{width:45%}
+/* The refusal, drawn: the term we are not going to chase. */
+.stu-pv-out i{color:var(--faint)}
+.stu-pv-out em{opacity:.45}
+
+@media (max-width:820px){
+  .stu-h1{font-size:26px}
+  .stu-ctx{gap:16px;padding:11px 13px}
+  .stu-composer{margin-bottom:32px}
+  .stu-card{flex-basis:200px}
+  .stu-card-pv{height:108px}
+}
+
+/* Creative video — the one real media path in Studio. Sits between the composer and the
+   deck, so it reads as the next step rather than a competing action. */
+.cv{margin:28px 0 8px;padding:20px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.cv-h{margin:0 0 6px;font-size:16px;font-weight:600}
+.cv-sub{margin:0 0 16px;color:var(--muted);font-size:13px;line-height:1.5;max-width:56ch}
+.cv-shots{margin:0 0 18px;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.cv-shots li{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:baseline;
+  padding:9px 12px;border:1px solid var(--line);border-radius:9px;font-size:13px}
+.cv-shot-n{font-family:var(--mono);font-size:11px;color:var(--accent)}
+.cv-shot-d{line-height:1.45}
+.cv-shot-m{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.cv-go{padding:10px 18px;border-radius:9px;border:0;background:var(--accent);color:#0b0d0a;
+  font-size:14px;font-weight:600;cursor:pointer}
+.cv-go:disabled{opacity:.5;cursor:not-allowed}
+.cv-again{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.cv-status{display:flex;flex-direction:column;gap:4px;margin:14px 0 0;font-size:14px}
+.cv-status-note{color:var(--muted);font-size:12px}
+.cv-fail{display:flex;flex-direction:column;align-items:flex-start;gap:10px;margin-top:14px;font-size:14px}
+.cv-code{font-family:var(--mono);font-size:11px;color:var(--muted);word-break:break-all}
+.cv-out{margin-top:16px}
+/* 9:16, capped so a vertical video does not take over the page. */
+.cv-video{width:100%;max-width:270px;aspect-ratio:9/16;border-radius:12px;background:#000;display:block}
+.cv-meta{margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.cv-actions{display:flex;gap:10px;align-items:center;margin-top:12px}
+.cv-dl{padding:10px 18px;border-radius:9px;border:1px solid var(--line);color:var(--fg);
+  font-size:14px;font-weight:600;text-decoration:none}
+.cv-brief{margin:0 0 14px;padding:12px 14px;border-left:2px solid var(--accent)}
+.cv-logline{margin:0 0 6px;font-size:14px;line-height:1.5}
+.cv-brief-m{margin:0;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.cv-shot-t{display:block;margin-top:4px;font-style:normal;font-size:12px;color:var(--accent)}
+
+/* ── Content Studio ────────────────────────────────────────────────────────
+   The creation canvas. Written after the legacy .cmp- rules so these win, and
+   scoped to classes the Composer actually renders. Tokens only — no new palette.  */
+
+.cmp{display:flex;flex-direction:column;gap:34px;margin-bottom:48px;max-width:900px}
+.cmp-write{display:flex;flex-direction:column;gap:18px}
+
+.cmp-head{display:flex;flex-direction:column;gap:8px}
+.cmp-eyebrow{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--faint)}
+.cmp-ask{font-size:34px;font-weight:500;letter-spacing:-.028em;line-height:1.12;color:var(--fg);margin:0}
+
+/* What Populr already knows. Quiet, but above the box — it is the argument the
+   whole screen is making, so it cannot live in a settings panel. */
+.cmp-ctx{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:12.5px;color:var(--dim);line-height:1.5}
+.cmp-ctx-i{display:inline-flex;align-items:baseline;gap:7px}
+.cmp-ctx-i em{font-style:normal;font-family:'Geist Mono',monospace;font-size:10px;
+  letter-spacing:.11em;text-transform:uppercase;color:var(--faint)}
+.cmp-ctx-empty{color:var(--dim)}
+.cmp-ctx-empty a{color:var(--acc);text-decoration:none;border-bottom:1px solid transparent}
+.cmp-ctx-empty a:hover{border-bottom-color:var(--acc)}
+
+/* The canvas: a real surface, not a floating line of placeholder text. */
+
+
+
+
+
+
+
+
+.cmp-go{font-family:inherit;font-size:13.5px;font-weight:600;color:#0e1206;background:var(--acc);
+  border:0;border-radius:10px;padding:0 18px;min-height:44px;cursor:pointer;transition:background .13s}
+.cmp-go:hover:not(:disabled){background:#e2ff96}
+.cmp-go:disabled{opacity:.45;cursor:default}
+.cmp-alt{font-family:inherit;font-size:13.5px;color:var(--dim);background:none;
+  border:1px solid var(--line);border-radius:10px;padding:0 15px;min-height:44px;cursor:pointer;
+  transition:color .13s,border-color .13s}
+.cmp-alt:hover:not(:disabled){color:var(--fg);border-color:#3c4a3f}
+.cmp-alt:disabled{opacity:.5;cursor:default}
+.cmp-accept{color:var(--acc);border-color:#3c4a3f}
+.cmp-adv-toggle{font-family:inherit;font-size:13px;color:var(--faint);background:none;border:0;
+  padding:0 8px;min-height:44px;cursor:pointer;transition:color .13s}
+.cmp-adv-toggle:hover{color:var(--fg)}
+
+/* Options — creative controls, not a database form. */
+.cmp-adv{display:flex;flex-direction:column;gap:12px;padding:18px;border:1px solid var(--line);
+  border-radius:14px;background:var(--panel)}
+.cmp-adv-row{display:flex;flex-wrap:wrap;gap:14px}
+.cmp-adv-field{display:flex;flex-direction:column;gap:7px;flex:1 1 190px;min-width:0}
+.cmp-adv-field>span{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--faint)}
+.cmp-select,.cmp-input{width:100%;font-family:inherit;font-size:13.5px;color:var(--fg);
+  background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:0 11px;min-height:44px;
+  outline:none;transition:border-color .13s}
+.cmp-select:focus,.cmp-input:focus{border-color:var(--acc)}
+.cmp-input::placeholder{color:var(--faint)}
+.cmp-adv-note{margin:0;font-size:12.5px;line-height:1.55;color:var(--faint);max-width:70ch}
+
+/* Starting points. */
+.cmp-starters{display:flex;flex-direction:column;gap:12px}
+.cmp-starters-h{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--faint)}
+.cmp-starter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(196px,1fr));gap:10px}
+.cmp-starter{display:flex;flex-direction:column;gap:5px;text-align:left;padding:15px 16px;
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;cursor:pointer;
+  transition:border-color .14s,background .14s}
+.cmp-starter:hover{border-color:#3c4a3f;background:var(--panel2)}
+.cmp-starter-t{font-family:inherit;font-size:13.5px;font-weight:500;color:var(--fg)}
+.cmp-starter-h2{font-family:inherit;font-size:12px;color:var(--faint);line-height:1.4}
+
+/* Working. One honest state — the backend reports one. */
+.cmp-working{display:flex;flex-direction:column;gap:8px;padding:26px 0}
+.cmp-working-t{margin:0;font-size:15px;color:var(--fg)}
+.cmp-working-s{margin:0;font-size:12.5px;color:var(--faint);line-height:1.55}
+.cmp-skel{display:flex;flex-direction:column;gap:11px;margin-top:16px;max-width:68ch}
+.cmp-skel span{display:block;border-radius:6px;background:var(--panel2);animation:cmpPulse 1.5s ease-in-out infinite}
+.cmp-skel-h{height:26px;width:56%}
+.cmp-skel-l{height:13px;width:100%}
+.cmp-skel-l.short{width:64%}
+@keyframes cmpPulse{0%,100%{opacity:.45}50%{opacity:.85}}
+@media (prefers-reduced-motion:reduce){.cmp-skel span{animation:none}}
+
+/* The piece. */
+.cmp-doc{display:flex;flex-direction:column;gap:22px}
+.cmp-tabs{display:flex;flex-wrap:wrap;gap:2px;border-bottom:1px solid var(--line)}
+.cmp-tab{display:inline-flex;align-items:center;gap:7px;font-family:inherit;font-size:13px;
+  color:var(--faint);background:none;border:0;border-bottom:2px solid transparent;
+  padding:0 13px;min-height:44px;cursor:pointer;margin-bottom:-1px;transition:color .13s,border-color .13s}
+.cmp-tab:hover{color:var(--fg)}
+.cmp-tab.on{color:var(--fg);border-bottom-color:var(--acc)}
+.cmp-tab-n{font-family:'Geist Mono',monospace;font-size:10px;color:var(--faint)}
+.cmp-tab-n.over{color:var(--amberr)}
+
+.cmp-piece{max-width:68ch}
+.cmp-title{font-size:28px;font-weight:500;letter-spacing:-.022em;line-height:1.2;color:var(--fg);margin:0 0 14px}
+.cmp-editor{position:relative}
+/* Height is set from scrollHeight in the component; overflow stays visible so nothing
+   can ever be clipped out of reach the way it was before. */
+.cmp-body{display:block;width:100%;white-space:pre-wrap;font-family:inherit;font-size:15.5px;
+  line-height:1.75;color:#d7ded4;background:none;border:0;padding:0;outline:none;resize:none;
+  overflow:hidden;max-width:68ch}
+.cmp-editable:focus{outline:none}
+.cmp-tags{margin:20px 0 0;font-family:'Geist Mono',monospace;font-size:12px;letter-spacing:.02em;
+  /* Was --faint at 3.84:1, which fails AA. --dim clears 4.5:1 at this size. */
+  color:var(--dim)}
+.cmp-note{font-size:12.5px;color:var(--amberr);margin-top:10px;line-height:1.5}
+.cmp-edited,.cmp-tip{font-size:12px;color:var(--faint);margin-top:14px;line-height:1.5}
+.cmp-linkbtn{font-family:inherit;font-size:12px;color:var(--acc);background:none;border:0;
+  padding:0;cursor:pointer;text-decoration:underline}
+.cmp-pending{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:14px;font-size:13px;color:var(--dim)}
+
+/* Refine toolbar — grouped so eleven actions read as a menu, and wrapping so it
+   never runs off a phone. */
+/* Anchored beneath the editor rather than floating over it. A toolbar positioned at the
+   selection always covers the sentence it is about to change, which is the one thing the
+   reader needs to see while choosing. */
+.cmp-float{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:12px;
+  padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.cmp-float-g{display:flex;flex-wrap:wrap;align-items:center;gap:3px}
+.cmp-float-l{font-family:'Geist Mono',monospace;font-size:9.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--faint);margin-right:3px}
+.cmp-float-b{font-family:inherit;font-size:12px;color:var(--dim);background:none;border:0;
+  border-radius:7px;padding:7px 9px;cursor:pointer;transition:background .12s,color .12s}
+.cmp-float-b:hover:not(:disabled){background:var(--bg);color:var(--fg)}
+.cmp-float-b:disabled{opacity:.5;cursor:default}
+
+.cmp-publish{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-top:20px;
+  border-top:1px solid var(--line)}
+.cmp-confirm{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13px;color:var(--dim)}
+.cmp-result{max-width:68ch;font-size:13.5px;color:var(--dim);line-height:1.7}
+.cmp-result b{color:var(--fg);font-weight:500}
+.cmp-err{font-size:13.5px;color:var(--amberr);line-height:1.55;max-width:68ch}
+.cmp-note-line{font-size:13px;color:var(--dim);line-height:1.55;max-width:68ch}
+
+.cmp-sub{max-width:68ch;padding-top:24px;border-top:1px solid var(--line);
+  display:flex;flex-direction:column;gap:20px}
+.cmp-dl{display:grid;grid-template-columns:132px 1fr;gap:12px 20px;font-size:13.5px;line-height:1.6;margin:0}
+.cmp-dl dt{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--faint);padding-top:3px}
+.cmp-dl dd{margin:0;color:var(--dim)}
+.cmp-slot{display:block}
+
+@media (max-width:640px){
+  .cmp{gap:26px}
+  .cmp-ask{font-size:26px}
+
+
+  .cmp-title{font-size:23px}
+  .cmp-starter-grid{grid-template-columns:1fr 1fr}
+  .cmp-dl{grid-template-columns:1fr;gap:4px 0}
+  .cmp-dl dd{margin-bottom:12px}
+
+}
+
+/* ── Content Engine: light workspace ───────────────────────────────────────
+   One token override, not a second design system. Every .cmp-*, .st-* and
+   .stu-* rule already reads these variables, so redefining them here flips the
+   whole subtree and keeps a single set of rules to maintain.
+
+   Scoped to /studio and /studio/create (see StudioShell). The rest of the
+   studio keeps the dark treatment it was designed in. */
+
+.studio-light{
+  --bg:#ffffff;
+  --panel:#fafafa;
+  --panel2:#f3f3f3;
+  --fg:#15171a;            /* near-black, never pure */
+  --dim:#5c6165;
+  /* #8b9096 measured 3.22:1 on white — below AA, and it carries the Options
+     control. Darkened until it clears 4.5:1. */
+  --faint:#6a7075;
+  --line:#e7e8ea;
+  --acc:#d5ff72;           /* kept, but only as a fill — see --acc-ink */
+  /* Lime is unreadable as text on white (≈1.3:1). Anything that used the accent
+     for text, icons or focus uses this instead; it is the same hue, taken down
+     to a contrast that passes. */
+  --acc-ink:#4a6b00;
+  --amberr:#8a5a00;
+  --redd:#a8341f;
+
+  background:#ffffff;
+  color:var(--fg);
+  /* The dark shell painted a lime radial glow behind everything. */
+  background-image:none;
+}
+
+/* --- shell ------------------------------------------------------------- */
+.studio-light .st-nav{background:#fcfcfc;border-right:1px solid var(--line)}
+.studio-light .st-brand-word{color:var(--fg)}
+.studio-light .st-link{color:var(--dim)}
+.studio-light .st-link:hover{background:var(--panel2);color:var(--fg)}
+/* The dark green pill was the loudest thing on the page. A soft neutral fill
+   with an accent rule reads as "you are here" without shouting. */
+.studio-light .st-link.on{
+  background:var(--panel2);color:var(--fg);box-shadow:inset 2px 0 0 var(--acc-ink)}
+.studio-light .st-link.on .st-link-ic{color:var(--acc-ink)}
+.studio-light .st-main{background:#ffffff}
+
+/* --- focus ------------------------------------------------------------- */
+.studio-light a:focus-visible,.studio-light button:focus-visible,
+.studio-light input:focus-visible,.studio-light select:focus-visible,
+.studio-light textarea:focus-visible{outline:2px solid var(--acc-ink);outline-offset:2px}
+
+/* --- accent used as ink ------------------------------------------------ */
+.studio-light .cmp-ctx-empty a,.studio-light .cmp-linkbtn,
+.studio-light .cmp-accept,.studio-light .cmp-dl a,.studio-light .stu-ctx-empty a{color:var(--acc-ink)}
+.studio-light .cmp-ctx-empty a:hover{border-bottom-color:var(--acc-ink)}
+.studio-light .cmp-tab.on{border-bottom-color:var(--acc-ink)}
+.studio-light .cmp-select:focus,.studio-light .cmp-input:focus{border-color:var(--acc-ink)}
+.studio-light .cmp-accept{border-color:#c9d6a8}
+.studio-light ::selection{background:#e8ffb0;color:var(--fg)}
+
+/* The "no business yet" line is context, not an alert. On dark it was a panel;
+   on white a filled box reads as a warning banner above the brief. */
+.studio-light .stu-ctx{background:none;border:0;padding:0}
+.studio-light .stu-ctx-empty{color:var(--dim)}
+
+/* --- the creation canvas ----------------------------------------------- */
+/* White on white needs a border, not a fill, to read as a surface. */
+
+
+.studio-light .cmp-adv{background:#fbfbfc}
+.studio-light .cmp-starter{background:#ffffff}
+.studio-light .cmp-starter:hover{background:#fbfbfc;border-color:#cfd3d8}
+.studio-light .cmp-select,.studio-light .cmp-input{background:#ffffff}
+
+/* --- the piece ---------------------------------------------------------- */
+/* Document ink: slightly softer than UI text, the way a page reads. */
+.studio-light .cmp-body{color:#22262b}
+.studio-light .cmp-float{background:#ffffff;box-shadow:0 1px 3px rgba(16,20,24,.06)}
+.studio-light .cmp-float-b:hover:not(:disabled){background:var(--panel2)}
+.studio-light .cmp-skel span{background:#eceef0}
+.studio-light .cmp-go{color:#1c2606}
+.studio-light .cmp-go:hover:not(:disabled){background:#c9f75e}
+.studio-light .cmp-alt:hover:not(:disabled){border-color:#c2c7cd}
+
+/* --- studio deck (the /studio/create cards) ----------------------------- */
+.studio-light .stu-card{background:#ffffff;border-color:var(--line)}
+.studio-light .stu-card:hover{background:#fbfbfc;border-color:#cfd3d8}
+.studio-light .stu-pv{background:var(--panel2)}
+.studio-light .stu-h1{color:var(--fg)}
+
+/* --- scrollbars --------------------------------------------------------- */
+.studio-light ::-webkit-scrollbar-thumb{background:#d7dade;border-color:#fff}
+
+/* The global announcement bar sits outside .studio, so it is reached by
+   presence rather than descent. Progressive: without :has it stays dark. */
+body:has(.studio-light) .eab{background:#fcfcfc;border-bottom:1px solid #e7e8ea;color:#15171a}
+body:has(.studio-light) .eab-msg{color:#5c6165}
+
+/* --- radius scale ------------------------------------------------------- */
+/* surface 12 · popover 10 · control 8 — one scale, applied in one place. */
+.studio-light .cmp-composer,.studio-light .cmp-adv,
+.studio-light .cmp-starter,.studio-light .stu-card{border-radius:12px}
+.studio-light .cmp-float{border-radius:10px}
+.studio-light .cmp-go,.studio-light .cmp-alt,
+.studio-light .cmp-select,.studio-light .cmp-input{border-radius:8px}
+
+/* Quiet the labels. Mono uppercase reads as a system readout; in a light editorial
+   workspace two of them stacked above the brief is shouting. Same information,
+   normal case, normal face. */
+.studio-light .cmp-eyebrow,.studio-light .cmp-starters-h,
+.studio-light .stu-deck-head .label,.studio-light .stu-head .label,
+.studio-light .cmp-adv-field>span,.studio-light .cmp-dl dt{
+  font-family:'Inter',sans-serif;font-size:12px;letter-spacing:0;
+  text-transform:none;color:var(--faint)}
+
+/* The deck scrolls horizontally by design, but a half-visible card at the edge of a
+   phone reads as broken rather than as "more this way". Two intentional columns. */
+@media (max-width:640px){
+  .studio-light .stu-deck{display:grid;grid-template-columns:1fr 1fr;gap:10px;overflow:visible}
+  .studio-light .stu-deck>*{min-width:0}
+  .studio-light .stu-card{width:100%}
+}
+
+/* ── The composer ──────────────────────────────────────────────────────────
+   One surface. The textarea is transparent and unbordered — a bordered field
+   inside a bordered card is what made the old version read as a form.
+
+   Height comes from content (autosize in Composer.tsx, 52px floor ≈ two lines),
+   so a short brief gives a short composer: ~132px total, not 241px with a
+   hundred pixels of nothing under one sentence. */
+
+.cmp-composer{
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:22px 22px 0;transition:border-color .16s var(--ease),box-shadow .16s var(--ease)}
+.cmp-composer:focus-within{border-color:#3c4a3f}
+.cmp-composer.working{opacity:.6}
+
+.cmp-prompt{
+  display:block;width:100%;background:none;border:0;outline:none;resize:none;overflow:hidden;
+  font-family:inherit;font-size:18px;line-height:1.45;color:var(--fg);padding:0;margin:0}
+.cmp-prompt::placeholder{color:var(--faint)}
+
+/* Action row: quiet on the left, the one primary on the right. ~52px tall. */
+.cmp-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  /* 44px control + 4px above and below = the ~52px row the composer is specced to. */
+  margin-top:16px;padding:4px 0;border-top:1px solid var(--line)}
+/* Visually quiet, but a full 44px hit area — the row is already that tall for the
+   primary, so a smaller target here buys nothing and costs reachability. */
+.cmp-bar .cmp-adv-toggle{padding:0 2px;min-height:44px}
+.cmp-bar .cmp-go{
+  display:inline-flex;align-items:center;gap:9px;
+  height:44px;min-height:0;padding:0 20px;border-radius:10px;font-weight:600}
+.cmp-kbd{
+  font-family:'Geist Mono',monospace;font-size:10.5px;line-height:1;
+  padding:3px 5px;border-radius:5px;background:rgba(0,0,0,.13);color:inherit;opacity:.72}
+
+@media (max-width:640px){
+  .cmp-composer{padding:17px 16px 0;border-radius:12px}
+  .cmp-prompt{font-size:16px}
+  /* Wrapping is fine; drifting apart is not. The primary keeps the right edge. */
+  .cmp-bar{flex-wrap:wrap;gap:8px}
+  .cmp-bar .cmp-go{margin-left:auto}
+}
+
+.studio-light .cmp-composer{background:#ffffff;border-color:#dfe1e4}
+.studio-light .cmp-composer:focus-within{border-color:#b9bec4;box-shadow:0 1px 2px rgba(16,20,24,.05)}
+.studio-light .cmp-kbd{background:rgba(24,32,8,.14)}
+
+/* ── Mobile menu bar ───────────────────────────────────────────────────────
+   Below 900px the rail was a horizontally scrolling strip with the scrollbar
+   hidden: 731px of links in a 375px viewport, so Team, Intelligence, Results
+   and Settings existed but could not be found. A bar that names where you are
+   and opens the full list replaces it. Desktop is untouched. */
+
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.st-menu-btn{display:none}
+
+@media (max-width:900px){
+  .st-nav{
+    display:flex;flex-direction:row;align-items:center;justify-content:space-between;
+    gap:12px;overflow:visible;padding:10px 14px;height:auto;
+    border-right:0;border-bottom:1px solid var(--line)}
+  /* The old scrolling rail hid the wordmark to buy horizontal room. A menu bar has
+     room, and a bar with no brand reads as a fragment of a page rather than a header. */
+  .st-brand{display:flex;padding:0;margin:0;border-bottom:0}
+  .st-brand-word{font-size:15px}
+
+  .st-menu-btn{
+    display:inline-flex;align-items:center;gap:9px;min-height:44px;padding:0 12px;
+    background:none;border:1px solid var(--line);border-radius:10px;
+    font-family:inherit;font-size:13.5px;font-weight:500;color:var(--fg)}
+  .st-menu-where{line-height:1}
+  .st-menu-ic{display:inline-flex;color:var(--dim)}
+
+  /* Closed by default; the button is the only way in, which is the point. */
+  .st-nav .st-links{display:none}
+  .st-nav.open .st-links{
+    display:flex;flex-direction:column;gap:2px;
+    position:absolute;top:100%;right:10px;left:10px;z-index:40;
+    padding:8px;background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;box-shadow:0 12px 28px rgba(0,0,0,.28)}
+  .st-nav.open .st-link{min-height:44px}
+}
+.studio-light .st-menu-btn{border-color:#dfe1e4}
+.studio-light .st-nav.open .st-links{background:#fff;box-shadow:0 12px 28px rgba(16,20,24,.12)}
+
+/* ── Uniform starter cards ─────────────────────────────────────────────────
+   Same width was already set; height was not, so a two-line blurb made a taller
+   card than a one-line blurb and the row read as ragged. Equal height, and the
+   text block takes the slack so every preview sits on the same line. */
+.stu-deck{align-items:stretch}
+.stu-deck>*{display:flex}
+.stu-card{height:100%;min-height:236px}
+.stu-card-t,.stu-card-d{padding-left:14px;padding-right:14px}
+.stu-card-d{flex:1}
+
+@media (max-width:640px){
+  .stu-deck{display:grid;grid-template-columns:1fr 1fr;gap:10px;overflow:visible;
+    grid-auto-rows:1fr}
+  .stu-deck>*{min-width:0}
+  .stu-card{flex-basis:auto;width:100%;min-height:214px}
+  .stu-card-pv{height:96px}
+}

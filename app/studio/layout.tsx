@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import StudioNav from "./StudioNav";
+import StudioShell from "./StudioShell";
 
 export const metadata: Metadata = {
   // Brand is appended by the root layout's title template — including it here
@@ -12,10 +12,5 @@ export const metadata: Metadata = {
 };
 
 export default function StudioLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="studio">
-      <StudioNav />
-      <main className="st-main">{children}</main>
-    </div>
-  );
+  return <StudioShell>{children}</StudioShell>;
 }

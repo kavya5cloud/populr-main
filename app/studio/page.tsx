@@ -8,7 +8,7 @@ import Composer from "./Composer";
 export default function StudioHome() {
   return (
     <section className="st-section">
-      <Composer heading="What do you want to create?" />
+      <Composer heading="What are we making?" />
     </section>
   );
 }
