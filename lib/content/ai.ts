@@ -1,3 +1,4 @@
+import { isEnglish, language, languageCode } from "@/lib/i18n/languages";
 import { generateText, configuredProviderNames } from "@/lib/services/llm";
 import { CRAFT_RULES, CRAFT_BANS, POST_SHAPES, INTERACTION, DISCOVERY, formFor, scoreDraft, rewriteNote } from "./craft";
 import { extractJson, LlmJsonError } from "@/lib/llm-json";
@@ -57,6 +58,24 @@ type LlmCompose = {
   confidence?: number;
 };
 
+// The shape of a script-and-shot-list, spelled out because the sections are the deliverable.
+//
+// The last line is the important one. Asked for "a video", a model will happily describe a
+// finished film — camera moves it invented, music it chose, a cut it cannot make — and the
+// reader takes that as a description of something Populr produced. It has to write a brief
+// for a human shoot, in the second person, addressed to whoever holds the camera.
+const SCRIPT_SHAPE = [
+  ``,
+  `SHAPE — use these headings, in this order:`,
+  `- Hook (0–3s): the line that stops the scroll.`,
+  `- Shot list: numbered shots. Each one gets Visual direction, On-screen text, and Voiceover/dialogue.`,
+  `- Caption: what goes in the post body.`,
+  `- CTA: one action.`,
+  `This is a document a person films from. Do not describe a finished video, do not narrate`,
+  `edits or music as though they exist, and never imply the video has been made. Write the`,
+  `directions to whoever is holding the camera.`,
+].join("\n");
+
 function buildPrompt(input: ComposeInput, ctx: GenerationContext): string {
   const meta = FORMAT_META[input.format];
   const platformList = ctx.platforms.length
@@ -70,8 +89,20 @@ function buildPrompt(input: ComposeInput, ctx: GenerationContext): string {
     // into the new year" in August, and it is the thing that makes today's brief textually
     // different from yesterday's, which is what breaks the cache.
     `TODAY: ${dayKey(input.now)}`,
+    ...(isEnglish(languageCode(input.language)) ? [] : [
+      // Written as a brief, not as "translate this into Hindi".
+      //
+      // A translation instruction produces English copy wearing another script — English
+      // sentence rhythm, English idiom, festivals and references nobody in the market uses.
+      // Naming the language, the reader and the register instead gets copy that was thought
+      // in that language, which is the entire point of doing this at all.
+      `WRITE IN: ${language(input.language).native} (${language(input.language).name}).`,
+      `Write it natively, not translated. Use the idiom, rhythm and references a ${language(input.language).name}-speaking reader in India actually uses. Do not write English copy and convert it.`,
+      `Keep in the original: the product name, URLs, and any English technical term your reader would themselves say in English. Everything else in ${language(input.language).name}.`,
+    ]),
     `THE ASK: ${input.prompt}`,
     `FORMAT: ${meta.label} — ${meta.blurb}`,
+    ...(input.format === "video_script" ? [SCRIPT_SHAPE] : []),
     ``,
     `CONTEXT YOU MUST USE:`,
     contextToPrompt(ctx),
@@ -188,8 +219,21 @@ export async function composeWithAi(
   // The salt is what makes this a request for writing rather than a lookup. The day alone
   // would still hand back the same post to two people asking on the same afternoon, so the
   // attempt rides along with it.
-  const cacheSalt = `compose:${dayKey(input.now)}:${opts.attempt ?? 0}`;
-  const result = await generateText({ prompt: buildPrompt(input, ctx), cacheSalt, temperature: COMPOSE_TEMPERATURE });
+  // Language belongs in the key, not only in the prompt.
+  //
+  // The prompt does carry it, so the hash would differ today — but the salt is the part that
+  // states intent, and a future change that moves the language instruction elsewhere would
+  // silently start serving a Hindi request the English post it cached ten minutes ago.
+  const cacheSalt = `compose:${dayKey(input.now)}:${languageCode(input.language)}:${opts.attempt ?? 0}`;
+  // Sarvam first for Indian-language work, and only for that.
+  //
+  // This is a preference, not a switch: generateText moves it to the front and leaves every
+  // other provider behind it, so an outage costs quality rather than the post. English
+  // generation resolves exactly as it did before this existed.
+  const prefer = isEnglish(languageCode(input.language)) ? undefined : ("sarvam" as const);
+  const result = await generateText({
+    prompt: buildPrompt(input, ctx), cacheSalt, temperature: COMPOSE_TEMPERATURE, preferProvider: prefer,
+  });
   if (!result.ok) {
     return deterministicResult(input, `Every AI provider failed (${result.error}). This draft is from the built-in composer.`);
   }
@@ -218,7 +262,7 @@ export async function composeWithAi(
   //
   // Capped at one attempt on purpose. A rewrite loop is how a token budget disappears, and
   // this codebase has already lost a day to exactly that.
-  const craft = scoreDraft(body);
+  const craft = scoreDraft(body, languageCode(input.language));
   if (craft.needsRewrite && !opts.signal?.aborted) {
     const retry = await generateText({
       prompt: [
@@ -263,9 +307,10 @@ export async function composeWithAi(
       // is the step whose output actually ships.
       cacheSalt: `${cacheSalt}:rewrite`,
       temperature: COMPOSE_TEMPERATURE,
+      preferProvider: prefer,
     });
     if (retry.ok && retry.text.trim()) {
-      const after = scoreDraft(retry.text.trim());
+      const after = scoreDraft(retry.text.trim(), languageCode(input.language));
       // Keep it only if it actually improved. A rewrite that scores worse is a worse post.
       if (after.score > craft.score) body = retry.text.trim();
       console.info(JSON.stringify({

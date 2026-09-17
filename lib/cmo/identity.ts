@@ -14,7 +14,7 @@
 // and it is why these are sentence-level regexes rather than a word list.
 
 /** Vendors and model families whose names only matter here in the first person. */
-const VENDORS = "Gemini|Google|Bard|OpenAI|ChatGPT|GPT-?[0-9o]*|Anthropic|Claude|Groq|Llama|Meta AI|Mistral|Copilot|DeepSeek|Qwen";
+const VENDORS = "Gemini|Google|Bard|OpenAI|ChatGPT|GPT-?[0-9o]*|Anthropic|Claude|Groq|Llama|Meta AI|Mistral|Copilot|DeepSeek|Qwen|Sarvam";
 
 /**
  * Self-disclosure patterns.

@@ -21,6 +21,9 @@
    because they have seen a thousand of them this month.
    ──────────────────────────────────────────────────────────────────────────── */
 
+import { DEFAULT_LANGUAGE, type LanguageCode } from "@/lib/i18n/languages";
+import { localeCraft } from "./craft-locale";
+
 export const AI_TELLS: string[] = [
   // openers that say nothing
   "in today's", "in the world of", "in the fast-paced", "in an era where",
@@ -244,8 +247,6 @@ export type CraftScore = {
   needsRewrite: boolean;
 };
 
-const sentences = (t: string) =>
-  t.replace(/\s+/g, " ").split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
 
 /** Openers that promise the reader nothing. */
 const WEAK_OPENINGS = /^(in|as|with|when|if|the|there (is|are)|it (is|was)|we (all|know)|have you ever|did you know|are you (tired|looking|struggling))\b/i;
@@ -267,21 +268,34 @@ const WEAK_OPENINGS = /^(in|as|with|when|if|the|there (is|are)|it (is|was)|we (a
  */
 const CONTRARIAN_OPENING = /^(there (is|are) (no|nothing|not)\b|no ?one\b|nobody\b|none of\b|it (is|was) never\b)/i;
 
-export function scoreDraft(text: string): CraftScore {
+/**
+ * @param lang Which language the draft is in. Defaults to English so every existing caller
+ *   is unchanged.
+ *
+ * The phrase and opener lists below are English strings. Run against Hindi they match
+ * nothing and report a clean draft — the gate does not misfire, it disappears, on exactly
+ * the content nobody here can proofread. lib/content/craft-locale.ts decides per language
+ * which checks still mean something; structural ones (rhythm, shape, line breaks) transfer,
+ * word lists do not.
+ */
+export function scoreDraft(text: string, lang: LanguageCode = DEFAULT_LANGUAGE): CraftScore {
   const t = (text || "").trim();
   const issues: CraftIssue[] = [];
   if (!t) return { score: 0, issues: [{ code: "weak_opening", detail: "empty" }], needsRewrite: true };
 
+  const locale = localeCraft(lang);
   const lower = t.toLowerCase();
 
-  for (const tell of AI_TELLS) {
-    if (lower.includes(tell)) issues.push({ code: "ai_tell", detail: tell });
-  }
-  for (const vague of VAGUE_CLAIMS) {
-    if (lower.includes(vague)) issues.push({ code: "vague_claim", detail: vague });
+  if (locale.usesEnglishPhraseRules) {
+    for (const tell of AI_TELLS) {
+      if (lower.includes(tell)) issues.push({ code: "ai_tell", detail: tell });
+    }
+    for (const vague of VAGUE_CLAIMS) {
+      if (lower.includes(vague)) issues.push({ code: "vague_claim", detail: vague });
+    }
   }
 
-  const sents = sentences(t);
+  const sents = locale.splitSentences(t);
 
   // A first line that opens on a preposition or a "did you know" is a first line that could
   // belong to any post about anything.
@@ -297,7 +311,7 @@ export function scoreDraft(text: string): CraftScore {
   // The length cap matters: "there is no silver bullet" is an assertion, while a 30-word
   // line starting "there is no doubt that…" is preamble wearing the same clothes.
   const contrarian = CONTRARIAN_OPENING.test(opener) && opener.split(/\s+/).length <= 14;
-  if (opener && WEAK_OPENINGS.test(opener) && !contrarian) {
+  if (locale.usesEnglishOpenerRules && opener && WEAK_OPENINGS.test(opener) && !contrarian) {
     issues.push({ code: "weak_opening", detail: opener.slice(0, 60) });
   }
 
@@ -332,15 +346,19 @@ export function scoreDraft(text: string): CraftScore {
   //
   // 25 still exempts a deliberate one-liner ("Nobody reads your case studies. They skim the
   // logo wall and leave." is twelve), which is the case worth protecting.
-  const longEnough = t.split(/\s+/).length >= 25;
+  // Threshold comes from the language: Devanagari and the southern scripts carry more per
+  // word, so 25 flags ordinary Hindi prose as a wall.
+  const longEnough = t.split(/\s+/).length >= locale.monotoneMinWords;
   if (longEnough && !hasBreak && !hasList && !hasPunchLine) {
     issues.push({ code: "monotone_shape", detail: `${lines.length} line(s), no break, no list, no short line` });
   }
 
-  // Closing summary.
-  const tail = sents.slice(-2).join(" ").toLowerCase();
-  if (/^(so|in short|to recap|overall|ultimately|in summary)\b/.test(tail) || /\b(in conclusion|to sum up|the takeaway)\b/.test(tail)) {
-    issues.push({ code: "summary_ending", detail: tail.slice(0, 60) });
+  // Closing summary. English phrasing, so English only.
+  if (locale.usesEnglishPhraseRules) {
+    const tail = sents.slice(-2).join(" ").toLowerCase();
+    if (/^(so|in short|to recap|overall|ultimately|in summary)\b/.test(tail) || /\b(in conclusion|to sum up|the takeaway)\b/.test(tail)) {
+      issues.push({ code: "summary_ending", detail: tail.slice(0, 60) });
+    }
   }
 
   // Three, not two. Two was below what LinkedIn and Instagram actually reward, so the check

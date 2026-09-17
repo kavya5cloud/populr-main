@@ -5,6 +5,7 @@ import { workspaceKey } from "@/lib/intel";
 import { socialEngine } from "@/lib/social/shared";
 import { buildVariants, isContentFormat, isSocialPlatform, type ContentFormat } from "@/lib/content/compose";
 import { composeWithAi } from "@/lib/content/ai";
+import { DEFAULT_LANGUAGE, isLanguageCode } from "@/lib/i18n/languages";
 import { recordGeneration } from "@/lib/content/generation-log";
 import type { SocialPlatform } from "@/lib/social/types";
 import { readAssets } from "@/lib/social/api-helpers";
@@ -55,6 +56,10 @@ export async function POST(req: NextRequest) {
       tenant, prompt, format: format as ContentFormat,
       audience: String(body.audience || "founders").slice(0, 120),
       platforms,
+      // Validated at the boundary, exactly like `format` above. An unrecognised code falls
+      // back to English rather than 422-ing: a stale client sending a language we have since
+      // removed should still get a post, in the language everyone can read.
+      language: isLanguageCode(body.language) ? body.language : DEFAULT_LANGUAGE,
       now: Date.now(),
       // "Give me another one" has to reach the cache key or it is not another one. Clamped
       // because this is the only thing a caller can vary freely to force fresh model calls.

@@ -1,3 +1,4 @@
+import type { LanguageCode } from "@/lib/i18n/languages";
 import { createHash } from "node:crypto";
 import { createAdapterRegistry } from "@/lib/social/registry";
 import { SOCIAL_PLATFORMS, type SocialPlatform } from "@/lib/social/types";
@@ -15,7 +16,7 @@ import { PUBLISH_CHANNELS, formatWindowLabel, type PublishChannel } from "@/lib/
 // it testable and what makes an approved draft the draft that ships.
 
 export const CONTENT_FORMATS = [
-  "post", "thread", "blog", "email", "landing_page", "announcement", "carousel",
+  "post", "thread", "blog", "email", "landing_page", "announcement", "carousel", "video_script",
 ] as const;
 export type ContentFormat = (typeof CONTENT_FORMATS)[number];
 
@@ -27,6 +28,9 @@ export const FORMAT_META: Record<ContentFormat, { label: string; blurb: string; 
   landing_page: { label: "Landing page", blurb: "Headline, proof, and a single action.", longForm: true },
   announcement: { label: "Product announcement", blurb: "What shipped, who it's for, why it matters.", longForm: true },
   carousel: { label: "Carousel", blurb: "Slide-by-slide, built to be swiped.", longForm: false },
+  // A written deliverable, not a video. The label says so in both halves on purpose: this
+  // produces the pages someone takes to a shoot, and Populr does not hold the camera.
+  video_script: { label: "Video script and shot list", blurb: "The words, the shots and the caption — for someone else to film.", longForm: true },
 };
 
 export type ComposeInput = {
@@ -37,6 +41,15 @@ export type ComposeInput = {
   audience: string;
   /** Platforms with a connected account — variants are only built for these. */
   platforms: SocialPlatform[];
+  /**
+   * What to write in. Optional and English by default, so every existing caller is
+   * unchanged.
+   *
+   * This is a generation instruction, not a translation one: the model writes natively in
+   * this language from the business context. English-then-translate produces copy that
+   * reads translated, which is the thing a regional audience notices first.
+   */
+  language?: LanguageCode;
   now: number;
 };
 
@@ -166,6 +179,30 @@ function body(input: ComposeInput): string {
         `Slide 3 — Why the usual fix doesn't hold.`,
         ...kw.slice(0, 2).map((k, i) => `Slide ${4 + i} — ${k}, shown not described.`),
         `Slide ${4 + Math.min(2, kw.length)} — What to do next.`,
+      ].join("\n");
+    case "video_script":
+      // The offline shape. Every heading here is something a person writes and a person
+      // reads on set — no frame, no render, no file.
+      return [
+        `## ${title(input.prompt, "video_script")}`,
+        ``,
+        `**Hook (0–3s).** ${p}`,
+        ``,
+        `**Shot 1 — establishing.** Visual: the problem as it looks today.`,
+        `On-screen text: the one line that names it.`,
+        `Voiceover: "${who.charAt(0).toUpperCase()}${who.slice(1)} do this by hand."`,
+        ``,
+        ...kw.slice(0, 2).flatMap((k, i) => [
+          `**Shot ${2 + i} — ${k}.** Visual: ${k}, shown rather than described.`,
+          `Voiceover: what changes, in one sentence.`,
+          ``,
+        ]),
+        `**Shot ${2 + Math.min(2, kw.length)} — close.** Visual: the result on screen.`,
+        `On-screen text: the CTA.`,
+        ``,
+        `**Caption.** ${p}`,
+        ``,
+        `**CTA.** One action, no setup call.`,
       ].join("\n");
     case "post":
     default:
