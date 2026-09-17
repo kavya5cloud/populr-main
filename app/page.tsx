@@ -1,73 +1,25 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { SHOW_CONTENT_ENGINE } from "@/lib/flags";
+import { useEffect, useRef } from "react";
 import { captureReferral } from "@/lib/referral-client";
-import Icon from "@/app/components/Icon";
 
-// The ways into the product. Derived rather than hand-numbered: the content engine is
-// behind a flag, and a hardcoded "01/02/03" under a hardcoded "Three ways in." would go
-// stale the moment it is hidden. Index 0 is the primary — exactly one, always.
-const WAYS: { href: string; title: string; desc: string }[] = [
-  // First, because it is the shortest path from "I have a website" to "my marketing is
-  // running". A new visitor should not have to work out which of the other entries is the
-  // one that sets things up. `next` carries them here through sign-in.
-  {
-    href: "/app?next=/app/assistant",
-    title: "Set up my marketing",
-    desc: "Four questions, about a minute — how often to post, where, how much you want to review, and what you're aiming for. Then Populr takes it from there.",
-  },
-  ...(SHOW_CONTENT_ENGINE
-    ? [{
-        href: "/app?next=/studio/documents",
-        title: "Create content",
-        desc: "One prompt becomes a post, thread, blog, email or landing page — sized to each platform's limits, with hashtags, CTAs and a schedule. Paste your site first so it writes about your product, not a generic one.",
-      }]
-    : []),
-  {
-    href: "/app",
-    title: "Launch workspace",
-    desc: "A whole launch, planned and executed — campaigns, assets, approvals and publishing, run by seven AI specialists you can watch and interrupt.",
-  },
-  {
-    href: "/app",
-    title: "Campaigns",
-    desc: "Everything already in flight, and what each one is doing next.",
-  },
+/**
+ * The team, as a studio would list it.
+ *
+ * Was thirteen flip cards with brand-coloured icons — Reddit, Hacker News, a Link Broker,
+ * a UGC Videos agent — which reads as a trading-card set rather than a marketing team, and
+ * two of them sold work this product cannot do. An agency's site does not enumerate its
+ * staff; it says what it takes responsibility for.
+ *
+ * Four, because that is what the product genuinely does end to end today. No video, no
+ * clips: nothing here renders a file, and a role named for an output we cannot produce is
+ * the most expensive line on the page.
+ */
+const TEAM: { role: string; does: string }[] = [
+  { role: "Strategy", does: "Reads the site, the analytics and the search data, then decides what the week is for." },
+  { role: "Editorial", does: "Writes the posts and pages in your voice, and rejects its own drafts before you see them." },
+  { role: "Search", does: "Finds the terms worth winning, and says plainly which ones are already lost." },
+  { role: "Publishing", does: "Sends approved work through your own accounts, at the hour it is most likely to be read." },
 ];
-
-const COUNT_WORD = ["No", "One", "Two", "Three", "Four"][WAYS.length] ?? String(WAYS.length);
-
-const AGENTS: { c: string; name: string; desc: string; soon?: boolean; icon: React.ReactNode }[] = [
-  { c: "#3ECF8E", name: "Influencer Agent", desc: "Finds creators who match your audience and drafts the outreach.", icon: <path d="M20 4L7 8.5H4.5A2.5 2.5 0 0 0 2 11v2a2.5 2.5 0 0 0 2.5 2.5H6V19a1.5 1.5 0 0 0 1.5 1.5H9a1 1 0 0 0 1-1v-3.6l10 3.6V4z" /> },
-  { c: "#FF4500", name: "Reddit Agent", desc: "Surfaces high-intent threads and drafts replies for your review.", icon: <><ellipse cx="12" cy="14" rx="8" ry="5.6" /><circle cx="19.5" cy="9.5" r="1.6" /><path d="M12 8.4l1.2-4.2 4 1.1" strokeLinecap="round" /><circle cx="9" cy="13.5" r="1.1" fill="currentColor" stroke="none" /><circle cx="15" cy="13.5" r="1.1" fill="currentColor" stroke="none" /><path d="M9.3 16.3c1.7 1.1 3.7 1.1 5.4 0" strokeLinecap="round" /></> },
-  { c: "#CDA6F2", name: "SEO Agent", desc: "Keyword opportunities, drafted into posts and pages for approval.", icon: <><circle cx="11" cy="11" r="6.2" /><path d="M15.6 15.6L20 20" /><path d="M8.5 11h5M11 8.5v5" /></> },
-  { c: "#9A6AE8", name: "Writer Agent", desc: "Long-form articles and copy in your brand voice.", icon: <><path d="M4 20l1.2-4.2L16.4 4.6a2.05 2.05 0 0 1 2.9 2.9L8.2 18.8 4 20z" /><path d="M14.5 6.5l3 3" /></> },
-  { c: "#FAFAFA", name: "X (Twitter) Agent", desc: "Post and thread drafts you refine and ship yourself.", icon: <path d="M17.2 3h3l-6.6 7.6L21.5 21h-6.1l-4.8-6.2L5.1 21h-3l7.1-8.1L2.5 3h6.2l4.3 5.7L17.2 3zm-1 16.2h1.7L6.9 4.7H5.1l11.1 14.5z" fill="currentColor" stroke="none" /> },
-  { c: "#0A66C2", name: "LinkedIn Agent", desc: "Professional drafts for you to personalise and share.", icon: <><rect x="3" y="3" width="18" height="18" rx="3.5" /><circle cx="8" cy="8.3" r="1.25" fill="currentColor" stroke="none" /><path d="M8 11.2v6" strokeWidth="2" strokeLinecap="round" /><path d="M12.2 17.2v-6" strokeWidth="2" strokeLinecap="round" /><path d="M12.2 13.6a2.5 2.5 0 0 1 5 0v3.6" strokeWidth="2" strokeLinecap="round" /></> },
-  { c: "#FF6600", name: "Hacker News Agent", desc: "Spots the right moments and drafts comments worth posting.", icon: <><rect x="3" y="3" width="18" height="18" rx="3.5" /><path d="M8.3 7.5l3.7 5.2v4M15.7 7.5L12 12.7" strokeWidth="1.9" strokeLinecap="round" /></> },
-  { c: "#5A8DE8", name: "GEO Agent", desc: "Gets your brand cited in ChatGPT and AI Overviews.", icon: <><circle cx="12" cy="12" r="8.4" /><ellipse cx="12" cy="12" rx="3.6" ry="8.4" /><path d="M3.8 12h16.4" /></> },
-  { c: "#3A8DE8", name: "Coding Agent", desc: "Ships technical SEO fixes as real code changes.", icon: <path d="M8.5 7.5L4 12l4.5 4.5M15.5 7.5L20 12l-4.5 4.5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /> },
-  { c: "#E8843A", name: "UGC Videos Agent", desc: "Guided briefs and AI clips, ready for social and ads.", icon: <><rect x="2.8" y="4.8" width="18.4" height="14.4" rx="3" /><path d="M10.2 9.2l4.6 2.8-4.6 2.8V9.2z" fill="currentColor" stroke="none" /></> },
-  { c: "#4285F4", name: "Google Search Console", desc: "Live search data reveals ranking opportunities.", icon: <><circle cx="11" cy="11" r="6.4" /><path d="M15.8 15.8L20 20" /><path d="M8.6 13.2v-2M11 13.2V8.8M13.4 13.2v-3.1" /></> },
-  { c: "#E8B45A", name: "Google Analytics", desc: "GA4 signals show what's working and where to focus.", icon: <><rect x="4" y="13.5" width="4.2" height="6.5" rx="1.4" fill="currentColor" stroke="none" /><rect x="9.9" y="8.5" width="4.2" height="11.5" rx="1.4" fill="currentColor" stroke="none" /><rect x="15.8" y="4" width="4.2" height="16" rx="1.4" fill="currentColor" stroke="none" /></> },
-  { c: "#5AC8E8", name: "Link Broker Agent", soon: true, desc: "High-quality backlink building, on autopilot.", icon: <><path d="M10.2 13.8a4.2 4.2 0 0 0 6.2.4l2.8-2.8a4.2 4.2 0 0 0-5.9-5.9l-1.5 1.5" /><path d="M13.8 10.2a4.2 4.2 0 0 0-6.2-.4l-2.8 2.8a4.2 4.2 0 0 0 5.9 5.9l1.5-1.5" /></> },
-];
-
-const AGENT_DETAILS: Record<string, string> = {
-  "Influencer Agent": "Builds a short, qualified creator list with audience-fit notes and ready-to-edit outreach messages.",
-  "Reddit Agent": "Prioritizes conversations with buying intent, then gives you a helpful, on-brand response draft to review.",
-  "SEO Agent": "Finds practical search opportunities across your site, from page fixes to content topics worth ranking for.",
-  "Writer Agent": "Turns the highest-value opportunities into articles, landing-page copy, and campaign content in your voice.",
-  "X (Twitter) Agent": "Produces timely post and thread ideas based on your positioning, product insights, and active campaigns.",
-  "LinkedIn Agent": "Creates credible founder-led posts that turn a specific product or market insight into a useful narrative.",
-  "Hacker News Agent": "Frames your launch around the problem, how the product works, technical choices, and honest limitations.",
-  "GEO Agent": "Checks where AI search tools cite competitors and identifies the content or authority gaps to close.",
-  "Coding Agent": "Converts technical SEO recommendations into implementation-ready tasks and code changes for your site.",
-  "UGC Videos Agent": "Creates clear creative briefs for short product videos, social clips, and paid-ad variations.",
-  "Google Search Console": "Uses verified Search Console data to surface queries, pages, clicks, impressions, and ranking changes.",
-  "Google Analytics": "Turns GA4 behavior signals into focused recommendations about what is working and what needs attention.",
-  "Link Broker Agent": "Will identify relevant backlink opportunities and prepare outreach once the feature is available.",
-};
 
 // What a daily run decides, shown as the product shows it.
 //
@@ -91,7 +43,6 @@ export default function Landing() {
   useEffect(() => { captureReferral(window.location.search); }, []);
 
   const dotsRef = useRef<HTMLCanvasElement>(null);
-  const [flippedAgent, setFlippedAgent] = useState<string | null>(null);
   useEffect(() => {
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -191,61 +142,16 @@ export default function Landing() {
       <nav>
         <div className="nav-in">
           <a href="/" className="logo" aria-label="Populr home">Populr.</a>
+          {/* One door.
+              This held a two-column hover panel with eight destinations — Dashboard, Launch
+              workspace, Integrations, Guides — plus an Early access button beside Try free.
+              A visitor deciding between four entrances has not been given a choice, they
+              have been given homework. The hero input is the way in; everything else here
+              is a link for someone who already knows what they want. */}
           <div className="nav-r">
-            {/* The mega menu.
-                Open on hover and on keyboard focus, closed otherwise — :focus-within does
-                the second half, which is why there is no React state here. A menu driven by
-                useState needs its own outside-click handler, its own Escape handler, and its
-                own focus management, and gets at least one of the three wrong. CSS already
-                knows when something inside is focused.
-
-                Every entry points at a page that exists. A menu advertising surfaces we have
-                not built is a promise the next click breaks. */}
-            <div className="nav-menu">
-              <button type="button" className="nav-trigger" aria-haspopup="true">
-                Product
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </button>
-              <div className="nav-panel">
-                <div className="nav-col">
-                  <p className="label">The product</p>
-                  {[
-                    ["#how", "How it works", "One URL in, today's plan out."],
-                    ["#agents", "The agents", "Every role a marketing team would hire."],
-                    ["#integrations", "Connects to", "Your site, your analytics, your accounts."],
-                    ["#pricing", "Pricing", "One plan. First month free."],
-                  ].map(([href, t, d]) => (
-                    <a key={href} href={href} className="nav-item">
-                      <span className="nav-item-t">{t}</span>
-                      <span className="nav-item-d">{d}</span>
-                    </a>
-                  ))}
-                </div>
-                <div className="nav-col nav-col-alt">
-                  <p className="label">Go to</p>
-                  {[
-                    ["/app", "Dashboard", "Your daily run and the CMO chat."],
-                    ["/guides", "Guides", "How GEO works, and why AI tools invent statistics."],
-                    ["/studio/launch", "Launch workspace", "Plan and ship a launch end to end."],
-                    ["/studio/integrations", "Integrations", "Connect accounts and manage billing."],
-                  ].map(([href, t, d]) => (
-                    <a key={href} href={href} className="nav-item">
-                      <span className="nav-item-t">{t}</span>
-                      <span className="nav-item-d">{d}</span>
-                    </a>
-                  ))}
-                </div>
-              </div>
-            </div>
-            {/* The menu's stand-in below its breakpoint. A hover panel needs a pointer and
-                needs room; neither is true on a phone. Rather than dropping the destination
-                entirely, the narrow layout keeps the one link the menu led with. */}
             <a href="#how" className="nav-compact">How it works</a>
             <a href="#pricing">Pricing</a>
-            <a href="/early-access" className="btn btn-ghost btn-sm">Early access</a>
-            <a href="/app" className="btn">Try free <span className="kbd">1 mo</span></a>
+            <a href="/app" className="btn">Start free</a>
           </div>
         </div>
       </nav>
@@ -313,59 +219,12 @@ export default function Landing() {
               </svg>
             </button>
           </form>
-          <p className="under">free for a month · no card · nothing publishes without you</p>
+          {/* Kept honest for what ships next.
+              This said "nothing publishes without you", which is true today and stops being
+              true the moment routine posts publish on their own. A line that has to be
+              retracted is worse than a weaker one that holds. */}
+          <p className="under">free for a month · no card · you approve anything that matters</p>
 
-          {/* Ask an assistant about us, rather than waiting to be cited by one.
-              
-              Okara does this and it is the right instinct: the people evaluating an AI CMO
-              are the same people who ask ChatGPT before they ask Google. A prefilled query is
-              also the only honest way to influence an AI answer — you cannot buy a citation,
-              but you can make the question easy to ask.
-              
-              Plain links with an encoded query. No SDK, no tracking, nothing to break. */}
-          <div className="aisum">
-            <span>Ask an AI about Populr</span>
-            <span className="aisum-links">
-              {([
-                ["ChatGPT", "https://chatgpt.com/?q="],
-                ["Claude", "https://claude.ai/new?q="],
-                ["Perplexity", "https://www.perplexity.ai/search?q="],
-              ] as const).map(([name, base]) => (
-                <a
-                  key={name}
-                  href={`${base}${encodeURIComponent("What is Populr (trypopulr.in) and how does it compare to hiring a marketing agency?")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {name}
-                </a>
-              ))}
-            </span>
-          </div>
-
-          {/* Supa Launch badge. Their asset on their CDN, so the host is allow-listed in
-              the CSP's img-src — without that the image is silently blocked and the page
-              shows a broken frame with nothing in the console to explain it.
-
-              width/height are set rather than left to `height: auto` so the space is
-              reserved before the SVG arrives. An unsized remote image directly under the
-              call to action shifts the buttons downward as it loads, which is the one place
-              on the page where a jump costs a click. */}
-          <a
-            className="launch-badge"
-            href="https://supalaun.ch/projects/populr"
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Supa Launch Top 2 Daily Winner"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="https://r2.direasy-multi-tenant.focusapps.app/uploads/616d0b1a-3979-4b8c-94d1-b4f1fedd3ead/1783046775816/iwwixene3dh/top2-dark.svg"
-              alt="Supa Launch — Top 2 Daily Winner"
-              width={195}
-              height={44}
-            />
-          </a>
           {/* The product frame.
               Arcade's hero ends on a framed screenshot of the app. The frame is the whole
               trick: the same content in a bare div reads as a picture of software, and
@@ -403,34 +262,6 @@ export default function Landing() {
           </figure>
         </div>
       </header>
-
-      {/* The three ways into the product, stated once. Replaces two near-identical
-          sections that between them offered six CTAs and twelve equal-weight links —
-          when everything is primary, nothing is. */}
-      <section id="start" className="start">
-        <div className="wrap">
-          <p className="label">Start here</p>
-          <h2 style={{ marginTop: 14 }}>{COUNT_WORD} ways in.</h2>
-          <p className="start-lede">
-            {WAYS.length === 2 ? "Both" : `All ${COUNT_WORD.toLowerCase()}`} start the same way — paste
-            your site, and Populr reads it before it writes anything. You land exactly where you were
-            heading.
-          </p>
-
-          <div className="start-grid">
-            {WAYS.map((w, i) => (
-              <a key={w.title} href={w.href} className={"start-row" + (i === 0 ? " start-primary" : "")}>
-                <span className="start-n">{String(i + 1).padStart(2, "0")}</span>
-                <span className="start-b">
-                  <span className="start-t">{w.title}</span>
-                  <span className="start-d">{w.desc}</span>
-                </span>
-                <span className="start-a">→</span>
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* How it works, told as three acts rather than three features.
           
@@ -503,45 +334,22 @@ export default function Landing() {
         </div>
       </section>
 
-      <section id="agents">
+      <section id="team">
         <div className="wrap">
-          <div style={{ textAlign: "center" }}>
-            <p className="label">The team</p>
-            <h2 style={{ marginTop: 14 }}>Every agent a marketing team would hire.<br />You stay in control.</h2>
-            <p className="sub">Agents do the heavy lifting. Nothing ships without your sign-off.</p>
-          </div>
-          <div className="agrid">
-            {AGENTS.map((a) => (
-              <button
-                className={"acell" + (flippedAgent === a.name ? " is-flipped" : "")}
-                key={a.name}
-                type="button"
-                onClick={() => setFlippedAgent((current) => current === a.name ? null : a.name)}
-                aria-pressed={flippedAgent === a.name}
-                aria-label={`${a.name}: ${flippedAgent === a.name ? "show overview" : "show details"}`}
-              >
-                <span className="aflip">
-                  <span className="aface afront">
-                    <span className="ahead">
-                      <span className="aic" style={{ ["--ac" as string]: a.c } as React.CSSProperties}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">{a.icon}</svg>
-                      </span>
-                      <span className="agent-name">{a.name}</span>
-                      {a.soon && <span className="soon">Early access</span>}
-                    </span>
-                    <span className="agent-copy">{a.desc}</span>
-                    <span className="flip-hint">Click for details</span>
-                  </span>
-                  <span className="aface aback">
-                    <span className="label">What it does</span>
-                    <span className="agent-name">{a.name}</span>
-                    <span className="agent-copy">{AGENT_DETAILS[a.name]}</span>
-                    <span className="flip-hint">Click to return</span>
-                  </span>
-                </span>
-              </button>
+          <p className="label">The team</p>
+          <h2 style={{ marginTop: 14 }}>Four roles, and one of them is saying no.</h2>
+          <p className="start-lede">
+            Not a roster to browse. This is who does the work, in the order they do it.
+          </p>
+
+          <ol className="team">
+            {TEAM.map((t) => (
+              <li key={t.role} className="team-row">
+                <span className="team-role">{t.role}</span>
+                <span className="team-does">{t.does}</span>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
       </section>
 
@@ -588,25 +396,6 @@ export default function Landing() {
                 reaching it immediately.
               </p>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="compare">
-        <div className="wrap">
-          <p className="label">The math</p>
-          <h2 style={{ marginTop: 14 }}>What Populr replaces vs. what it costs.</h2>
-          <div className="cmp">
-            <div className="cmp-row cmp-head"><span>What needs doing</span><span>Hiring it out</span><span className="hi">With Populr</span></div>
-            {[
-              ["Marketing generalist", "$5,000/mo"], ["SEO agency", "$4,000/mo"], ["Content writer", "$1,500/mo"],
-              ["Social media manager", "$1,500/mo"], ["Community & Reddit growth", "$1,000/mo"],
-            ].map(([r, c]) => (
-              <div className="cmp-row" key={r}><span>{r}</span><span>{c}</span><span className="hi"><Icon name="check" size={14} /></span></div>
-            ))}
-            <div className="cmp-row"><span>AI-search visibility (GEO)</span><span className="na">not offered</span><span className="hi"><Icon name="check" size={14} /></span></div>
-            <div className="cmp-row"><span>Saying no to busywork</span><span className="na">rare</span><span className="hi"><Icon name="check" size={14} /></span></div>
-            <div className="cmp-row cmp-total"><span>Total per month</span><span className="strike">$13,000+</span><span className="hi">$15/mo</span></div>
           </div>
         </div>
       </section>

@@ -1,5 +1,7 @@
-import StudioSection from "../StudioSection";
+import { redirect } from "next/navigation";
+import { STUDIO_FALLBACK } from "@/lib/studio/unsupported";
 
+// No image provider exists. See lib/studio/unsupported.ts.
 export default function Page() {
-  return <StudioSection category="images" />;
+  redirect(STUDIO_FALLBACK);
 }

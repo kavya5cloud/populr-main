@@ -39,13 +39,16 @@ export const STAGE_SEQUENCES: Record<RequestType, Stage[]> = {
     { icon: "brain", title: "Building creative direction", hint: "The idea and structure" },
     { icon: "sparkle", title: "Preparing creative assets", hint: "Shaping the output" },
   ],
+  // Video means the script and the shot list. "Rendering visuals" and "Finalizing your
+  // video" used to be on this list; nothing in this codebase renders a frame, so they were
+  // describing work that never happened. Every stage below is writing, which is the work
+  // that does.
   video: [
     { icon: "clapper", title: "Planning the story", hint: "Beats, arc and message" },
-    { icon: "cast", title: "Building storyboard", hint: "Scenes and shots" },
-    { icon: "camera", title: "Preparing scenes", hint: "Framing each moment" },
-    { icon: "palette", title: "Rendering visuals", hint: "Bringing the frames to life" },
+    { icon: "cast", title: "Building the shot list", hint: "Scenes, framing and on-screen text" },
+    { icon: "pen", title: "Writing the script", hint: "Hook, voiceover and caption" },
     { icon: "search", title: "Creative Director reviewing", hint: "Checking it's on-brand" },
-    { icon: "sparkle", title: "Finalizing your video", hint: "Last polish" },
+    { icon: "sparkle", title: "Finalizing your script", hint: "Ready to hand to whoever films it" },
   ],
   document: [
     { icon: "doc", title: "Understanding the document", hint: "Purpose and audience" },

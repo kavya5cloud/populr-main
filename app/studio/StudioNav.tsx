@@ -1,5 +1,6 @@
 "use client";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { SHOW_CONTENT_ENGINE } from "@/lib/flags";
@@ -39,7 +40,9 @@ const NAV: Item[] = [
   ...(SHOW_CONTENT_ENGINE ? [{
     href: "/studio", label: "Create",
     icon: svg(<><path d="M4 20l1.2-4.2L16.4 4.6a2.05 2.05 0 0 1 2.9 2.9L8.2 18.8 4 20z" /><path d="M14.5 6.5l3 3" /></>),
-    match: (p: string) => p === "/studio" || /^\/studio\/(documents|ads|videos|images|motion|ugc|blitz|library)$/.test(p),
+    // images and motion are absent: both routes redirect to /studio/create, and a nav item
+    // that highlights for a page you are bounced off is worse than no nav item.
+    match: (p: string) => p === "/studio" || /^\/studio\/(create|documents|ads|videos|ugc|blitz|library)$/.test(p),
   }] : []),
   {
     href: "/studio/social", label: "Publishing",
@@ -81,13 +84,52 @@ function NavLink({ item, path }: { item: Item; path: string }) {
 
 export default function StudioNav() {
   const path = usePathname();
+  /**
+   * Mobile only.
+   *
+   * The rail used to become a horizontally scrolling strip below 900px — 731px of links in
+   * a 375px viewport, with the scrollbar hidden. Half the product (Team, Intelligence,
+   * Results, Settings) was reachable only by guessing that the row scrolled. A menu bar
+   * shows where you are and puts everything one tap away instead.
+   *
+   * Desktop is untouched: the vertical rail is unchanged above 900px, and this state is
+   * simply never used there.
+   */
+  const [open, setOpen] = useState(false);
+
+  // Close on navigation — without this the sheet stays open over the page you just opened.
+  useEffect(() => { setOpen(false); }, [path]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  const current = NAV.find((i) => (i.match ? i.match(path) : path === i.href));
+
   return (
-    <nav className="st-nav" aria-label="Populr">
+    <nav className={"st-nav" + (open ? " open" : "")} aria-label="Populr">
       <Link href="/app" className="st-brand">
         <span className="st-brand-word">Populr<span className="st-brand-acc">.</span></span>
       </Link>
 
-      <div className="st-links">
+      {/* The mobile bar. Hidden on desktop by CSS, so the markup costs nothing there. */}
+      <button
+        type="button" className="st-menu-btn" aria-expanded={open} aria-controls="st-links"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className="st-menu-where">{current?.label ?? "Menu"}</span>
+        <span className="st-menu-ic" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="16" height="16" {...stroke}>
+            {open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+          </svg>
+        </span>
+        <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
+      </button>
+
+      <div className="st-links" id="st-links">
         {NAV.map((i) => <NavLink key={i.href} item={i} path={path} />)}
       </div>
     </nav>

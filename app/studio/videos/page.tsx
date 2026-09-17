@@ -1,5 +1,5 @@
-import StudioSection from "../StudioSection";
+import VideoScript from "./VideoScript";
 
 export default function Page() {
-  return <StudioSection category="videos" />;
+  return <VideoScript />;
 }
