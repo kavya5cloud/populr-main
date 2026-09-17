@@ -159,6 +159,54 @@ export interface GenerationProvider<S extends GenerationSpec = GenerationSpec> {
   estimateLatency(spec: S, opts?: GenerateOptions): LatencyEstimate;
 }
 
+// ---- Asynchronous providers ----
+//
+// GenerationProvider.generate() returns Promise<ProviderOutput>, which assumes the work
+// finishes inside the call. That is true of every provider in the registry today and is not
+// true of a video model: a task is submitted now and answered in minutes, long after the
+// request that started it has returned.
+//
+// Rather than a parallel hierarchy, an async provider is a GenerationProvider that *also*
+// offers submit/poll. Everything already written keeps working untouched — the registry,
+// the router, the reference providers and the whole text chain never see these members —
+// and a caller that needs the async lifecycle narrows with isAsyncProvider().
+
+/** A provider-side task handle. Never a URL, never a vendor payload. */
+export type ProviderTask = { taskId: string; providerId: string };
+
+/**
+ * A provider's status, normalized.
+ *
+ * `terminalSuccess` deliberately requires an output URL as well as a success status: a
+ * provider claiming completion without giving us anything to fetch is not a success, and
+ * the two must not be separable by a caller reading only one field.
+ */
+export type ProviderTaskStatus = {
+  /** The provider's own string, kept for logs and for recognising new states later. */
+  raw: string;
+  terminalSuccess: boolean;
+  failed: boolean;
+  /** Temporary and provider-owned. Never stored as an asset uri, never sent to a browser. */
+  outputUrl?: string;
+  durationSec?: number;
+  ratio?: string;
+  resolution?: string;
+  error?: string;
+};
+
+export interface AsyncGenerationProvider<S extends GenerationSpec = GenerationSpec>
+  extends GenerationProvider<S> {
+  readonly isAsync: true;
+  /** Create the task. Returns as soon as the provider has accepted it. */
+  submit(spec: S, opts?: GenerateOptions): Promise<ProviderTask>;
+  /** Ask where the task got to. Must never throw for an ordinary provider failure. */
+  poll(taskId: string): Promise<ProviderTaskStatus>;
+}
+
+export function isAsyncProvider(p: GenerationProvider): p is AsyncGenerationProvider {
+  return (p as AsyncGenerationProvider).isAsync === true;
+}
+
 // Modality-typed aliases (documentation + explicit registry typing).
 export type ImageProvider = GenerationProvider<ImageSpec>;
 export type VideoProvider = GenerationProvider<VideoSpec>;

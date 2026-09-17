@@ -1,0 +1,70 @@
+name: Creative sweep
+
+# The backstop for video generation.
+#
+# Seedance calls our webhook when a task finishes. When that call is not delivered — a
+# deploy mid-flight, a transient 5xx, a provider-side hiccup — the job would otherwise sit
+# in "running" forever holding a video we already paid for. This pass asks the provider what
+# actually happened to anything that has stopped moving.
+#
+# Separate from publish.yml on purpose. They run on the same cadence and share nothing else:
+# a creative failure must not be able to stop posts going out, and the publish pass should
+# not have to share its timeout budget with a provider poll.
+#
+# The route itself is bounded — a fixed batch per run, and jobs older than the provider's
+# 7-day task retention are failed rather than polled forever.
+#
+# Setup, both under Settings → Secrets and variables → Actions:
+#   Secret   CRON_SECRET   the same value as CRON_SECRET in Vercel
+#   Variable SITE_URL      optional; defaults to the production host below
+#
+# A green run does not mean a video finished. It means the endpoint answered. Most runs find
+# nothing to do, which is correct.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: creative-sweep
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      SITE_URL: ${{ vars.SITE_URL || 'https://www.trypopulr.in' }}
+    steps:
+      # Not configured is not the same as broken — the same lesson publish.yml learned the
+      # hard way, 333 red runs before anyone looked.
+      - name: Waiting for setup
+        if: env.CRON_SECRET == ''
+        run: |
+          echo "::notice::CRON_SECRET is not set, so no creative sweep ran."
+          echo "Generations in flight stay queued until it is added — they are not lost."
+
+      - name: Sweep in-flight generations
+        if: env.CRON_SECRET != ''
+        run: |
+          set -euo pipefail
+
+          echo "GET ${SITE_URL}/api/cron/creative-sweep"
+
+          # GET and idempotent, so --retry is safe. --fail is deliberately not used: it
+          # discards the body on an error status, which is the one time it is worth reading.
+          status=$(curl -sS -o /tmp/sweep.json -w '%{http_code}' \
+            --max-time 120 --retry 2 --retry-delay 5 --retry-connrefused \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${SITE_URL}/api/cron/creative-sweep")
+
+          echo "status: ${status}"
+          echo "response:"
+          cat /tmp/sweep.json || true
+          echo ""
+
+          if [ "${status}" != "200" ]; then
+            echo "::error::Creative sweep failed with status ${status}."
+            exit 1
+          fi
