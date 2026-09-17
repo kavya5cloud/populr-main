@@ -1,8 +1,20 @@
 # secrets — never commit
-.env.local
-.env*.local
-openai_key.txt
-groq_key.txt
+#
+# Ignore every .env variant, then allow the one that is meant to be shared.
+# The previous patterns had two gaps that mattered: `.env*.local` requires the name
+# to END in .local, so `.env.local.backup` was NOT ignored; and `.vercel` further
+# down matches the directory, not the file `.env.vercel` that `vercel env pull`
+# writes. Both were sitting untracked-but-stageable — one `git add -A` from being
+# committed. Prefix matching closes that class of gap for good.
+.env
+.env.*
+!.env.example
+
+# API keys pasted into files. Generic, so a new one is covered without an edit.
+*_key.txt
+*_key.json
+*.pem
+*credentials*.json
 
 # dependencies
 node_modules/
@@ -20,3 +32,4 @@ npm-debug.log*
 
 # TypeScript incremental build cache
 tsconfig.tsbuildinfo
+.vercel
