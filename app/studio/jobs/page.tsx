@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
+import { usePoll } from "@/app/components/usePoll";
 
 // Execution Dashboard (Part 9) — the live cockpit for the Job Engine. It seeds a few jobs
 // on first load, then polls the real /api/jobs/dashboard: running/queued/completed/failed,
@@ -31,31 +32,34 @@ const STATE_CLASS: Record<string, string> = {
 export default function JobsDashboard() {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [jobs, setJobs] = useState<JobRow[]>([]);
-  const seeded = useRef(false);
+  const [seeding, setSeeding] = useState(false);
 
-  useEffect(() => {
-    let stop = false;
-    async function seed() {
-      await Promise.all(SEED.map((s) => fetch("/api/jobs", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...s, requestType: s.type, brief: BRIEF }),
-      }).catch(() => {})));
-    }
-    async function poll() {
-      try {
-        const r = await fetch("/api/jobs/dashboard", { cache: "no-store" });
-        const d = await r.json();
-        if (stop) return;
-        setMetrics(d.metrics); setJobs(d.jobs ?? []);
-        if (!seeded.current && (d.metrics?.completed ?? 0) + (d.metrics?.running ?? 0) + (d.metrics?.queued ?? 0) === 0) {
-          seeded.current = true; await seed();
-        }
-      } catch { /* keep polling */ }
-      if (!stop) setTimeout(poll, 1000);
-    }
-    poll();
-    return () => { stop = true; };
+  // Was a 1s self-rescheduling setTimeout with no visibility check: 3,600 requests an hour
+  // from a tab nobody was looking at. 5s is still live for a dashboard, and usePoll stops
+  // entirely while the tab is hidden.
+  const load = useCallback(async () => {
+    try {
+      const r = await fetch("/api/jobs/dashboard", { cache: "no-store" });
+      const d = await r.json();
+      setMetrics(d.metrics); setJobs(d.jobs ?? []);
+    } catch { /* a missed tick is not a failure; the next one will say */ }
   }, []);
+  usePoll(load, 5000);
+
+  // The seeding that used to live here is gone.
+  //
+  // It POSTed five jobs whenever the dashboard reported zero — and on a serverless platform
+  // the engine is per-instance, so a fresh instance always reports zero. Opening this page
+  // created real work, which is the opposite of what a read-only cockpit should do.
+  const seedDemo = useCallback(async () => {
+    setSeeding(true);
+    await Promise.all(SEED.map((s) => fetch("/api/jobs", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...s, requestType: s.type, brief: BRIEF }),
+    }).catch(() => {})));
+    await load();
+    setSeeding(false);
+  }, [load]);
 
   const m = metrics;
   const tile = (label: string, value: string | number) => (
@@ -68,6 +72,11 @@ export default function JobsDashboard() {
         <span className="label">Execution · Jobs</span>
         <h1>Job Orchestration</h1>
         <p>Every AI request runs as a Job through the central engine — Planner → Creative Intelligence → Generation → Creative Director → Approval → Publishing → Learning. Live from real execution.</p>
+        {/* Seeding is a deliberate action now. It used to happen on page load whenever the
+            dashboard reported zero jobs, which on a fresh serverless instance is always. */}
+        <button className="cmp-alt" onClick={seedDemo} disabled={seeding}>
+          {seeding ? "Seeding…" : "Seed demo jobs"}
+        </button>
       </header>
 
       {!m ? <div className="st-empty"><p>Connecting to the execution engine…</p></div> : (

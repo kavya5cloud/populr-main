@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { usePoll } from "@/app/components/usePoll";
 
 // The connector cockpit: data sources, their sync health, the event stream and run history.
 //
@@ -24,7 +25,6 @@ export default function ConnectorCockpit() {
   const [events, setEvents] = useState<BizEvent[]>([]);
   const [history, setHistory] = useState<SyncRun[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
-  const seeded = useRef(false);
 
   async function refresh() {
     const [c, e, h] = await Promise.all([
@@ -37,22 +37,14 @@ export default function ConnectorCockpit() {
     if (h.history) setHistory(h.history);
   }
 
-  useEffect(() => {
-    (async () => {
-      await refresh();
-      if (!seeded.current) {
-        seeded.current = true;
-        // Connect a few connectors + sync so the cockpit shows live activity on first load.
-        for (const id of ["google_analytics", "stripe", "meta_ads", "linkedin"]) {
-          await fetch("/api/connectors/connect", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ connector: id }) }).catch(() => {});
-        }
-        await fetch("/api/connectors/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: "incremental" }) }).catch(() => {});
-        await refresh();
-      }
-    })();
-    const iv = setInterval(refresh, 3000);
-    return () => clearInterval(iv);
-  }, []);
+  // Was setInterval(refresh, 3000) with no visibility check, and refresh fires three
+  // fetches — 60 invocations a minute from a tab nobody was looking at. usePoll runs once
+  // on mount, then every 15s, and not at all while the tab is hidden.
+  //
+  // The auto-connect that used to run here is gone. It POSTed four /connectors/connect
+  // calls plus a sync on every first load, so merely opening this page wrote data and
+  // triggered a sync. Connecting is the user's decision and the buttons below already do it.
+  usePoll(refresh, 15_000);
 
   async function connect(id: string, connected: boolean) {
     setBusy(id);

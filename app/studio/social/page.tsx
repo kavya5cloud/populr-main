@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { usePoll } from "@/app/components/usePoll";
 
 // Publishing Dashboard (Cross-Platform Publishing) — connect accounts, compose + publish
 // now or schedule (timezone-aware), and watch the queue, calendar and history. Live from
@@ -28,7 +29,6 @@ export default function SocialDashboard() {
   const [account, setAccount] = useState("");
   const [when, setWhen] = useState("");
   const [busy, setBusy] = useState(false);
-  const seeded = useRef(false);
 
   async function refresh() {
     const [a, d, dr] = await Promise.all([
@@ -60,14 +60,10 @@ export default function SocialDashboard() {
     await refresh();
   }
 
-  useEffect(() => {
-    (async () => {
-      await refresh();
-      if (!seeded.current) { seeded.current = true; /* leave connecting to the user */ }
-    })();
-    const iv = setInterval(refresh, 3000);
-    return () => clearInterval(iv);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Was setInterval(refresh, 3000) with no visibility check — and refresh fires THREE
+  // fetches, so a background tab produced 60 invocations a minute. 15s, and nothing at all
+  // while the tab is hidden.
+  usePoll(refresh, 15_000);
 
   async function publish(schedule: boolean) {
     const acc = accounts.find((a) => a.id === account);

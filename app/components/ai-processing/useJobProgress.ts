@@ -21,20 +21,37 @@ export function useJobProgress(jobId: string | null | undefined): AIProcessingSt
   useEffect(() => {
     if (!jobId) { setData(null); return; }
     let cancelled = false;
+    /**
+     * Attempts that produced no usable progress.
+     *
+     * Both non-terminal branches below used to reschedule unconditionally, so a response
+     * without `.progress` — a 404, most often — polled once a second forever with no
+     * condition that could ever end it. That is not hypothetical: the job engine keeps
+     * jobs in per-instance memory, so a job created by one serverless instance returns 404
+     * from the next, and a single stuck overlay generated 3,600 invocations an hour.
+     *
+     * A bounded count means an unreachable job costs a handful of requests and then stops.
+     */
+    let misses = 0;
+    const MAX_MISSES = 5;
+
     const poll = async () => {
       try {
         const r = await fetch(`/api/jobs/${jobId}`, { cache: "no-store" });
         const d = await r.json();
         if (cancelled) return;
         if (d?.progress) {
+          misses = 0;
           const p = d.progress as JobProgressPayload;
           setData(p);
-          if (!TERMINAL.includes(p.state)) timer.current = setTimeout(poll, 800);
-        } else {
-          timer.current = setTimeout(poll, 1000);
+          if (!TERMINAL.includes(p.state)) timer.current = setTimeout(poll, 1500);
+        } else if (++misses < MAX_MISSES) {
+          timer.current = setTimeout(poll, 1500);
         }
+        // Out of attempts: stop. The overlay keeps whatever it last showed rather than
+        // spinning against a job this instance cannot see.
       } catch {
-        if (!cancelled) timer.current = setTimeout(poll, 1500);
+        if (!cancelled && ++misses < MAX_MISSES) timer.current = setTimeout(poll, 2000);
       }
     };
     poll();
