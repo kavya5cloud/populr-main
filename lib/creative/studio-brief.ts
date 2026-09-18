@@ -1,3 +1,4 @@
+import type { LanguageCode } from "@/lib/i18n/languages";
 import type { CreativeBriefInput } from "@/lib/creative/types";
 
 // The workspace's business context → a Creative Brief.
@@ -26,6 +27,9 @@ export type WorkspaceProfile = {
   positioning?: string;
   voice?: string;
   description?: string;
+  /** What the workspace markets in. Absent means English. Carried here so the studio reads
+   *  it from the one profile fetch rather than opening a second one. */
+  language?: LanguageCode;
 };
 
 const clean = (v: string | undefined): string => (v ?? "").trim();

@@ -4,7 +4,8 @@ import { DEFAULT_LANGUAGE, LANGUAGES, LANGUAGE_CODES, localeLabel, type Language
 import { CONTENT_FORMATS, FORMAT_META, type ContentFormat } from "@/lib/content/compose";
 import type { SocialPlatform } from "@/lib/social/types";
 import { humanError, humanThrow } from "@/lib/ui/errors";
-import { connectedPlatforms, workspaceProfile } from "@/lib/studio/workspace-context";
+import { connectedPlatforms, workspaceProfile, resetWorkspaceContext } from "@/lib/studio/workspace-context";
+import { loadState, saveState } from "@/lib/store";
 import type { WorkspaceProfile } from "@/lib/creative/studio-brief";
 
 // The Content Studio: brief → draft → ship.
@@ -145,8 +146,29 @@ export default function Composer({
   useEffect(() => {
     let live = true;
     void connectedPlatforms().then((p) => { if (live) setConnected(p); });
-    void workspaceProfile().then((p) => { if (live) setProfile(p); });
+    void workspaceProfile().then((p) => {
+      if (!live) return;
+      setProfile(p);
+      // The workspace's own language, so a founder who set Marathi once does not reset it on
+      // every visit. Skipped when a card preset a language on purpose — that card exists to
+      // override the default for one post, and the saved preference should not fight it.
+      if (initialLanguage === DEFAULT_LANGUAGE && p?.language) setLanguage(p.language);
+    });
     return () => { live = false; };
+  }, [initialLanguage]);
+
+  // Changing the language is a workspace decision, not a per-post one, so it is written back
+  // to the same profile the automated path reads with getWorkspaceLanguage(). Without this a
+  // scheduled post would keep going out in English while the composer showed Marathi.
+  const changeLanguage = useCallback((next: LanguageCode) => {
+    setLanguage(next);
+    void loadState().then(({ saved }) => {
+      if (!saved?.profile || saved.profile.language === next) return;
+      saveState({ ...saved, profile: { ...saved.profile, language: next } });
+      // The page-load profile cache now holds a stale language, and Composer remounts on
+      // every card click — without this the select would snap back to the old language.
+      resetWorkspaceContext();
+    });
   }, []);
 
   const call = useCallback(async (body: Record<string, unknown>, tag: string) => {
@@ -376,7 +398,7 @@ export default function Composer({
                   the language a business markets in is a decision only its owner can make. */}
               <label className="cmp-adv-field">
                 <span>Language</span>
-                <select className="cmp-select" value={language} onChange={(e) => setLanguage(e.target.value as LanguageCode)}>
+                <select className="cmp-select" value={language} onChange={(e) => changeLanguage(e.target.value as LanguageCode)}>
                   {LANGUAGE_CODES.map((c) => <option key={c} value={c}>{localeLabel(c)}</option>)}
                 </select>
               </label>

@@ -10,6 +10,8 @@
 // quality gate reads its behaviour from this table rather than from a switch statement, so
 // nothing else has to change.
 
+import type { Sql } from "@/lib/db";
+
 export const LANGUAGES = {
   "en-IN": { name: "English",  native: "English",  script: "latin",     terminator: ".", spaced: true },
   "hi-IN": { name: "Hindi",    native: "हिन्दी",     script: "devanagari", terminator: "।", spaced: true },
@@ -84,4 +86,25 @@ export function localeLabel(code: LanguageCode): string {
 /** English is the only language whose phrase-level craft lists were written for it. */
 export function isEnglish(code: LanguageCode): boolean {
   return code === "en-IN";
+}
+
+/**
+ * The language a workspace has chosen, read server-side.
+ *
+ * The automated path has no browser to ask, so the preference has to come back out of the
+ * same `workspaces.state.profile` the client wrote it to. Never throws and never returns
+ * undefined: a missing row, an unreadable database or a code we no longer ship all mean
+ * English, because a scheduled post going out in the wrong language is a worse failure
+ * than one going out in the default.
+ */
+export async function getWorkspaceLanguage(sql: Sql | null, tenant: string): Promise<LanguageCode> {
+  if (!sql || !tenant) return DEFAULT_LANGUAGE;
+  try {
+    const rows = (await sql`SELECT state FROM workspaces WHERE wsid = ${tenant}`) as
+      { state?: { profile?: { language?: string } } }[];
+    const lang = rows[0]?.state?.profile?.language;
+    return isLanguageCode(lang) ? lang : DEFAULT_LANGUAGE;
+  } catch {
+    return DEFAULT_LANGUAGE;
+  }
 }
