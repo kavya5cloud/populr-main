@@ -14,6 +14,7 @@ const base = {
   reason: "unwinnable_search" as const,
   explanation: "Three incumbents own page one and have for two years.",
   insteadDid: "Fixed the pricing page",
+  insteadChannel: null,
   checkableAt: null,
 };
 
@@ -77,8 +78,9 @@ describe("grading only what is checkable", () => {
 describe("the scorecard cannot flatter itself", () => {
   const at = (over: Partial<Refusal>): Refusal => ({
     id: "x", workspaceKey: "ws1", proposed: "p", channel: "seo", reason: "low_intent",
-    explanation: "e", insteadDid: null, checkableAt: null, verdict: "unknown",
-    evidence: null, createdAt: 0, resolvedAt: null, ...over,
+    explanation: "e", insteadDid: null, insteadChannel: null, checkableAt: null, verdict: "unknown",
+    evidence: null, insteadOutcome: "unknown", insteadEvidence: null, insteadResolvedAt: null,
+    createdAt: 0, resolvedAt: null, ...over,
   });
 
   it("reports accuracy as null when nothing has been decided", () => {

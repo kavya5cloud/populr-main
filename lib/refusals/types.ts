@@ -46,6 +46,20 @@ export type Verdict =
   | "wrong"
   /** No evidence either way. The default, and where most refusals stay. */
   | "unknown";
+  /**
+ * What happened on the channel backed instead of this one. Independent of `verdict`:
+ * this says the alternative worked (or didn't), never that the refusal was correct.
+ * A refusal can be `verdict: "unknown"` (we'll never know if the declined channel
+ * would have worked) and `insteadOutcome: "worked"` (the channel we backed did well)
+ * at the same time — both can be true, and neither implies the other.
+ */
+export type InsteadOutcome =
+  /** Measured evidence the channel backed instead produced real results. */
+  | "worked"
+  /** Measured evidence it did not. */
+  | "did_not"
+  /** No evidence either way, or not yet checkable. The default. */
+  | "unknown";
 
 export type Refusal = {
   id: string;
@@ -59,6 +73,12 @@ export type Refusal = {
   /** What was done with the hour instead, when there was an alternative. */
   insteadDid: string | null;
   /**
+   * The channel actually backed instead of this one (e.g. "seo"), not a rendering of it.
+   * `insteadDid` is prose for a person; this is the identifier grading needs to look up
+   * real performance data without parsing a sentence back into a channel.
+   */
+  insteadChannel: string | null;
+  /**
    * When this becomes checkable. A "won't rank" call cannot be judged for months; a
    * "buyers aren't there this week" call resolves in days. Null means never automatically.
    */
@@ -66,11 +86,22 @@ export type Refusal = {
   verdict: Verdict;
   /** What decided the verdict. Required when the verdict is not unknown. */
   evidence: string | null;
+  /**
+   * Whether the channel backed instead measurably worked. Independent of `verdict` —
+   * this never implies the declined channel would have done worse. See InsteadOutcome.
+   */
+  insteadOutcome: InsteadOutcome;
+  /** What decided insteadOutcome. Required when it is not "unknown". */
+  insteadEvidence: string | null;
+  insteadResolvedAt: number | null;
   createdAt: number;
   resolvedAt: number | null;
 };
 
-export type NewRefusal = Omit<Refusal, "id" | "verdict" | "evidence" | "createdAt" | "resolvedAt">;
+export type NewRefusal = Omit<
+  Refusal,
+  "id" | "verdict" | "evidence" | "createdAt" | "resolvedAt" | "insteadOutcome" | "insteadEvidence" | "insteadResolvedAt"
+>;
 
 /** Human-readable reason, for the UI. Kept beside the type so the two cannot drift. */
 export const REASON_LABEL: Record<RefusalReason, string> = {

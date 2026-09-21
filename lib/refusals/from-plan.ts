@@ -90,7 +90,7 @@ export function refusalsFromPlan(
 ): NewRefusal[] {
   if (candidates.length <= KEPT) return [];
   const winner = candidates[0];
-  return candidates.slice(KEPT).map((c) => {
+    return candidates.slice(KEPT).map((c) => {
     const reason = reasonFor(c);
     return {
       workspaceKey,
@@ -99,6 +99,7 @@ export function refusalsFromPlan(
       reason,
       explanation: explain(c, winner, reason),
       insteadDid: winner.title,
+      insteadChannel: winner.channel,
       checkableAt: checkableAt(reason, now),
     };
   });

@@ -12,6 +12,8 @@ import {
 } from "@/lib/intel";
 import { ensurePushTables, getPrefs, sendToUser, wasReminderSentToday, recordReminder } from "@/lib/push";
 import { displaySite } from "@/lib/gsc-match";
+import { refusalRepo } from "@/lib/refusals/store";
+import { GRADABLE_INSTEAD_REASONS, isGradableInsteadChannel, gradeInsteadOutcome, type ScoredRow } from "@/lib/refusals/grade-instead";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -21,6 +23,12 @@ export const maxDuration = 60;
 //   verified site's last-7-day metrics (append-only; never overwrites).
 //   Phase 2 — for approved recommendations that now have a snapshot before approval and
 //   one ≥6 days after, compute the delta and store an association score (NOT causality).
+//   Phase 3 — for due refusals whose reason is checkable against outcome data
+//   (better_use_of_time, low_intent) and whose backed channel is one GSC actually
+//   measures (seo, geo, articles — see grade-instead.ts), grade insteadOutcome from
+//   the recommendation_scores Phase 2 just computed. Everything else stays unknown:
+//   no channel-attributed measurement exists yet for the other four channels, and
+//   that's an honest limit, not a shortcoming of this pass.
 
 function authCron(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -175,6 +183,49 @@ export async function GET(req: NextRequest) {
   }
   log("attribution_pass_complete", { candidates: candidates.length, scored });
 
-  log("outcome_cron_complete", { snapshots, notified, candidates: candidates.length, scored, durationMs: Date.now() - started });
-  return NextResponse.json({ ok: true, snapshots, notified, candidates: candidates.length, scored });
+  /* ---- Phase 3: grade insteadOutcome for due refusals ---- */
+  // Bounded fan-out: discover at most 100 workspaces with something due, process them in
+  // sequence (not Promise.all — an unbounded parallel loop of per-workspace score lookups
+  // is exactly the pattern that ran Active CPU up before). Checkable windows are 14-30
+  // days, so anything left over is picked up by next week's run; nothing here is urgent.
+  let refusalsGraded = 0;
+  let refusalsChecked = 0;
+  try {
+    const dueWorkspaceKeys = await refusalRepo().dueWorkspaces(Date.now(), 100);
+    for (const wsKey of dueWorkspaceKeys) {
+      try {
+        const due = await refusalRepo().due(wsKey, Date.now());
+        for (const refusal of due) {
+          if (!GRADABLE_INSTEAD_REASONS.includes(refusal.reason)) continue;
+          if (!isGradableInsteadChannel(refusal.insteadChannel)) continue;
+          refusalsChecked++;
+
+          const rows = (await sql`
+            SELECT s.association_score, s.confidence
+            FROM recommendation_scores s JOIN recommendations r ON r.id = s.recommendation_id
+            WHERE r.workspace_key = ${wsKey} AND r.channel = ${refusal.insteadChannel}
+              AND r.generated_at > ${new Date(refusal.createdAt).toISOString()}`
+          ) as { association_score: number; confidence: number }[];
+
+          const scoredRows: ScoredRow[] = rows.map((r) => ({
+            associationScore: Number(r.association_score),
+            confidence: Number(r.confidence),
+          }));
+          const { outcome, evidence } = gradeInsteadOutcome(scoredRows);
+          if (outcome === "unknown") continue; // leave as-is; unknown is the honest default already
+
+          await refusalRepo().resolveInstead(refusal.id, outcome, evidence, Date.now());
+          refusalsGraded++;
+        }
+      } catch (e) {
+        log("refusal_grade_workspace_error", { wsKey, detail: String(e).slice(0, 150) });
+      }
+    }
+  } catch (e) {
+    log("refusal_grade_discovery_error", { detail: String(e).slice(0, 150) });
+  }
+  log("refusal_grade_pass_complete", { refusalsChecked, refusalsGraded });
+
+  log("outcome_cron_complete", { snapshots, notified, candidates: candidates.length, scored, refusalsChecked, refusalsGraded, durationMs: Date.now() - started });
+  return NextResponse.json({ ok: true, snapshots, notified, candidates: candidates.length, scored, refusalsChecked, refusalsGraded });
 }
