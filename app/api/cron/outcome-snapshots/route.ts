@@ -190,14 +190,26 @@ export async function GET(req: NextRequest) {
   // days, so anything left over is picked up by next week's run; nothing here is urgent.
   let refusalsGraded = 0;
   let refusalsChecked = 0;
+  let refusalGradeBudgetExhausted = false;
+  const REFUSAL_GRADE_BUDGET_MS = 45_000; // leaves headroom under maxDuration=60s for phases 1-2's writes to land
   try {
     const dueWorkspaceKeys = await refusalRepo().dueWorkspaces(Date.now(), 100);
-    for (const wsKey of dueWorkspaceKeys) {
+    outer: for (const wsKey of dueWorkspaceKeys) {
       try {
         const due = await refusalRepo().due(wsKey, Date.now());
         for (const refusal of due) {
+          if (Date.now() - started > REFUSAL_GRADE_BUDGET_MS) {
+            refusalGradeBudgetExhausted = true;
+            log("refusal_grade_budget_exhausted", { refusalsChecked, refusalsGraded });
+            break outer;
+          }
           if (!GRADABLE_INSTEAD_REASONS.includes(refusal.reason)) continue;
           if (!isGradableInsteadChannel(refusal.insteadChannel)) continue;
+          // Already resolved — due() only filters on verdict, which this feature never
+          // writes, so a graded refusal (insteadOutcome !== "unknown") would otherwise be
+          // re-selected and re-queried on every run forever. resolveInstead()'s write-once
+          // guard makes the write safe, but not the query — skip before spending one.
+          if (refusal.insteadOutcome !== "unknown") continue;
           refusalsChecked++;
 
           const rows = (await sql`
@@ -224,8 +236,8 @@ export async function GET(req: NextRequest) {
   } catch (e) {
     log("refusal_grade_discovery_error", { detail: String(e).slice(0, 150) });
   }
-  log("refusal_grade_pass_complete", { refusalsChecked, refusalsGraded });
+  log("refusal_grade_pass_complete", { refusalsChecked, refusalsGraded, budgetExhausted: refusalGradeBudgetExhausted });
 
-  log("outcome_cron_complete", { snapshots, notified, candidates: candidates.length, scored, refusalsChecked, refusalsGraded, durationMs: Date.now() - started });
-  return NextResponse.json({ ok: true, snapshots, notified, candidates: candidates.length, scored, refusalsChecked, refusalsGraded });
+  log("outcome_cron_complete", { snapshots, notified, candidates: candidates.length, scored, refusalsChecked, refusalsGraded, refusalGradeBudgetExhausted, durationMs: Date.now() - started });
+  return NextResponse.json({ ok: true, snapshots, notified, candidates: candidates.length, scored, refusalsChecked, refusalsGraded, refusalGradeBudgetExhausted });
 }
