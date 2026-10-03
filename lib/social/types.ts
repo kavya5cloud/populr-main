@@ -160,6 +160,45 @@ export type PublishHistoryEntry = {
 
 export type ConnectionCheck = { ok: boolean; status: ConnectionStatus; detail?: string };
 
+/**
+ * A snapshot of how one published post is doing, taken at a point in time. Metrics move
+ * after publication, so capturedAt matters as much as the numbers — a snapshot without it
+ * cannot be placed in a before/after window the way outcome_snapshots does for search.
+ *
+ * ok: false is a real, distinct state from a snapshot of zeros. A post the platform
+ * genuinely could not report on (rate limited, token expired, post removed) carries no
+ * engagement numbers at all — collapsing that into 0 would be indistinguishable from a
+ * post nobody engaged with, which is a different fact.
+ */
+/**
+ * Why a metrics request couldn't be fulfilled. Closed set, not free text — Stage 3
+ * aggregates these per channel, and each one implies a different action: rate_limited
+ * means retry later, token_expired means prompt the user to reconnect, post_deleted is
+ * permanent and should stop us asking. A free-text reason flattens three different
+ * actions into one unusable column — the same lesson as RefusalReason in
+ * lib/refusals/types.ts.
+ */
+export type MetricsFailureReason =
+  | "rate_limited"
+  | "token_expired"
+  | "post_deleted"
+  | "unsupported"
+  | "upstream_error";
+
+export type MetricsSnapshot =
+  | {
+      ok: true;
+      capturedAt: number;
+      impressions: number;
+      /** Reactions + comments + shares + clicks, platform's own definition of "engagement". */
+      engagements: number;
+    }
+  | {
+      ok: false;
+      capturedAt: number;
+      reason: MetricsFailureReason;
+    };
+
 export interface SocialAdapter {
   readonly platform: SocialPlatform;
   publish(req: PublishRequest, token: OAuthToken): Promise<PublishResult>;
@@ -169,6 +208,12 @@ export interface SocialAdapter {
   validateConnection(token: OAuthToken): Promise<ConnectionCheck>;
   /** Platform posting constraints, so the scheduler/UI can validate without platform code. */
   constraints(): PlatformConstraints;
+  /**
+   * How this specific published post is doing right now. Optional: createLiveAdapters()
+   * returns a partial record, and a platform without this method is a real state —
+   * "cannot report" — not an error to work around.
+   */
+  metrics?(externalId: string, token: OAuthToken): Promise<MetricsSnapshot>;
 }
 
 export type PlatformConstraints = {

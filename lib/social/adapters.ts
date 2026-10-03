@@ -1,6 +1,6 @@
 import { OAuthService } from "./oauth";
 import type {
-  ConnectionCheck, OAuthToken, PlatformConstraints, PublishRequest, PublishResult,
+  ConnectionCheck, MetricsSnapshot, OAuthToken, PlatformConstraints, PublishRequest, PublishResult,
   SocialAdapter, SocialPlatform,
 } from "./types";
 
@@ -70,8 +70,29 @@ class ReferenceSocialAdapter implements SocialAdapter {
 
   async validateConnection(token: OAuthToken): Promise<ConnectionCheck> {
     if (!token.accessToken) return { ok: false, status: "disconnected" };
-    if (token.expiresAt != null && token.expiresAt <= this.now()) return { ok: false, status: "expired", detail: "token expired" };
+    if (token.expiresAt != null && token.expiresAt <=this.now()) return { ok: false, status: "expired", detail: "token expired" };
     return { ok: true, status: "connected" };
+  }
+
+  async metrics(externalId: string, _token: OAuthToken): Promise<MetricsSnapshot> {
+    if (!externalId) return { ok: false, capturedAt: this.now(), reason: "unsupported" };
+    // Deterministic fake numbers from the externalId's own hash, so the same post always
+    // reports the same thing in a given test — no randomness to chase down later.
+    // engagements is derived AS A FRACTION OF impressions, not independently — two
+    // independent moduli can produce engagements > impressions, which is physically
+    // impossible and would make a Stage 3 engagement-rate calculation see a ratio above
+    // 1 off a fixture artifact rather than a real bug. A real platform can never report
+    // more engagements than impressions; neither can this one.
+    const h = parseInt(hash(externalId), 16);
+    const impressions = h % 5000;
+    // Bounded engagement rate: 0% to ~15% of impressions, a plausible real-world range.
+    const engagementRate = (h % 150) / 1000; // 0 to 0.149
+    return {
+      ok: true,
+      capturedAt: this.now(),
+      impressions,
+      engagements: Math.floor(impressions * engagementRate),
+    };
   }
 }
 
