@@ -22,12 +22,18 @@ describe("metrics()", () => {
   it("never reports more engagements than impressions, across many ids", async () => {
     const adapters = createReferenceAdapters(() => 1_000);
     const adapter = adapters.linkedin;
+    let successes = 0;
     for (let i = 0; i < 200; i++) {
       const snap = await adapter.metrics!(`post_${i}`, {} as any);
       if (snap.ok) {
+        successes++;
         expect(snap.engagements).toBeLessThanOrEqual(snap.impressions);
       }
     }
+    // Guards against the loop silently asserting nothing if every snapshot ever started
+    // failing — a vacuously green test is worse than no test, because it claims coverage
+    // it doesn't have.
+    expect(successes).toBeGreaterThan(0);
   });
 
   it("is deterministic — the same externalId always reports the same thing", async () => {
@@ -37,12 +43,12 @@ describe("metrics()", () => {
     expect(a).toEqual(b);
   });
 
-  it("reports a specific failure reason, not a free-text string, when it cannot report", async () => {
+  it("reports invalid_request for a missing externalId — a caller bug, not a platform gap", async () => {
     const adapters = createReferenceAdapters(() => 1_000);
     const snap = await adapters.linkedin.metrics!("", {} as any);
     expect(snap.ok).toBe(false);
     if (!snap.ok) {
-      expect(["rate_limited", "token_expired", "post_deleted", "unsupported", "upstream_error"]).toContain(snap.reason);
+      expect(snap.reason).toBe("invalid_request");
     }
   });
 

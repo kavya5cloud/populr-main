@@ -70,12 +70,17 @@ class ReferenceSocialAdapter implements SocialAdapter {
 
   async validateConnection(token: OAuthToken): Promise<ConnectionCheck> {
     if (!token.accessToken) return { ok: false, status: "disconnected" };
-    if (token.expiresAt != null && token.expiresAt <=this.now()) return { ok: false, status: "expired", detail: "token expired" };
+    if (token.expiresAt != null && token.expiresAt <= this.now()) return { ok: false, status: "expired", detail: "token expired" };
     return { ok: true, status: "connected" };
   }
 
   async metrics(externalId: string, _token: OAuthToken): Promise<MetricsSnapshot> {
-    if (!externalId) return { ok: false, capturedAt: this.now(), reason: "unsupported" };
+    // invalid_request, not unsupported: unsupported means this platform has no metrics
+    // API at all, a permanent property of the channel. A missing externalId is a bug in
+    // the caller, not a fact about the platform — conflating the two would make an
+    // "unsupported" count in Stage 3 impossible to interpret (platform gap, or we called
+    // it wrong?).
+    if (!externalId) return { ok: false, capturedAt: this.now(), reason: "invalid_request" };
     // Deterministic fake numbers from the externalId's own hash, so the same post always
     // reports the same thing in a given test — no randomness to chase down later.
     // engagements is derived AS A FRACTION OF impressions, not independently — two

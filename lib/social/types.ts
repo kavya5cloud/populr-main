@@ -183,8 +183,19 @@ export type MetricsFailureReason =
   | "token_expired"
   | "post_deleted"
   | "unsupported"
-  | "upstream_error";
+  | "upstream_error"
+  | "invalid_request";
 
+/**
+ * A snapshot of how one published post is doing, taken at a point in time. Metrics move
+ * after publication, so capturedAt matters as much as the numbers — a snapshot without it
+ * cannot be placed in a before/after window the way outcome_snapshots does for search.
+ *
+ * ok: false is a real, distinct state from a snapshot of zeros. A post the platform
+ * genuinely could not report on (rate limited, token expired, post removed) carries no
+ * engagement numbers at all — collapsing that into 0 would be indistinguishable from a
+ * post nobody engaged with, which is a different fact.
+ */
 export type MetricsSnapshot =
   | {
       ok: true;
