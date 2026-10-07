@@ -443,7 +443,10 @@ export default function Landing() {
         <div className="wrap">
           <div style={{ textAlign: "center" }}>
             <p className="label">Connects to</p>
-            <h2 style={{ marginTop: 14 }}>Works with the accounts<br />you already have.</h2>
+            {/* The space before <br /> is for everything that reads text rather than pixels.
+                Without it a crawler, a screen reader's text view and a search snippet all
+                get "accountsyou". It collapses at the line end, so nothing visible moves. */}
+            <h2 style={{ marginTop: 14 }}>Works with the accounts{" "}<br />you already have.</h2>
             <p className="sub">No new tool to migrate into. Populr reads what exists and writes back through it.</p>
           </div>
 

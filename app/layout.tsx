@@ -19,7 +19,11 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
   // Self-referencing canonical on the home page. Sub-pages override with their own.
-  alternates: { canonical: "/" },
+  //
+  // `types` advertises the guides feed in <head>, which is how feed readers and crawlers
+  // auto-discover it from any page. A sub-page that sets its own `alternates` drops this —
+  // the same shallow merge that dropped the OG image — so /guides restates it.
+  alternates: { canonical: "/", types: { "application/rss+xml": "/guides/feed.xml" } },
   openGraph: {
     type: "website",
     siteName: SITE_NAME,

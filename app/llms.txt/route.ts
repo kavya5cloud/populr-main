@@ -19,7 +19,6 @@ export const dynamic = "force-static";
 const ROUTE_LABEL: Record<string, string> = {
   "/": "Home",
   "/early-access": "Early Access",
-  "/worked": "What Worked",
   "/guides": "Guides",
   "/privacy": "Privacy",
   "/terms": "Terms",

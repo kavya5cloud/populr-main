@@ -28,8 +28,11 @@ describe("every guide is fit to index", () => {
     });
 
     it(`${g.slug}: description is a usable snippet`, () => {
-      expect(g.description.length).toBeGreaterThanOrEqual(110);
-      expect(g.description.length).toBeLessThanOrEqual(175);
+      // Matches the bound documented on Guide.description. This used to allow up to 175,
+      // which is how a 167-character description shipped and got cut off mid-sentence in
+      // results while the type beside it said 160.
+      expect(g.description.length).toBeGreaterThanOrEqual(140);
+      expect(g.description.length).toBeLessThanOrEqual(160);
     });
 
     it(`${g.slug}: has enough body to be worth ranking`, () => {

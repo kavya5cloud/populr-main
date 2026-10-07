@@ -12,7 +12,10 @@ const organization = {
   "@id": url("/#organization"),
   name: SITE_NAME,
   url: SITE_URL,
-  logo: { "@type": "ImageObject", url: url("/icon.svg") },
+  // Raster and square. Google's logo guidance asks for at least 112×112 in a format Google
+  // Images indexes, and an SVG is the format most often rejected in practice. app/apple-icon
+  // is already 180×180 and already served at this path by Next's file convention.
+  logo: { "@type": "ImageObject", url: url("/apple-icon.png"), width: 180, height: 180 },
   description: SITE_DESCRIPTION,
   email: "team@trypopulr.in",
 };

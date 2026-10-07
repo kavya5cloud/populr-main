@@ -7,7 +7,8 @@ import { ImageResponse } from "next/og";
 // Generated rather than a checked-in PNG so it cannot drift from the brand, and drawn with
 // system fonts so the build never depends on fetching a font file.
 
-export const runtime = "edge";
+// No `runtime = "edge"`: the Edge runtime is deprecated on Vercel, and ImageResponse renders
+// the same on Node.
 export const alt = "Populr — your AI CMO";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";

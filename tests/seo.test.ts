@@ -77,10 +77,9 @@ describe("per-page metadata", () => {
   // state this site was actually in — every page inherited the root title — so it is worth
   // asserting rather than eyeballing.
   async function collect() {
-    const [root, ea, worked, privacy, terms] = await Promise.all([
+    const [root, ea, privacy, terms] = await Promise.all([
       import("@/app/layout"),
       import("@/app/early-access/layout"),
-      import("@/app/worked/layout"),
       import("@/app/privacy/page"),
       import("@/app/terms/page"),
     ]);
@@ -89,7 +88,6 @@ describe("per-page metadata", () => {
     return [
       { path: "/", title: title(root.metadata), meta: root.metadata },
       { path: "/early-access", title: title(ea.metadata), meta: ea.metadata },
-      { path: "/worked", title: title(worked.metadata), meta: worked.metadata },
       { path: "/privacy", title: title(privacy.metadata), meta: privacy.metadata },
       { path: "/terms", title: title(terms.metadata), meta: terms.metadata },
     ];
@@ -128,6 +126,26 @@ describe("per-page metadata", () => {
       if (p.path === "/") continue;   // the root default is a full title, not a template arg
       expect(p.title).not.toMatch(/Populr/);
     }
+  });
+});
+
+describe("/worked stays out of results", () => {
+  // It renders the signed-in workspace's own outcomes, so a crawler — always logged out —
+  // got a back link, "Loading…" and an empty table, listed in the sitemap as proof.
+
+  it("is not a public route, so neither the sitemap nor llms.txt lists it", () => {
+    expect(PUBLIC_ROUTES.map((r) => r.path)).not.toContain("/worked");
+  });
+
+  it("carries noindex", async () => {
+    const { metadata } = await import("@/app/worked/layout");
+    expect((metadata.robots as { index?: boolean })?.index).toBe(false);
+  });
+
+  it("is NOT disallowed in robots, or the noindex could never be read", () => {
+    // The tempting fix is wrong. A disallowed URL is not fetched, so its noindex is never
+    // seen, and a page with inbound links can stay in results as a bare URL indefinitely.
+    expect(DISALLOWED.some((d) => d === "/worked" || d === "/worked/")).toBe(false);
   });
 });
 

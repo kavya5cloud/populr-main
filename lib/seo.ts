@@ -53,7 +53,11 @@ export const url = (path = "/") => `${SITE_URL}${path.startsWith("/") ? path : `
 export const PUBLIC_ROUTES: { path: string; priority: number; changeFrequency: "daily" | "weekly" | "monthly" | "yearly" }[] = [
   { path: "/", priority: 1.0, changeFrequency: "weekly" },
   { path: "/early-access", priority: 0.8, changeFrequency: "weekly" },
-  { path: "/worked", priority: 0.6, changeFrequency: "weekly" },
+  // /worked is deliberately absent. It renders the signed-in workspace's own outcomes, so
+  // what a crawler gets is "← Back to dashboard", "Loading…" and an empty state — a thin
+  // page telling Google the site's quality is lower than it is. It carries noindex in its
+  // layout; it is NOT disallowed in robots, because a crawler that cannot fetch the page
+  // cannot read the noindex either.
   { path: "/guides", priority: 0.9, changeFrequency: "weekly" },
   { path: "/privacy", priority: 0.3, changeFrequency: "yearly" },
   { path: "/terms", priority: 0.3, changeFrequency: "yearly" },

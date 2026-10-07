@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { allGuides, guideBySlug, type Block, type Guide } from "@/lib/guides";
+import { allGuides, guideBySlug, wordsIn, type Block, type Guide } from "@/lib/guides";
 import { SITE_NAME, url } from "@/lib/seo";
 
 // One guide.
@@ -32,7 +32,7 @@ export async function generateMetadata(
   return {
     title: guide.title,
     description: guide.description,
-    alternates: { canonical },
+    alternates: { canonical, types: { "application/rss+xml": "/guides/feed.xml" } },
     openGraph: {
       type: "article",
       title: guide.title,
@@ -87,6 +87,12 @@ function structuredData(guide: Guide) {
       dateModified: guide.updated,
       inLanguage: "en",
       mainEntityOfPage: canonical,
+      // Google lists `image` as recommended for Article and uses it for the large result
+      // thumbnail and Discover. This is the same card the share preview uses
+      // (./opengraph-image.tsx), so markup and page can never disagree about it.
+      image: { "@type": "ImageObject", url: `${canonical}/opengraph-image`, width: 1200, height: 630 },
+      wordCount: wordsIn(guide.blocks),
+      timeRequired: `PT${guide.readingMinutes}M`,
       author: { "@id": url("/#organization") },
       publisher: { "@id": url("/#organization") },
     },

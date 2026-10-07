@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   description:
     "The marketing actions Populr took, and what each one actually did — measured against real outcomes rather than activity counts.",
   alternates: { canonical: "/worked" },
+  // Product surface, not a landing page — see lib/seo.ts. follow stays on so the links on
+  // it still pass through; only the page itself stays out of results.
+  robots: { index: false, follow: true },
   openGraph: {
     title: "What actually worked — Populr",
     description:

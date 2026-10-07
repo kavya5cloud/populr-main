@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   title: "Guides",
   description:
     "Practical guides on marketing without a marketing team — what agencies cost, how to be cited by AI assistants, and why AI writing tools invent statistics.",
-  alternates: { canonical: url("/guides") },
+  alternates: { canonical: url("/guides"), types: { "application/rss+xml": "/guides/feed.xml" } },
   openGraph: {
     type: "website",
     title: `Guides — ${SITE_NAME}`,
