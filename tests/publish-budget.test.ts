@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { reclaimStalled, retryFailed, runDue, STALE_CLAIM_MS, type PublishPort } from "@/lib/automation/runner";
 import { setState } from "@/lib/automation/engine";
 import type { QueueItem } from "@/lib/automation/types";
@@ -126,4 +126,43 @@ describe("the pass yields rather than being killed", () => {
     expect(r.queue[0].state).toBe("failed");
     expect(r.outcomes[0].message).toMatch(/no content was available/i);
   });
+
+  // The second unbounded call. The content step got the deadline; the pre-publish rewrite
+  // did not. optimize() checked `aborted` before and after its model call, but the call in
+  // between ran to the provider timeout — 45s with retries and fallback — inside a 60s
+  // function, so the pass still 504'd after the first fix shipped.
+  describe("the pre-publish rewrite obeys the same deadline", () => {
+    afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+
+    it("a slot whose rewrite is in flight at the deadline still finishes the pass", async () => {
+      vi.stubEnv("GROQ_API_KEY", "gsk_test_groq");
+      // Every provider request hangs until it is aborted — the worst case, a provider that
+      // accepts the connection and never answers.
+      let requests = 0;
+      vi.stubGlobal("fetch", vi.fn((_u: string, init?: RequestInit) => {
+        requests++;
+        return new Promise((_res, rej) => {
+          const s = init?.signal;
+          if (s?.aborted) return rej(Object.assign(new Error("aborted"), { name: "AbortError" }));
+          s?.addEventListener("abort", () => rej(Object.assign(new Error("aborted"), { name: "AbortError" })), { once: true });
+        });
+      }));
+
+      const abort = new AbortController();
+      const started = Date.now();
+      setTimeout(() => abort.abort(), 50);
+      const r = await runDue([slot()], "t", {
+        now: NOW, engine: connected(), budgetMs: 10_000, signal: abort.signal,
+        content: async () => ({ text: "Same-day delivery for every kirana shop, starting today.", assetIds: [] }),
+      });
+
+      expect(requests, "the rewrite never reached a provider, so this proves nothing").toBeGreaterThan(0);
+      // Without the signal this waits out the 45s provider timeout and the test times out.
+      expect(Date.now() - started).toBeLessThan(5_000);
+      // Cancelling the rewrite is not a reason to drop the post: the deterministic floor
+      // stands in, and only validation may block a publish.
+      expect(r.outcomes).toHaveLength(1);
+    }, 15_000);
+  });
 });
+

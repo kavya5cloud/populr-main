@@ -221,7 +221,7 @@ export async function runDue(
     // and a generated post are held to the same limits, links and accessibility rules.
     const pipeline = await prePublish(
       { text: body.text, assetIds: body.assetIds },
-      { platform: slot.platform as SocialPlatform, contextPrompt: opts.contextPrompt, scheduledTexts: opts.scheduledTexts },
+      { platform: slot.platform as SocialPlatform, contextPrompt: opts.contextPrompt, scheduledTexts: opts.scheduledTexts, signal: opts.signal },
     ).catch(() => null);
 
     if (pipeline) opts.onOptimized?.(slot.id, pipeline);

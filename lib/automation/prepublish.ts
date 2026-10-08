@@ -249,7 +249,12 @@ export async function optimize(content: PrePublishContent, ctx: OptimizeContext)
     `{ "text": string, "altText": { "assetId": "description" }, "applied": [string], "reasoning": string, "confidence": number }`,
   ].filter(Boolean).join("\n");
 
-  const result = await generateText({ prompt });
+  // The signal has to reach the call, not just bracket it. This checked `aborted` before and
+  // after while the request in between ran to the provider's own timeout — 45s, with retries
+  // and fallback across providers — inside a 60s publish function. That was the second half
+  // of the publish pass's 504s, after the content call was given the deadline and this one
+  // was not. Cancelled here, the slot still ships with the deterministic floor.
+  const result = await generateText({ prompt, signal: ctx.signal });
   if (!result.ok || ctx.signal?.aborted) return deterministicOptimize(content, ctx.platform);
 
   let parsed: LlmOptimization;
