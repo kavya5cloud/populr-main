@@ -34,3 +34,7 @@ Full reference: [trypopulr.in/developers/docs](https://www.trypopulr.in/develope
 - A key works only for the workspace that created it. Revoke it any time at [trypopulr.in/app/keys](https://www.trypopulr.in/app/keys).
 
 Requires VS Code 1.101 or later.
+
+## License
+
+MIT — this covers the extension only. Populr itself is a hosted service with its own terms.

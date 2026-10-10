@@ -3,9 +3,16 @@
   "displayName": "Populr SEO",
   "description": "Apply the SEO fixes you approve in Populr from VS Code's agent mode — titles, descriptions, structured data and llms.txt, in your site's code.",
   "version": "1.0.0",
+  "license": "MIT",
   "publisher": "populr",
+  "pricing": "Free",
   "icon": "media/icon.png",
   "homepage": "https://www.trypopulr.in/developers",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kavya5cloud/populr-main.git",
+    "directory": "extensions/vscode"
+  },
   "bugs": {
     "email": "team@trypopulr.in"
   },
@@ -103,7 +110,9 @@
   "scripts": {
     "compile": "tsc -p .",
     "watch": "tsc -w -p .",
-    "package": "npm run compile && npx @vscode/vsce package --skip-license --out populr-seo.vsix",
+    "package": "npm run compile && npx @vscode/vsce package --out populr-seo.vsix",
+    "publish:marketplace": "npx @vscode/vsce publish --packagePath populr-seo.vsix",
+    "publish:openvsx": "npx ovsx publish populr-seo.vsix",
     "vscode:prepublish": "npm run compile"
   },
   "devDependencies": {
