@@ -5106,3 +5106,26 @@ body:has(.missions) ::-webkit-scrollbar-thumb{background:#d3d5d9;border-color:#f
 .appui .ap-link{padding:4px 0;border:0;background:none;color:var(--dim);font-size:12.5px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .appui .ap-primary:disabled,.appui .ap-secondary:disabled{opacity:.5;cursor:default}
 @media(max-width:560px){.appui .ap-grid{grid-template-columns:1fr}}
+
+/* ---- Localized landing pages (/hi, /fr, …) -------------------------------- */
+.landing.lx .lx-body{max-width:980px;margin:0 auto;padding:clamp(48px,7vw,88px) 20px clamp(56px,8vw,96px)}
+.landing.lx .lx-sec{padding:clamp(28px,4vw,44px) 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.landing.lx .lx-sec h2{margin:0 0 22px;font-size:clamp(24px,3vw,34px);font-weight:400;letter-spacing:-.025em}
+.landing.lx .lx-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.landing.lx .lx-steps li{padding:20px;border:1px solid rgba(255,255,255,.1);border-radius:16px;background:rgba(255,255,255,.03)}
+.landing.lx .lx-n{display:inline-flex;width:26px;height:26px;border-radius:50%;align-items:center;justify-content:center;font-family:'Geist Mono',monospace;font-size:12px;color:#0a0d0b;background:#d5ff72}
+.landing.lx .lx-steps h3{margin:12px 0 6px;font-size:17px;font-weight:500}
+.landing.lx .lx-steps p,.landing.lx .lx-langs,.landing.lx .lx-faq dd{margin:0;color:#b9c2b5;line-height:1.6;font-size:15px}
+.landing.lx .lx-langs{margin-top:20px}
+.landing.lx .lx-price{margin:0 0 18px;font-size:18px;color:#eef3e6}
+.landing.lx .lx-cta{display:inline-flex;padding:11px 20px;border-radius:100px;background:#d5ff72;color:#0a0d0b;font-weight:600;text-decoration:none}
+.landing.lx .lx-faq{margin:0;display:flex;flex-direction:column;gap:18px}
+.landing.lx .lx-faq dt{font-size:16px;font-weight:500;margin-bottom:4px;color:#eef3e6}
+.landing.lx .lx-switch{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding-top:32px;font-size:14px;color:#9aa39c}
+.landing.lx .lx-switch a{color:#e8ece4;text-underline-offset:3px}
+.landing .hc-btn-short{display:none}
+@media(max-width:420px){.landing .hc-btn-full{display:none}.landing .hc-btn-short{display:inline}}
+/* Devanagari: letter-spacing pulls vowel signs away from the letters they belong to, and
+   the monospace face has no Devanagari glyphs at all. Plain spacing, the body face. */
+.landing.lx:is([lang="hi-IN"],[lang="mr-IN"]) .hc-eyebrow,
+.landing.lx:is([lang="hi-IN"],[lang="mr-IN"]) .lx-n{letter-spacing:0;text-transform:none;font-family:inherit}

@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/react";
 import EarlyAccessBanner from "./components/EarlyAccessBanner";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/seo";
 import JsonLd from "./components/JsonLd";
+import { homeAlternates } from "@/lib/i18n/landing";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -23,7 +24,10 @@ export const metadata: Metadata = {
   // `types` advertises the guides feed in <head>, which is how feed readers and crawlers
   // auto-discover it from any page. A sub-page that sets its own `alternates` drops this —
   // the same shallow merge that dropped the OG image — so /guides restates it.
-  alternates: { canonical: "/", types: { "application/rss+xml": "/guides/feed.xml" } },
+  // `languages` is the hreflang set: every language version of the home page, English as
+  // x-default. Each localized page lists the same set, because Google ignores hreflang that
+  // isn't reciprocal.
+  alternates: { canonical: "/", types: { "application/rss+xml": "/guides/feed.xml" }, languages: homeAlternates() },
   openGraph: {
     type: "website",
     siteName: SITE_NAME,

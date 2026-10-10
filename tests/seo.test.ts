@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GUIDES } from "@/lib/guides";
+import { homeAlternates, LANDING, LANDING_LOCALES } from "@/lib/i18n/landing";
 import { CANONICAL_HOST, DISALLOWED, PUBLIC_ROUTES, SITE_DESCRIPTION, SITE_URL, url } from "@/lib/seo";
 import sitemap from "@/app/sitemap";
 import robots from "@/app/robots";
@@ -30,8 +31,8 @@ describe("site identity", () => {
 describe("sitemap", () => {
   const entries = sitemap();
 
-  it("lists every public route and every guide, once each", () => {
-    expect(entries).toHaveLength(PUBLIC_ROUTES.length + GUIDES.length);
+  it("lists every public route, every guide and every language version, once each", () => {
+    expect(entries).toHaveLength(PUBLIC_ROUTES.length + GUIDES.length + LANDING_LOCALES.length);
     expect(new Set(entries.map((e) => e.url)).size).toBe(entries.length);
   });
 
@@ -125,6 +126,55 @@ describe("per-page metadata", () => {
     for (const p of await collect()) {
       if (p.path === "/") continue;   // the root default is a full title, not a template arg
       expect(p.title).not.toMatch(/Populr/);
+    }
+  });
+});
+
+describe("the home page in other languages", () => {
+  // Google ignores hreflang that isn't reciprocal: if /fr names / but / doesn't name /fr,
+  // neither annotation counts. These pin both directions and the sitemap's copy of the set.
+
+  it("every language version is in the sitemap, naming all the others", () => {
+    const entries = sitemap();
+    const set = homeAlternates();
+    for (const l of LANDING_LOCALES) {
+      const e = entries.find((x) => x.url === url(`/${l}`));
+      expect(e, l).toBeTruthy();
+      expect(Object.keys(e!.alternates?.languages ?? {}).sort(), l).toEqual(Object.keys(set).sort());
+    }
+  });
+
+  it("the English home names every language version back, with itself as x-default", async () => {
+    const { metadata } = await import("@/app/layout");
+    const langs = (metadata.alternates?.languages ?? {}) as Record<string, string>;
+    for (const l of LANDING_LOCALES) expect(langs[LANDING[l].hreflang], l).toBe(`/${l}`);
+    expect(langs["x-default"]).toBe("/");
+  });
+
+  it("each version is canonical to itself and lists the same set", async () => {
+    const { generateMetadata } = await import("@/app/[locale]/page");
+    for (const l of LANDING_LOCALES) {
+      const m = await generateMetadata({ params: Promise.resolve({ locale: l }) });
+      expect(m.alternates?.canonical, l).toBe(`/${l}`);
+      expect(m.alternates?.languages, l).toEqual(homeAlternates());
+    }
+  });
+
+  it("every version carries the same structure, so none is a thin copy", () => {
+    const en = LANDING.fr;
+    for (const l of LANDING_LOCALES) {
+      const c = LANDING[l];
+      expect(c.steps, l).toHaveLength(en.steps.length);
+      expect(c.faq.length, l).toBeGreaterThanOrEqual(3);
+      expect(c.description.length, l).toBeGreaterThan(100);
+      expect(c.description.length, l).toBeLessThanOrEqual(175);
+    }
+  });
+
+  it("only offers languages the product can write in", async () => {
+    const { LANGUAGE_CODES } = await import("@/lib/i18n/languages");
+    for (const l of LANDING_LOCALES) {
+      expect(LANGUAGE_CODES.some((code) => code.startsWith(`${l}-`)), l).toBe(true);
     }
   });
 });
