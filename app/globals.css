@@ -5048,3 +5048,20 @@ body:has(.missions) ::-webkit-scrollbar-thumb{background:#d3d5d9;border-color:#f
   .landing .hc-pills a:not(.on){display:none}
 }
 @media(max-width:420px){.landing .hc-btn-more{display:none}}
+
+/* ---- Hero photograph -----------------------------------------------------
+   The green gradients are replaced by the founder's photograph: sharp in the right panel,
+   and the same image blurred hard behind the frame, so the page reads as one picture the
+   way the reference does. The gradients stay underneath as the colour shown while the image
+   loads. */
+.landing .hc-media::before{content:none}
+.landing .hc-photo{object-fit:cover;z-index:0}
+.landing .hc-media .hc-corner,.landing .hc-media .hc-tags{z-index:1}
+.landing header.hero-clean{position:relative;isolation:isolate;overflow:hidden}
+.landing header.hero-clean::before{
+  content:"";position:absolute;inset:-60px;z-index:-1;
+  background:url(/hero/park.jpg) center/cover no-repeat;
+  filter:blur(36px) saturate(1.1) brightness(.92);transform:scale(1.08);
+}
+/* Over a photograph the corner label sits on whatever is beneath it; more glass keeps it legible on a busy patch. */
+.landing .hc-media .hc-corner{background:rgba(255,255,255,.82);backdrop-filter:blur(8px)}

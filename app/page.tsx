@@ -1,5 +1,6 @@
 "use client";
 import HeroDemo from "./components/HeroDemo";
+import Image from "next/image";
 import { useEffect, useRef } from "react";
 import { captureReferral } from "@/lib/referral-client";
 // Counted from the real tables rather than typed in. The first version of this section
@@ -231,6 +232,10 @@ export default function Landing() {
           </div>
 
           <div className="hc-media" aria-hidden="true">
+            {/* The founder's chosen photograph: people, from above — who the marketing is for.
+                next/image serves it resized and in a modern format, and `priority` because it is
+                the largest thing on the first screen. Decorative, so no alt text to announce. */}
+            <Image src="/hero/park.jpg" alt="" fill priority sizes="(min-width: 960px) 50vw, 100vw" className="hc-photo" />
             <span className="hc-corner">{LANGUAGE_CODES.length} languages</span>
             <div className="hc-tags">
               <span>Reads your site</span>
