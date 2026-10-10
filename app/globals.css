@@ -4804,3 +4804,49 @@ body:has(.missions) ::-webkit-scrollbar-thumb{background:#d3d5d9;border-color:#f
 .appui .agent-sources a{color:var(--fg);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:2px;overflow-wrap:anywhere}
 .appui .agent-sources a:hover{text-decoration-color:var(--fg)}
 .appui .agent-src-via{color:var(--dim);font-size:11.5px}
+
+/* ---- The AI team page --------------------------------------------------- */
+.appui .team-wrap{max-width:1120px;margin:0 auto;padding:48px 24px 96px}
+.appui .team-head h1{font-size:30px;letter-spacing:-.03em;margin:0 0 8px;line-height:1.15}
+.appui .team-head p{color:var(--dim);font-size:15px;max-width:62ch;margin:0 0 28px}
+.appui .team-head strong{color:var(--fg);font-weight:500}
+.appui .team-quiet{color:var(--dim)}
+.appui .team-totals{display:flex;gap:12px;margin:0 0 24px;flex-wrap:wrap}
+.appui .team-totals>div{flex:1 1 140px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.appui .team-totals dt{font-size:12.5px;color:var(--dim)}
+.appui .team-totals dd{margin:4px 0 0;font-size:26px;letter-spacing:-.02em;font-weight:600}
+.appui .team-totals dd.need{color:var(--acc-text)}
+
+.appui .team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.appui .team-card{display:flex;flex-direction:column;gap:12px;padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--panel);min-width:0}
+.appui .team-card.running{border-color:var(--green-ink)}
+.appui .team-card.waiting_approval{border-color:color-mix(in srgb,var(--acc) 70%,var(--line))}
+.appui .team-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.appui .team-card h2{font-size:16px;margin:0;letter-spacing:-.01em}
+.appui .team-role{margin:2px 0 0;font-size:12.5px;color:var(--dim)}
+.appui .team-pill{flex:0 0 auto;font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:100px;border:1px solid var(--line);color:var(--dim)}
+.appui .team-pill.completed{color:var(--green-ink);border-color:color-mix(in srgb,var(--green-ink) 35%,transparent)}
+.appui .team-pill.running{color:var(--green-ink);border-color:var(--green-ink)}
+.appui .team-pill.waiting_approval{color:var(--acc-text);border-color:color-mix(in srgb,var(--acc-text) 40%,transparent)}
+.appui .team-pill.failed{color:var(--redd);border-color:color-mix(in srgb,var(--redd) 40%,transparent)}
+.appui .team-last{display:flex;flex-direction:column;gap:6px;flex:1}
+.appui .team-task{margin:0;font-size:14px;font-weight:500;line-height:1.4}
+.appui .team-why{margin:0;font-size:13px;color:var(--dim);line-height:1.5}
+.appui .team-outputs{margin:2px 0 0;padding-left:16px;font-size:12.5px;color:var(--fg);display:flex;flex-direction:column;gap:3px}
+.appui .team-none{margin:0;font-size:13px;color:var(--dim);line-height:1.5;flex:1}
+.appui .team-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;color:var(--dim);padding-top:10px;border-top:1px solid var(--line)}
+.appui .team-conf{display:inline-flex;align-items:center;gap:8px}
+.appui .team-conf-bar{width:56px;height:5px;border-radius:5px;background:var(--line);overflow:hidden;display:inline-block}
+.appui .team-conf-bar>span{display:block;height:100%;background:var(--green-ink)}
+
+.appui .team-log{margin-top:36px}
+.appui .team-log h2{font-size:16px;margin:0 0 12px}
+.appui .team-log ol{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.appui .team-log li{display:grid;grid-template-columns:140px 1fr auto;gap:14px;padding:11px 0;border-bottom:1px solid var(--line);font-size:13.5px;align-items:baseline}
+.appui .team-log-who{color:var(--dim);font-size:12.5px}
+.appui .team-log-when{color:var(--dim);font-size:12px;white-space:nowrap}
+@media(max-width:640px){
+  .appui .team-wrap{padding:28px 16px 72px}
+  .appui .team-head h1{font-size:24px}
+  .appui .team-log li{grid-template-columns:1fr;gap:2px}
+}

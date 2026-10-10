@@ -8,6 +8,12 @@ import { emptyTeamState, type TeamState } from "./types";
 export interface TeamStateRepo {
   get(tenant: string, launchId: string): Promise<TeamState>;
   save(state: TeamState): Promise<TeamState>;
+  /**
+   * The workspace's most recently updated team state, whichever launch it belongs to. The
+   * daily pass creates a fresh launch each run, so "what has the team been doing" is the
+   * latest one, not a launch the founder has to name.
+   */
+  latest(tenant: string): Promise<TeamState | null>;
 }
 
 export class InMemoryTeamStateRepo implements TeamStateRepo {
@@ -15,6 +21,10 @@ export class InMemoryTeamStateRepo implements TeamStateRepo {
   private k(t: string, l: string) { return `${t}::${l}`; }
   async get(tenant: string, launchId: string) { return this.m.get(this.k(tenant, launchId)) ?? emptyTeamState(tenant, launchId); }
   async save(state: TeamState) { this.m.set(this.k(state.tenant, state.launchId), state); return state; }
+  async latest(tenant: string) {
+    const mine = [...this.m.values()].filter((s) => s.tenant === tenant);
+    return mine.length ? mine.reduce((a, b) => (b.updatedAt > a.updatedAt ? b : a)) : null;
+  }
 }
 
 let ready = false;
@@ -35,6 +45,13 @@ export class NeonTeamStateRepo implements TeamStateRepo {
     const rows = await this.sql`SELECT state FROM agent_team_state
       WHERE tenant = ${tenant} AND launch_id = ${launchId}` as { state: TeamState }[];
     return rows[0]?.state ?? emptyTeamState(tenant, launchId);
+  }
+
+  async latest(tenant: string): Promise<TeamState | null> {
+    await ensureTable(this.sql);
+    const rows = await this.sql`SELECT state FROM agent_team_state
+      WHERE tenant = ${tenant} ORDER BY updated_at DESC LIMIT 1` as { state: TeamState }[];
+    return rows[0]?.state ?? null;
   }
 
   async save(state: TeamState): Promise<TeamState> {

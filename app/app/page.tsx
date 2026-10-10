@@ -986,6 +986,7 @@ Output ONLY this JSON, nothing else: {"impressions":<integer>,"clicks":<integer>
           </div>
           <div className="tb-r">
             <a href="/app/campaigns" className="credits" style={{ textDecoration: "none", color: "inherit" }} title="Marketing Missions — your AI CMO assigns work">missions ↗</a>
+            <a href="/app/team" className="credits" style={{ textDecoration: "none", color: "inherit" }} title="Your nine marketing agents and what each did today">team ↗</a>
             <a href="/worked" className="credits" style={{ textDecoration: "none", color: "inherit" }} title="Recommendations ranked by measured outcome">worked ↗</a>
             <span className="credits">{cloud ? "cloud" : "local"}</span>
             {authUser && (
