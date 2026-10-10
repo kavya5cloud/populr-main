@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
 
       try {
-        for await (const event of streamText(prompt)) send(event);
+        for await (const event of streamText(prompt, { signal: req.signal })) send(event);
       } catch {
         // The generator already reports what it can; this is the last resort so the client
         // is never left holding an open socket that will not speak again.

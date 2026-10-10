@@ -17,7 +17,9 @@ describe("fallback happens before the first byte, never after", () => {
 
   it("moves to the next model when a stream fails to open", () => {
     // Nothing has reached the browser yet, so trying another provider costs nothing.
-    expect(stream()).toMatch(/if \(!res\?\.body\) continue/);
+    // The branch now also drops the caller's cancel listener before moving on; what matters
+    // is that it still continues to the next model rather than returning.
+    expect(stream()).toMatch(/if \(!res\?\.body\) \{[^}]*continue;\s*\}/);
   });
 
   it("still moves on when a provider opens but says nothing", () => {

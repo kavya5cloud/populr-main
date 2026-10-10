@@ -140,7 +140,15 @@ async function openStream(
  * Yields plain events rather than writing a wire format, so the route decides how to frame
  * them and this stays testable without a server.
  */
-export async function* streamText(prompt: string): AsyncGenerator<StreamEvent> {
+/**
+ * `signal` is the caller's: when the person closes the tab, the provider stream is cancelled
+ * too, and no other model is tried. Without it a cancelled stream kept running to its end,
+ * billed, and one that had shown nothing yet fell through to the next model — a fresh paid
+ * call for someone who had already left.
+ */
+export async function* streamText(prompt: string, opts: { signal?: AbortSignal } = {}): AsyncGenerator<StreamEvent> {
+  const { signal } = opts;
+  if (signal?.aborted) return;
   const cfg = streamConfig();
   if (!cfg.providers.length) {
     yield { type: "error", message: "No AI provider is configured." };
@@ -149,11 +157,15 @@ export async function* streamText(prompt: string): AsyncGenerator<StreamEvent> {
 
   for (const { provider, key } of cfg.providers) {
     for (const model of provider.models) {
+      if (signal?.aborted) return;
       const controller = new AbortController();
+      const onCancel = () => controller.abort();
+      signal?.addEventListener("abort", onCancel, { once: true });
       const openTimer = setTimeout(() => controller.abort(), OPEN_TIMEOUT_MS);
       const res = await openStream(provider, model, key, prompt, controller.signal);
       clearTimeout(openTimer);
-      if (!res?.body) continue;   // still before the first byte — the next model is fair game
+      if (signal?.aborted) { signal.removeEventListener("abort", onCancel); return; }
+      if (!res?.body) { signal?.removeEventListener("abort", onCancel); continue; }   // before the first byte — the next model is fair game
 
       // Whole-stream budget, from the provider where it declares one. Sarvam is measured
       // at roughly 55 seconds end to end with its first content chunk at 14, so a provider
@@ -190,14 +202,18 @@ export async function* streamText(prompt: string): AsyncGenerator<StreamEvent> {
           }
         }
       } catch {
+        clearTimeout(streamTimer);
+        signal?.removeEventListener("abort", onCancel);
+        // Cancelled by the caller: not a failure, and not a reason to try another model.
+        if (signal?.aborted) return;
         // Mid-stream failure. No fallback is possible without replaying, so say what
         // happened — silence here reads as the model simply stopping.
-        clearTimeout(streamTimer);
         if (chars === 0) continue;   // nothing was shown yet, so the next model is still fair
         yield { type: "error", message: "The response was cut off. Try again." };
         return;
       }
       clearTimeout(streamTimer);
+      signal?.removeEventListener("abort", onCancel);
 
       if (chars === 0) continue;   // opened but said nothing — treat as a failed attempt
 
