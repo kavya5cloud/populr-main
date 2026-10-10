@@ -1,3 +1,4 @@
+import { safeFetchText } from "@/lib/net/safe-fetch";
 // A real site audit.
 //
 // Every number here is measured by Google and reported verbatim. That is the entire design
@@ -257,8 +258,10 @@ export async function auditUrl(url: string, opts: { timeoutMs?: number } = {}): 
     const [mobileRes, desktopRes, page] = await Promise.all([
       runPsi(url, "mobile", controller.signal).catch((e) => ({ ok: false as const, status: 0, keyed: false, body: String(e).slice(0, 160) })),
       runPsi(url, "desktop", controller.signal).catch((e) => ({ ok: false as const, status: 0, keyed: false, body: String(e).slice(0, 160) })),
-      fetch(url, { signal: controller.signal, headers: { "User-Agent": "populr-audit/1.0" } })
-        .then((r) => (r.ok ? r.text() : ""))
+      // Guarded: isSafePublicUrl only checks the text of the URL, so a domain resolving to
+      // a private address — or redirecting to one — got through to a plain fetch().
+      safeFetchText(url, { timeoutMs: 20_000, maxBytes: 3_000_000, headers: { "User-Agent": "populr-audit/1.0" } })
+        .then((r) => (r.status >= 200 && r.status < 300 ? r.text : ""))
         .catch(() => ""),
     ]);
 

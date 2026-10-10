@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { safeFetchText } from "@/lib/net/safe-fetch";
 import { LANGUAGE_CODES, servedBySarvam } from "@/lib/i18n/languages";
 import { db, type Sql } from "@/lib/db";
 import {
@@ -649,16 +650,14 @@ function collect(html: string, re: RegExp, max: number): string[] {
   return out;
 }
 
+// The customer's site, fetched through the guarded path: public addresses only, every
+// redirect re-checked, a byte cap. This fetched any URL a user typed, so
+// http://169.254.169.254/ or a public URL redirecting to localhost turned the server into a
+// proxy for its own network. Same contract as before — HTML or null.
 async function fetchRawHtml(url: string): Promise<string | null> {
   try {
-    const controller = new AbortController();
-    const t = setTimeout(() => controller.abort(), 10000);
-    const r = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0 (Populr analyzer)" },
-      signal: controller.signal,
-    });
-    clearTimeout(t);
-    return await r.text();
+    const r = await safeFetchText(url, { timeoutMs: 10_000, maxBytes: 2_000_000, headers: { "User-Agent": "Mozilla/5.0 (Populr analyzer)" } });
+    return r.text;
   } catch {
     return null;
   }
