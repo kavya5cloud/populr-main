@@ -17,6 +17,7 @@ import ResizableDash from "./_components/ResizableDash";
 import DashboardSkeleton from "./_components/DashboardSkeleton";
 import SeoAudit from "./_components/SeoAudit";
 import SeoAutopilot from "./_components/SeoAutopilot";
+import EditorAccess from "./_components/EditorAccess";
 import Section from "@/app/components/Section";
 import DocSkeleton from "@/app/components/DocSkeleton";
 import { DELIVERABLE_RULES } from "@/lib/cmo/quality-rules";
@@ -1264,6 +1265,7 @@ Output ONLY this JSON, nothing else: {"impressions":<integer>,"clicks":<integer>
                       connected; the two are complementary, not alternatives. */}
                   {url && <SeoAudit url={url} />}
                   {url && <SeoAutopilot url={url} />}
+                  {url && <EditorAccess />}
                   {!gscData ? (
                     <div className="placeholder" style={{ marginTop: 18 }}><b style={{ color: "var(--dim)" }}>Search Console</b><br /><span className="mono" style={{ fontSize: 11 }}>Connect it to add your real queries, positions and CTR</span></div>
                   ) : (
