@@ -20,9 +20,14 @@ export const maxDuration = 60;
 
 const ORIGIN = siteUrl("/").replace(/\/$/, "");
 
-async function ws(req: NextRequest, wsid: string | null): Promise<{ error: NextResponse } | { w: string }> {
+// Reads get their own, looser limit: the keys page re-reads settings while it's open, and
+// that mustn't use up the budget for saving, drafting (a model call) or approving.
+async function ws(req: NextRequest, wsid: string | null, write = true): Promise<{ error: NextResponse } | { w: string }> {
   const session = await getSession();
-  const limit = rateLimit(`autopilot:${requestKey(req.headers, session?.userId)}`, session ? 40 : 15, 60_000);
+  const who = requestKey(req.headers, session?.userId);
+  const limit = write
+    ? rateLimit(`autopilot:${who}`, session ? 40 : 15, 60_000)
+    : rateLimit(`autopilot:r:${who}`, session ? 120 : 60, 60_000);
   if (!limit.allowed) return { error: NextResponse.json({ error: "rate_limited" }, { status: 429 }) };
   const w = await workspaceKey(wsid);
   return w ? { w } : { error: NextResponse.json({ error: "no_key" }, { status: 400 }) };
@@ -58,7 +63,7 @@ function business(b: unknown): BusinessDetails | null {
 }
 
 export async function GET(req: NextRequest) {
-  const r = await ws(req, req.nextUrl.searchParams.get("wsid"));
+  const r = await ws(req, req.nextUrl.searchParams.get("wsid"), false);
   if ("error" in r) return r.error;
   return NextResponse.json(view(await autopilotStore().get(r.w)));
 }

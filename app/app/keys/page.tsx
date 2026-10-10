@@ -26,7 +26,7 @@ export default function KeysPage() {
         </div>
         <KeysHeader />
 
-        <EditorAccess />
+        <EditorAccess intro={false} />
 
         {url === null && (
           <section className="ap-card">

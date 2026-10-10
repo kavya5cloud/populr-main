@@ -5131,12 +5131,69 @@ body:has(.missions) ::-webkit-scrollbar-thumb{background:#d3d5d9;border-color:#f
 .landing.lx:is([lang="hi-IN"],[lang="mr-IN"]) .lx-n{letter-spacing:0;text-transform:none;font-family:inherit}
 
 /* ---- Editor access keys (dashboard, SEO tab) ---------------------------- */
-.appui .ek-fresh{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:10px;border:1px solid color-mix(in srgb,var(--green-ink) 40%,var(--line));background:color-mix(in srgb,var(--green-ink) 5%,var(--bg))}
-.appui .ek-fresh p{margin:0;font-size:13px}
-.appui .ek-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
-.appui .ek-list li{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;flex-wrap:wrap}
-.appui .ek-list li>span:first-child{flex:1;min-width:160px}
-.appui .ek-list code{font-family:'Geist Mono',monospace;font-size:11.5px;color:var(--dim)}
+.appui .ek{gap:12px;position:relative;isolation:isolate;overflow:hidden;border-radius:16px;padding:18px;
+  border:1px solid color-mix(in srgb,var(--green-ink) 20%,transparent);
+  background:linear-gradient(140deg,color-mix(in srgb,#d5ff72 16%,rgba(255,255,255,.82)) 0%,rgba(255,255,255,.66) 42%,color-mix(in srgb,var(--green-ink) 9%,rgba(255,255,255,.74)) 100%);
+  backdrop-filter:blur(16px) saturate(150%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 0 0 1px rgba(255,255,255,.35),0 14px 34px -22px color-mix(in srgb,var(--green-ink) 55%,transparent)}
+/* Light caught in the glass: two soft glows, behind everything and never in the way. */
+.appui .ek::before,.appui .ek::after{content:"";position:absolute;z-index:-1;pointer-events:none;border-radius:50%;filter:blur(34px)}
+.appui .ek::before{width:260px;height:180px;top:-90px;right:-60px;background:color-mix(in srgb,#d5ff72 55%,transparent)}
+.appui .ek::after{width:220px;height:160px;bottom:-100px;left:-50px;background:color-mix(in srgb,var(--green-ink) 22%,transparent)}
+.appui .ek-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.appui .ek-head h3{margin:0;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.appui .ek-count{font:500 11px/1 'Geist Mono',monospace;color:var(--green-ink);padding:3px 7px;border:1px solid color-mix(in srgb,var(--green-ink) 22%,transparent);border-radius:100px;background:rgba(255,255,255,.6)}
+.appui .ek-sub{margin:3px 0 0;font-size:12.5px;color:var(--dim);line-height:1.5;max-width:56ch}
+.appui .ek-sub a{color:var(--fg);text-decoration:none;border-bottom:1px solid var(--edge-strong)}
+.appui .ek-sub a:hover{border-bottom-color:var(--fg)}
+.appui .ek-new{flex:none;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid color-mix(in srgb,var(--green-ink) 22%,transparent);border-radius:9px;background:rgba(255,255,255,.72);color:var(--fg);font-size:12.5px;font-weight:500;cursor:pointer;box-shadow:inset 0 1px 0 #fff,0 1px 2px rgba(15,122,78,.08);transition:border-color .15s,background .15s}
+.appui .ek-new span{font-size:14px;line-height:1;color:var(--green-ink)}
+.appui .ek-new:hover{border-color:color-mix(in srgb,var(--green-ink) 45%,transparent);background:#fff}
+.appui .ek-add{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.appui .ek-add input{flex:1;min-width:180px;padding:7px 10px;border:1px solid color-mix(in srgb,var(--green-ink) 22%,transparent);border-radius:9px;background:rgba(255,255,255,.85);color:var(--fg);font-size:13px;outline:none}
+.appui .ek-add input:focus{border-color:var(--green-ink);box-shadow:0 0 0 3px color-mix(in srgb,var(--green-ink) 14%,transparent)}
+.appui .ek-go{padding:7px 13px;border:0;border-radius:8px;background:var(--fg);color:var(--bg);font-size:12.5px;font-weight:500;cursor:pointer}
+.appui .ek-go:disabled{opacity:.6;cursor:default}
+.appui .ek-quiet{padding:5px 8px;border:0;border-radius:6px;background:none;color:var(--dim);font-size:12.5px;cursor:pointer}
+.appui .ek-quiet:hover{color:var(--fg);background:rgba(255,255,255,.7)}
+.appui .ek-list{list-style:none;margin:0;padding:0;border:1px solid rgba(255,255,255,.9);border-radius:12px;background:rgba(255,255,255,.62);backdrop-filter:blur(8px);overflow:hidden;box-shadow:0 1px 0 color-mix(in srgb,var(--green-ink) 10%,transparent),0 0 0 1px color-mix(in srgb,var(--green-ink) 10%,transparent)}
+.appui .ek-list li{display:flex;align-items:center;gap:12px;padding:10px 12px;font-size:13px;min-height:52px}
+.appui .ek-list li+li{border-top:1px solid color-mix(in srgb,var(--green-ink) 9%,transparent)}
+.appui .ek-list li{transition:background .15s}
+.appui .ek-list li:hover{background:rgba(255,255,255,.55)}
+.appui .ek-dot{flex:none;width:7px;height:7px;border-radius:50%;background:var(--green-ink);box-shadow:0 0 0 3px color-mix(in srgb,var(--green-ink) 14%,transparent)}
+.appui .ek-dot.never{background:transparent;border:1.5px solid var(--edge-strong);box-shadow:none}
+.appui .ek-dot.idle{background:var(--edge-strong);box-shadow:none}
+.appui .ek-who{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.appui .ek-who b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.appui .ek-who span{font-size:11.5px;color:var(--dim)}
+.appui .ek-hint{flex:none;font:11.5px/1 'Geist Mono',monospace;color:var(--dim);padding:4px 7px;border-radius:6px;background:color-mix(in srgb,var(--green-ink) 6%,rgba(255,255,255,.7));border:1px solid color-mix(in srgb,var(--green-ink) 8%,transparent)}
+.appui .ek-revoke{opacity:.75}
+.appui .ek-list li:hover .ek-revoke,.appui .ek-revoke:focus-visible{opacity:1}
+.appui .ek-confirm{display:inline-flex;gap:2px;align-items:center}
+.appui .ek-danger{padding:5px 9px;border:1px solid color-mix(in srgb,var(--redd) 35%,var(--line));border-radius:6px;background:color-mix(in srgb,var(--redd) 6%,var(--bg));color:var(--redd);font-size:12.5px;font-weight:500;cursor:pointer}
+.appui .ek-danger:hover{background:color-mix(in srgb,var(--redd) 12%,var(--bg))}
+.appui .ek-empty{margin:0;padding:14px;border:1px dashed color-mix(in srgb,var(--green-ink) 28%,transparent);border-radius:12px;background:rgba(255,255,255,.45);font-size:12.5px;color:var(--dim);text-align:center}
+.appui .ek-note{margin:0;font-size:12.5px;color:var(--fg)}
+.appui .ek-fine{margin:0;display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--faint)}
+.appui .ek-fine svg{width:13px;height:13px;flex:none;color:var(--green-ink)}
+.appui .ek-fresh{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,.95);background:rgba(255,255,255,.78);backdrop-filter:blur(10px);box-shadow:0 0 0 1px color-mix(in srgb,var(--green-ink) 14%,transparent),0 10px 24px -18px color-mix(in srgb,var(--green-ink) 60%,transparent)}
+.appui .ek-fresh p{margin:0}
+.appui .ek-fresh-t{font-size:12px;font-weight:500;color:var(--dim)}
+.appui .ek-keyline{display:flex;align-items:center;gap:8px;padding:4px 4px 4px 12px;border:1px solid color-mix(in srgb,var(--green-ink) 22%,transparent);border-radius:9px;background:color-mix(in srgb,#d5ff72 12%,#fff)}
+.appui .ek-keyline code{flex:1;min-width:0;overflow-x:auto;white-space:nowrap;font:12.5px/1.6 'Geist Mono',monospace;color:var(--fg);user-select:all;scrollbar-width:none}
+.appui .ek-copy{flex:none;padding:6px 12px;border:0;border-radius:6px;background:var(--fg);color:var(--bg);font-size:12px;font-weight:500;cursor:pointer;min-width:66px}
+.appui .ek-warn{font-size:12px;color:var(--amberr)}
+.appui .ek-step{font-size:12.5px;color:var(--dim);margin-top:4px!important}
+.appui .ek-done{align-self:flex-end;padding:6px 12px;border:1px solid color-mix(in srgb,var(--green-ink) 20%,transparent);border-radius:9px;background:rgba(255,255,255,.8);color:var(--fg);font-size:12.5px;cursor:pointer}
+.appui .ek-done:hover{border-color:var(--edge-strong)}
+.appui .ek-fresh .dv-tabs{padding:0;border:0;border-radius:0;background:none;margin:0}
+.appui .ek-fresh .dv-tablist{padding:0 0 6px;gap:2px}
+.appui .ek-fresh .dv-tablist button{padding:6px 11px;font-size:12.5px;border-radius:7px}
+.appui .ek-fresh .dv-tablist button.on{background:color-mix(in srgb,var(--green-ink) 9%,#fff);color:var(--green-ink)}
+.appui .ek-fresh .dv-tabpanel{padding:0;display:flex;flex-direction:column;gap:6px}
+.appui .ek-fresh .dv-where,.appui .ek-fresh .dv-tabnote{font-size:12px;color:var(--dim);line-height:1.5}
+@media (max-width:560px){.appui .ek-hint{display:none}.appui .ek-head{flex-direction:column}.appui .ek-new{align-self:flex-start}}
 .appui .ap-lede a{color:var(--fg);text-underline-offset:2px}
 
 /* ═══ Developer pages (/developers, /developers/docs) ══════════════════════

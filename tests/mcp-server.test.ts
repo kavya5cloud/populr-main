@@ -8,7 +8,7 @@ import { InMemoryAutopilotStore } from "@/lib/seo/autopilot-store";
 // it initialised, listed seven tools and called seo_status, get_seo_fixes and verify_page
 // against a real public site. These pin the protocol, the key handling, and the tenant line.
 
-afterEach(() => { vi.resetModules(); vi.doUnmock("@/lib/mcp/keys"); vi.doUnmock("@/lib/seo/autopilot-store"); });
+afterEach(() => { vi.resetModules(); vi.doUnmock("@/lib/auth"); vi.doUnmock("@/lib/mcp/keys"); vi.doUnmock("@/lib/seo/autopilot-store"); });
 
 async function setup() {
   const autopilot = new InMemoryAutopilotStore();
@@ -139,5 +139,33 @@ describe("POST /api/mcp", () => {
     expect((await POST(req("Bearer pop_wrong", { jsonrpc: "2.0", id: 1, method: "ping" }))).status).toBe(401);
     expect((await POST(req(`Bearer ${c.key}`, { jsonrpc: "2.0", method: "notifications/initialized" }))).status).toBe(202);
     expect(await (await POST(req(`Bearer ${c.key}`, { jsonrpc: "2.0", id: 7, method: "ping" }))).json()).toEqual({ jsonrpc: "2.0", id: 7, result: {} });
+  });
+});
+
+describe("/api/mcp/keys and /api/seo/autopilot rate limits", () => {
+  // The keys page re-reads both while it's open. When reads shared one budget with
+  // create/revoke, an open page used up its own limit and the key list went blank.
+  it("lets an open page keep reading, while creating keys stays strictly limited", async () => {
+    const keys = new InMemoryKeyStore();
+    vi.doMock("@/lib/auth", async (orig) => ({ ...(await orig<object>()), getSession: async () => null }));
+    vi.doMock("@/lib/mcp/keys", async (orig) => ({ ...(await orig<object>()), keyStore: () => keys }));
+    vi.doMock("@/lib/seo/autopilot-store", async (orig) => ({ ...(await orig<object>()), autopilotStore: () => new InMemoryAutopilotStore() }));
+    const k = await import("@/app/api/mcp/keys/route");
+    const a = await import("@/app/api/seo/autopilot/route");
+    const ip = { "x-forwarded-for": "203.0.113.77" };
+    const get = (path: string) => new NextRequest(`http://x${path}?wsid=ws-rl`, { headers: ip });
+
+    for (let i = 0; i < 30; i++) {
+      expect((await k.GET(get("/api/mcp/keys"))).status).toBe(200);
+      expect((await a.GET(get("/api/seo/autopilot"))).status).toBe(200);
+    }
+
+    const post = () => new NextRequest("http://x/api/mcp/keys", { method: "POST", headers: { ...ip, "Content-Type": "application/json" }, body: JSON.stringify({ wsid: "ws-rl", name: "x" }) });
+    const statuses: number[] = [];
+    for (let i = 0; i < 12; i++) statuses.push((await k.POST(post())).status);
+    expect(statuses.slice(0, 10).every((s) => s === 200)).toBe(true);
+    expect(statuses.slice(10)).toEqual([429, 429]);
+    // Being limited on writes doesn't lock the page out of reading.
+    expect((await k.GET(get("/api/mcp/keys"))).status).toBe(200);
   });
 });

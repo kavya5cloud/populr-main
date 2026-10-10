@@ -12,9 +12,14 @@ export const runtime = "nodejs";
 //   POST    { name } — a new key, returned once in full and never again
 //   DELETE  ?id= — revoke
 
-async function ws(req: NextRequest, wsid: string | null): Promise<{ error: NextResponse } | { w: string }> {
+// Listing is cheap and the keys page re-reads it while open, so reads get their own, looser
+// limit — sharing one with create/revoke meant an open page could lock itself out.
+async function ws(req: NextRequest, wsid: string | null, write = false): Promise<{ error: NextResponse } | { w: string }> {
   const session = await getSession();
-  const limit = rateLimit(`mcpkeys:${requestKey(req.headers, session?.userId)}`, session ? 30 : 10, 60_000);
+  const who = requestKey(req.headers, session?.userId);
+  const limit = write
+    ? rateLimit(`mcpkeys:w:${who}`, session ? 30 : 10, 60_000)
+    : rateLimit(`mcpkeys:r:${who}`, session ? 120 : 60, 60_000);
   if (!limit.allowed) return { error: NextResponse.json({ error: "rate_limited" }, { status: 429 }) };
   const w = await workspaceKey(wsid);
   return w ? { w } : { error: NextResponse.json({ error: "no_key" }, { status: 400 }) };
@@ -28,7 +33,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const b = await req.json().catch(() => ({})) as { wsid?: string; name?: string };
-  const r = await ws(req, b.wsid ?? null);
+  const r = await ws(req, b.wsid ?? null, true);
   if ("error" in r) return r.error;
   const name = String(b.name ?? "").trim().slice(0, 60) || "Code editor";
   const created = await keyStore().create(r.w, name, Date.now());
@@ -37,7 +42,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const r = await ws(req, req.nextUrl.searchParams.get("wsid"));
+  const r = await ws(req, req.nextUrl.searchParams.get("wsid"), true);
   if ("error" in r) return r.error;
   const ok = await keyStore().revoke(r.w, req.nextUrl.searchParams.get("id") ?? "");
   return NextResponse.json({ ok }, { status: ok ? 200 : 404 });

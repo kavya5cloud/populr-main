@@ -32,9 +32,13 @@ export default function KeysHeader() {
       setS({ hasKey: keys.length > 0, keyUsed: keys.some((x) => x.lastUsedAt), approved: pages.filter((p) => p.status === "approved").length, configured: !!a?.configured });
     });
     load();
-    // Re-read while the page is open, so step 2 ticks the moment an editor first connects.
-    const id = setInterval(load, 8000);
-    return () => clearInterval(id);
+    // Re-read while the page is in view, so step 2 ticks soon after an editor first connects —
+    // and at once when you come back from the editor. A hidden tab doesn't poll.
+    const visible = () => document.visibilityState === "visible";
+    const id = setInterval(() => { if (visible()) load(); }, 10_000);
+    const back = () => { if (visible()) load(); };
+    document.addEventListener("visibilitychange", back);
+    return () => { clearInterval(id); document.removeEventListener("visibilitychange", back); };
   }, []);
 
   const steps = [
