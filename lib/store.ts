@@ -48,7 +48,18 @@ export type ChatAction = {
   ran?: string;
 };
 
-export type ChatMsg = { who: "ai" | "me"; text: string; intent?: string; action?: ChatAction };
+/** One visible step of a live agent run, as streamed from /api/agents/research. */
+export type ChatAgentStep = { id: string; agent: "research" | "strategy"; label: string; status: "running" | "done" | "skipped" | "failed"; detail?: string };
+/** A source a live answer cites by number. */
+export type ChatSource = { n: number; title: string; url: string; via: string; publisher?: string; publishedAt: number | null };
+
+export type ChatMsg = {
+  who: "ai" | "me"; text: string; intent?: string; action?: ChatAction;
+  /** Live agent runs only: identifies the message while its events stream in. */
+  rid?: string;
+  steps?: ChatAgentStep[];
+  sources?: ChatSource[];
+};
 export type FeedEntry = { summary: string; items: [string, string][] };
 // Removed: Ranking. It typed a shape only the dashboard's Top queries panel used, and that
 // panel now shows Search Console data or nothing. The type's last job was carrying guessed

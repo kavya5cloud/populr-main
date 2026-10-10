@@ -3,7 +3,8 @@ import HomeHero from "./HomeHero";
 import { FEED_SLOT_MS, feedIsFresh } from "@/lib/agent-feed";
 import AccountConnections from "@/app/components/AccountConnections";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { loadLocal, loadState, saveState, workspaceId, type Saved, type Profile, type Draft, type ChatMsg, type ChatAction, type FeedEntry } from "@/lib/store";
+import { loadLocal, loadState, saveState, workspaceId, type Saved, type Profile, type Draft, type ChatMsg, type ChatAction, type FeedEntry, type ChatAgentStep, type ChatSource } from "@/lib/store";
+import { isResearchQuestion } from "@/lib/agents/live/intent";
 import { CHANNEL_LABELS, formatWindowLabel, channelSchedule, type PublishChannel } from "@/lib/publish-times";
 import { matchGscSite, displaySite } from "@/lib/gsc-match";
 import { fetchPushStatus, subscribePush, unsubscribePush, type PushStatus } from "@/lib/push-client";
@@ -624,8 +625,59 @@ Output ONLY this JSON, nothing else: {"impressions":<integer>,"clicks":<integer>
     } finally { setBusyAction(null); }
   }
 
+  /**
+   * A market question, answered by the research and strategy agents in the open.
+   *
+   * Each step arrives as it starts and finishes and is drawn into the same message, so the
+   * founder sees "Searching this week's news…" turn into "81 articles", and a step that
+   * could not run says why. The answer and its numbered sources land last.
+   */
+  async function sendResearch(q: string) {
+    const rid = `r${Date.now().toString(36)}`;
+    const patch = (f: (m: ChatMsg) => ChatMsg) => setChat((c) => c.map((m) => (m.rid === rid ? f(m) : m)));
+    setChat((c) => [...c, { who: "ai", text: "", intent: "research", rid, steps: [], sources: [] }]);
+    try {
+      const r = await fetch("/api/agents/research", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wsid: workspaceId(), question: q, profile: { name: profile?.name, oneLiner: profile?.oneLiner, audience: profile?.audience, competitors: competitors.map((x) => x.n) } }),
+      });
+      if (!r.ok || !r.body) throw new Error(r.status === 429 ? "Too many research requests — give it a minute." : "research failed");
+      const reader = r.body.getReader();
+      const dec = new TextDecoder();
+      let buf = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let nl: number;
+        while ((nl = buf.indexOf("\n")) >= 0) {
+          const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
+          if (!line) continue;
+          const e = JSON.parse(line) as { type: string; step?: ChatAgentStep; sources?: ChatSource[]; text?: string };
+          if (e.type === "step" && e.step) {
+            const step = e.step;
+            patch((m) => ({ ...m, steps: [...(m.steps ?? []).filter((s) => s.id !== step.id), step] }));
+          } else if (e.type === "sources" && e.sources) {
+            const sources = e.sources;
+            patch((m) => ({ ...m, sources }));
+          } else if (e.type === "answer") {
+            patch((m) => ({ ...m, text: e.text ?? "" }));
+          }
+        }
+      }
+    } catch (err) {
+      patch((m) => ({ ...m, text: err instanceof Error && /Too many/.test(err.message) ? err.message : "The research didn't go through. Try again in a moment." }));
+    }
+  }
+
   async function sendChat() {
     const q = chatInput.trim(); if (!q) return;
+    // Market questions go to the live agents; everything else to the CMO as before.
+    if (isResearchQuestion(q)) {
+      setChatInput(""); setChat((c) => [...c, { who: "me", text: q }]);
+      await sendResearch(q);
+      return;
+    }
     setChatInput(""); setChat((c) => [...c, { who: "me", text: q }]); setTyping(true);
     let reply: string;
     let intent = "strategy";
@@ -1322,7 +1374,33 @@ Output ONLY this JSON, nothing else: {"impressions":<integer>,"clicks":<integer>
                   <div key={i} style={{ display: "contents" }}>
                     <span className={"msg-meta" + (m.who === "me" ? " me" : "")}>{label}</span>
                     <div className={"msg " + m.who + (isContent ? " deliverable" : "")}>
+                      {/* The live agents' steps, in the order they ran. */}
+                      {m.steps && m.steps.length > 0 && (
+                        <ol className="agent-steps" aria-label="What the agents did">
+                          {m.steps.map((s) => (
+                            <li key={s.id} className={"agent-step " + s.status}>
+                              <span className="agent-step-mark" aria-hidden="true" />
+                              <span className="agent-step-body">
+                                <span className="agent-step-who">{s.agent}</span>
+                                <span className="agent-step-label">{s.label}</span>
+                                {s.detail && <span className="agent-step-detail">{s.detail}</span>}
+                              </span>
+                            </li>
+                          ))}
+                        </ol>
+                      )}
                       {m.text}
+                      {m.sources && m.sources.length > 0 && (
+                        <ol className="agent-sources" aria-label="Sources">
+                          {m.sources.map((s) => (
+                            <li key={s.n}>
+                              <span className="agent-src-n">{s.n}</span>
+                              <a href={s.url} target="_blank" rel="noopener noreferrer">{s.title}</a>
+                              <span className="agent-src-via">{[s.via, s.publisher].filter(Boolean).join(" · ")}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      )}
                       {m.who === "ai" && (
                         <div className="msg-actions">
                           <button onClick={() => { navigator.clipboard?.writeText(m.text).then(() => showToast("Copied")); }}>Copy</button>
