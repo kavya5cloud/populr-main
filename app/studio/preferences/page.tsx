@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import WhatsAppCard from "./WhatsAppCard";
+import BusinessWhatsAppCard from "./BusinessWhatsAppCard";
 import { loadPreferences, savePreferences } from "@/lib/studio/preferences";
 import { DEFAULT_LANGUAGE, LANGUAGE_CODES, localeLabel, type LanguageCode } from "@/lib/i18n/languages";
 import {
@@ -167,6 +168,7 @@ export default function PreferencesPage() {
 
       <div className="prefs-grid wa-grid">
         <WhatsAppCard />
+        <BusinessWhatsAppCard />
       </div>
 
       <p className="prefs-status" aria-live="polite">

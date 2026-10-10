@@ -72,5 +72,16 @@ export function assistantDeps(): AssistantDeps {
     },
     timezone: (ws) => getWorkspaceTimezone(db(), ws).catch(() => "Asia/Kolkata"),
     appUrl: url("/app"),
+    customers: {
+      async open(ws) {
+        const { businessStore } = await import("./business/shared");
+        return (await businessStore().openEscalations(ws)).map((e) => ({ ref: e.ref, question: e.question }));
+      },
+      async reply(ws, ref, answer) {
+        const { businessStore, businessConfig } = await import("./business/shared");
+        const { answerCustomer } = await import("./business/flow");
+        return answerCustomer(ws, ref, answer, { business: businessStore(), businessConfig, now: Date.now });
+      },
+    },
   };
 }

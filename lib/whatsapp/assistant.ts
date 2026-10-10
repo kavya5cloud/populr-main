@@ -26,6 +26,11 @@ export type AssistantDeps = {
   research(workspace: string, question: string): Promise<{ answer: string; sources: { title: string; url: string }[] } | null>;
   timezone(workspace: string): Promise<string>;
   appUrl: string;
+  /** The business's customer agent: questions it handed to the founder. Absent if not connected. */
+  customers?: {
+    open(workspace: string): Promise<{ ref: number; question: string }[]>;
+    reply(workspace: string, ref: number, answer: string): Promise<string>;
+  };
 };
 
 const PLATFORM: Record<string, string> = { linkedin: "LinkedIn", x: "X", instagram: "Instagram", facebook: "Facebook", threads: "Threads", pinterest: "Pinterest", reddit: "Reddit" };
@@ -36,6 +41,8 @@ const HELP = [
   "*today* — posts waiting for your OK",
   "*approve 1* or *approve all* — let them go out",
   "*skip 2* — don't post that one",
+  "*questions* — customers waiting on you",
+  "*reply 12 your answer* — answer customer #12",
   "Ask about your market — \"what's trending in quick commerce?\" — and I'll check this week's news.",
   "*stop* — disconnect this number",
 ].join("\n");
@@ -74,6 +81,26 @@ export async function handleInbound(msg: InboundMessage, deps: AssistantDeps): P
   }
 
   if (/^(help|menu|hi|hello|hey|\?)$/.test(lower)) return HELP;
+
+  // Answering a customer the business's agent handed over. Matched on the original text, not
+  // the lowercased copy, so the answer goes out exactly as the founder typed it.
+  const replyTo = text.match(/^reply\s+#?(\d+)\s*([\s\S]*)$/i);
+  if (replyTo) {
+    if (!deps.customers) return "Your business WhatsApp isn't connected, so there are no customer questions to answer.";
+    return deps.customers.reply(ws, Number(replyTo[1]), replyTo[2]);
+  }
+
+  if (/^(questions|customers|inbox|waiting)$/.test(lower)) {
+    const open = deps.customers ? await deps.customers.open(ws) : [];
+    if (!open.length) return "No customers are waiting on you.";
+    return [
+      `${open.length} customer${open.length === 1 ? " is" : "s are"} waiting:`,
+      "",
+      ...open.slice(0, 8).map((q) => `*#${q.ref}* "${q.question.slice(0, 160)}"`),
+      "",
+      "Reply *reply 12* followed by your answer.",
+    ].join("\n");
+  }
 
   if (/^(today|plan|pending|queue|what'?s (going out|next)|posts?)$/.test(lower)) {
     const pending = await deps.approvals.pending(ws);

@@ -14,7 +14,7 @@ export const runtime = "nodejs";
 //   POST    a fresh one-time code, and a wa.me link with "link <code>" already typed
 //   DELETE  disconnect
 
-async function workspace(req: NextRequest, wsid: string | null) {
+async function workspace(req: NextRequest, wsid: string | null): Promise<{ error: NextResponse } | { ws: string }> {
   const session = await getSession();
   const limit = rateLimit(requestKey(req.headers, session?.userId), session ? 30 : 10, 60_000);
   if (!limit.allowed) return { error: NextResponse.json({ error: "rate_limited" }, { status: 429 }) };

@@ -194,3 +194,26 @@ describe("redeliveries", () => {
     expect(await store.firstSeen("wamid.A", 1_000)).toBe(false);
   });
 });
+
+describe("customers waiting on the founder", () => {
+  it("passes 'reply 12 …' through exactly as typed, and lists who is waiting", async () => {
+    const replies: [string, number, string][] = [];
+    const { d, store } = deps({
+      customers: {
+        open: async () => [{ ref: 12, question: "Do you deliver to Baner?" }],
+        reply: async (ws, ref, answer) => { replies.push([ws, ref, answer]); return "Sent."; },
+      },
+    });
+    await store.link("911", "ws1", 0);
+    expect(await handleInbound(msg("911", "questions"), d)).toMatch(/\*#12\* "Do you deliver to Baner\?"/);
+    expect(await handleInbound(msg("911", "reply 12 Yes — Baner is within 3 KM."), d)).toBe("Sent.");
+    // Case and punctuation kept: the customer gets the founder's words, not a lowercased copy.
+    expect(replies).toEqual([["ws1", 12, "Yes — Baner is within 3 KM."]]);
+  });
+
+  it("says so when no business number is connected", async () => {
+    const { d, store } = deps();
+    await store.link("911", "ws1", 0);
+    expect(await handleInbound(msg("911", "reply 12 hi"), d)).toMatch(/isn't connected/);
+  });
+});
