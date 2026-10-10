@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { loadLocal } from "@/lib/store";
 import EditorAccess from "../_components/EditorAccess";
 import SeoAutopilot from "../_components/SeoAutopilot";
+import KeysHeader from "./KeysHeader";
 
 // /app/keys — where "Get an access key" lands.
 //
@@ -18,15 +19,12 @@ export default function KeysPage() {
 
   return (
     <div className="appui">
-      <div className="team-wrap keys-wrap">
+      <div className="keys-wrap">
         <div className="asst-top">
           <a href="/app">← Back to dashboard</a>
           <span className="app-wordmark">Populr.</span>
         </div>
-        <header className="team-head">
-          <h1>Access keys</h1>
-          <p>Connect Claude Code, Cursor, VS Code or Windsurf to Populr, so your coding assistant can apply your approved SEO fixes in your site&apos;s code. <a href="/developers/docs">How it works</a></p>
-        </header>
+        <KeysHeader />
 
         <EditorAccess />
 
