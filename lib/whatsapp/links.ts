@@ -25,6 +25,10 @@ export interface WhatsAppStore {
   byWorkspace(workspace: string): Promise<WaLink | null>;
   /** True the first time an inbound message id is seen. Meta redelivers on any doubt. */
   firstSeen(messageId: string, now: number): Promise<boolean>;
+  /** Every linked number, for the morning digest. */
+  allLinks(): Promise<WaLink[]>;
+  lastDigest(workspace: string): Promise<number | null>;
+  markDigest(workspace: string, at: number): Promise<void>;
 }
 
 const newCode = () => String(randomInt(100_000, 1_000_000));
@@ -33,6 +37,7 @@ export class InMemoryWhatsAppStore implements WhatsAppStore {
   private codes = new Map<string, { workspace: string; until: number }>();
   private links = new Map<string, WaLink>();
   private seen = new Map<string, number>();
+  private digests = new Map<string, number>();
 
   async createCode(workspace: string, now: number) {
     for (const [c, v] of this.codes) if (v.workspace === workspace) this.codes.delete(c);
@@ -59,6 +64,9 @@ export class InMemoryWhatsAppStore implements WhatsAppStore {
     this.seen.set(id, now);
     return true;
   }
+  async allLinks() { return [...this.links.values()]; }
+  async lastDigest(ws: string) { return this.digests.get(ws) ?? null; }
+  async markDigest(ws: string, at: number) { this.digests.set(ws, at); }
 }
 
 let ready = false;
@@ -67,6 +75,7 @@ async function ensure(sql: Sql) {
   await sql`CREATE TABLE IF NOT EXISTS whatsapp_link_codes (code TEXT PRIMARY KEY, workspace TEXT NOT NULL, expires_at BIGINT NOT NULL)`;
   await sql`CREATE TABLE IF NOT EXISTS whatsapp_links (wa_id TEXT PRIMARY KEY, workspace TEXT NOT NULL UNIQUE, linked_at BIGINT NOT NULL)`;
   await sql`CREATE TABLE IF NOT EXISTS whatsapp_seen (message_id TEXT PRIMARY KEY, seen_at BIGINT NOT NULL)`;
+  await sql`CREATE TABLE IF NOT EXISTS whatsapp_digest_log (workspace TEXT PRIMARY KEY, sent_at BIGINT NOT NULL)`;
   ready = true;
 }
 
@@ -119,7 +128,27 @@ export class NeonWhatsAppStore implements WhatsAppStore {
     await ensure(this.sql);
     const rows = await this.sql`INSERT INTO whatsapp_seen (message_id, seen_at) VALUES (${id}, ${now})
       ON CONFLICT (message_id) DO NOTHING RETURNING message_id` as unknown[];
+    // Ids older than a day can't be redelivered any more; keep the table from growing forever.
+    if (Math.random() < 0.02) await this.sql`DELETE FROM whatsapp_seen WHERE seen_at < ${now - 86_400_000}`;
     return rows.length > 0;
+  }
+
+  async allLinks() {
+    await ensure(this.sql);
+    const r = await this.sql`SELECT wa_id, workspace, linked_at FROM whatsapp_links` as { wa_id: string; workspace: string; linked_at: string | number }[];
+    return r.map((x) => ({ waId: x.wa_id, workspace: x.workspace, linkedAt: Number(x.linked_at) }));
+  }
+
+  async lastDigest(workspace: string) {
+    await ensure(this.sql);
+    const r = await this.sql`SELECT sent_at FROM whatsapp_digest_log WHERE workspace = ${workspace}` as { sent_at: string | number }[];
+    return r[0] ? Number(r[0].sent_at) : null;
+  }
+
+  async markDigest(workspace: string, at: number) {
+    await ensure(this.sql);
+    await this.sql`INSERT INTO whatsapp_digest_log (workspace, sent_at) VALUES (${workspace}, ${at})
+      ON CONFLICT (workspace) DO UPDATE SET sent_at = EXCLUDED.sent_at`;
   }
 }
 

@@ -140,3 +140,18 @@ jobs:
           if [ "${status}" != "200" ]; then
             echo "::warning::Agent pass returned ${status}."
           fi
+
+      # The morning WhatsApp message, for founders who connected WhatsApp. The endpoint
+      # decides who is due (9am in their timezone, once a day, only if something is
+      # waiting), so calling it every ten minutes is free. Never fails the run: publishing
+      # is what customers are waiting on.
+      - name: Send WhatsApp morning digests
+        if: env.CRON_SECRET != ''
+        continue-on-error: true
+        run: |
+          set -uo pipefail
+          status=$(curl -sS -o /tmp/digest.json -w '%{http_code}' \
+            --max-time 60 -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${SITE_URL}/api/cron/whatsapp-digest")
+          echo "status: ${status}"; cat /tmp/digest.json || true; echo
+          if [ "${status}" != "200" ]; then echo "::warning::WhatsApp digest returned ${status}."; fi
