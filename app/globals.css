@@ -4850,3 +4850,16 @@ body:has(.missions) ::-webkit-scrollbar-thumb{background:#d3d5d9;border-color:#f
   .appui .team-head h1{font-size:24px}
   .appui .team-log li{grid-template-columns:1fr;gap:2px}
 }
+
+/* ---- WhatsApp connect card (Settings) ----------------------------------- */
+.wa-grid{margin-top:16px}
+.wa-card .wa-quiet{color:var(--dim);font-size:13.5px;line-height:1.5;margin:10px 0 0}
+.wa-card .wa-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;flex-wrap:wrap}
+.wa-card .wa-linked{margin:0;font-size:14px}
+.wa-card .wa-linked b{font-weight:600}
+.wa-card .wa-primary{display:inline-flex;align-items:center;justify-content:center;margin-top:12px;padding:10px 16px;border:0;border-radius:10px;background:var(--acc);color:#0a0d0b;font-size:14px;font-weight:600;text-decoration:none;cursor:pointer}
+.wa-card .wa-primary:disabled{opacity:.5;cursor:default}
+.wa-card .wa-secondary{padding:9px 14px;border:1px solid var(--line);border-radius:10px;background:none;color:var(--dim);font-size:13.5px;cursor:pointer}
+.wa-card .wa-secondary:hover{color:var(--fg)}
+.wa-card .wa-code p{margin:12px 0 0;font-size:13.5px}
+.wa-card .wa-code-msg code{display:inline-block;margin-top:2px;padding:8px 14px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);font-family:'Geist Mono',monospace;font-size:18px;letter-spacing:.06em;color:var(--fg)}
