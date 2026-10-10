@@ -222,7 +222,16 @@ export class SocialPublishingEngine {
    * The cron worker may run in a different serverless instance from the request that
    * created the job, so always refresh the working set from the durable job store first.
    */
-  async dispatchDue(now = this.now()): Promise<PublishJob[]> {
+  /**
+   * Run every job that is due.
+   *
+   * `until` is a wall-clock time after which no further job is STARTED. Each job is a
+   * network call to a platform, run one after another, over every due job in the table —
+   * so a backlog alone could outlast the 60s function calling this, which had already spent
+   * its own 45s budget before getting here. Jobs not started stay due and the next pass,
+   * ten minutes away, takes them.
+   */
+  async dispatchDue(now = this.now(), opts: { until?: number } = {}): Promise<PublishJob[]> {
     const stored = await this.jobs.list();
     for (const job of stored) {
       if (!this.jobMem.has(job.id) || this.jobMem.get(job.id)!.updatedAt < job.updatedAt) {
@@ -231,7 +240,10 @@ export class SocialPublishingEngine {
     }
     const due = [...this.jobMem.values()].filter((j) => isDue(j, now));
     const out: PublishJob[] = [];
-    for (const j of due) out.push((await this.runJob(j.id))!);
+    for (const j of due) {
+      if (opts.until !== undefined && Date.now() >= opts.until) break;
+      out.push((await this.runJob(j.id))!);
+    }
     return out;
   }
 

@@ -101,7 +101,15 @@ jobs:
           echo
 
           case "${status}" in
-            200) echo "::notice::Publish pass completed." ;;
+            # A pass that hit the route's 54s hard stop answers 200 with "incomplete":true
+            # and the stage it reached. Unfinished work stays due for the next run, so this is
+            # not a failure — but it is not a quiet success either, so it says so.
+            200)
+              if grep -q '"incomplete":true' /tmp/out.json; then
+                echo "::warning::Publish pass ran out of time and stopped early. The response above shows the stage it reached and where the time went."
+              else
+                echo "::notice::Publish pass completed."
+              fi ;;
             401) echo "::error::Rejected. CRON_SECRET here does not match the one in Vercel."; exit 1 ;;
             # A silent failure is the whole problem this workflow exists to prevent, so any
             # non-200 fails the run and shows up in the Actions tab.

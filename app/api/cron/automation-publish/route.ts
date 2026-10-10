@@ -55,10 +55,29 @@ function authCron(req: NextRequest): boolean {
 // from the automation's own statement by deleting numbers and cadence words, which produced
 // prompts like "LinkedIn   week" and asked for the identical thing every single day.
 
-export async function GET(req: NextRequest) {
-  if (!authCron(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+/** How far the pass got, kept outside it so the hard stop can report it. */
+type Phases = {
+  startedAt: number;
+  stage: "starting" | "loading tenants" | "tenants" | "dispatch" | "heartbeat" | "done";
+  tenantsStarted: number;
+  tenantsDoneMs?: number;
+  dispatchDoneMs?: number;
+};
 
-  const now = Date.now();
+// The time budget, end to end, inside a 60s function.
+//
+//   0–45s   tenants: generate and publish due slots (TENANT_DEADLINE_MS, enforced by abort)
+//   45–50s  dispatch the engine's own due jobs (stops STARTING jobs at DISPATCH_UNTIL_MS)
+//   54s     hard stop: answer with whatever was reached, no matter what is still running
+//
+// The first two were added one at a time as each slow step was found. The hard stop is the
+// guarantee that does not depend on having found them all.
+const TENANT_DEADLINE_MS = 45_000;
+const DISPATCH_UNTIL_MS = 50_000;
+const HARD_STOP_MS = 54_000;
+
+async function runPass(phases: Phases): Promise<NextResponse> {
+  const now = phases.startedAt;
   const repo = automationRepo();
   const engine = socialEngine() as unknown as PublishPort;
 
@@ -74,7 +93,7 @@ export async function GET(req: NextRequest) {
   // Cancelling instead means the pass returns what it managed, on time.
   //
   // Declared out here so `finally` can clear the timer.
-  const deadline = now + 45_000;
+  const deadline = now + TENANT_DEADLINE_MS;
   const abort = new AbortController();
   const abortTimer = setTimeout(() => abort.abort(), Math.max(0, deadline - Date.now()));
 
@@ -97,8 +116,12 @@ export async function GET(req: NextRequest) {
     // unstarted slots stay `upcoming` and the next pass is ten minutes away.
     let skippedTenants = 0;
 
-    for (const tenant of await repo.activeTenants()) {
+    phases.stage = "loading tenants";
+    const tenants = await repo.activeTenants();
+    phases.stage = "tenants";
+    for (const tenant of tenants) {
       if (Date.now() > deadline) { skippedTenants++; continue; }
+      phases.tenantsStarted++;
       const automations = await repo.listAutomations(tenant);
       let queue = await repo.listQueue(tenant);
 
@@ -238,9 +261,11 @@ export async function GET(req: NextRequest) {
     // automation slots have been claimed. Two separate every-minute crons touching the
     // same engine raced each other and doubled the cron count for no benefit; ordering
     // them in one pass means a slot created this minute also dispatches this minute.
+    phases.tenantsDoneMs = Date.now() - now;
+    phases.stage = "dispatch";
     let dispatched = 0;
     try {
-      dispatched = (await socialEngine().dispatchDue(now)).length;
+      dispatched = (await socialEngine().dispatchDue(now, { until: now + DISPATCH_UNTIL_MS })).length;
     } catch (e) {
       console.warn(JSON.stringify({ event: "dispatch_due_failed", error: String(e).slice(0, 200) }));
     }
@@ -248,7 +273,10 @@ export async function GET(req: NextRequest) {
     // Proof the pass happened, so the app can stop taking "next post tomorrow 09:00" on
     // trust. Written after the work, not before: a heartbeat recorded on entry would go on
     // looking healthy through a pass that threw halfway.
+    phases.dispatchDoneMs = Date.now() - now;
+    phases.stage = "heartbeat";
     await recordHeartbeat({ at: now, dispatched, tenants: report.length });
+    phases.stage = "done";
 
     // `skipped` is reported rather than swallowed: a pass that ran out of time looks
     // identical to a quiet one in the response body, and the workflow's own comment already
@@ -264,6 +292,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       ok: true, at: now, tenants: report.length, dispatched, skippedTenants,
       outOfTime: abort.signal.aborted, report,
+      // Where the time went. The workflow prints this body, so a slow run explains itself
+      // in its own log instead of needing someone to reproduce it.
+      timing: { totalMs: Date.now() - now, tenantsMs: phases.tenantsDoneMs, dispatchMs: phases.dispatchDoneMs },
     });
   } catch (e) {
     return NextResponse.json({ error: "cron_failed", detail: String(e).slice(0, 200) }, { status: 503 });
@@ -271,5 +302,44 @@ export async function GET(req: NextRequest) {
     // Otherwise the timer holds the function alive to the deadline on every quiet pass —
     // most passes have nothing due and should finish in milliseconds.
     clearTimeout(abortTimer);
+  }
+}
+
+/**
+ * The guarantee: this endpoint answers before the platform kills it.
+ *
+ * The pass 504'd for days while it was fixed twice, each time by finding one more step that
+ * ran past its budget — first the content model call, then the pre-publish rewrite. A third
+ * was waiting in dispatch. Each fix was right and none of them made the next one
+ * unnecessary, so this stops depending on having found every slow step.
+ *
+ * A killed function is the worst outcome: no response, no log of where it was, the queue
+ * not saved, and curl retrying it twice more. Answering at 54s with `incomplete: true` and
+ * the stage reached is strictly better. Anything not finished stays due — slots are
+ * idempotent and a stranded claim is recovered by reclaimStalled — and the next pass is ten
+ * minutes away. The workflow warns on `incomplete` rather than failing, because it is a
+ * pass that ran out of time, not one that broke.
+ */
+export async function GET(req: NextRequest) {
+  if (!authCron(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  const phases: Phases = { startedAt: Date.now(), stage: "starting", tenantsStarted: 0 };
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const hardStop = new Promise<NextResponse>((resolve) => {
+    timer = setTimeout(() => {
+      const body = {
+        ok: true, incomplete: true, stoppedAt: phases.stage,
+        tenantsStarted: phases.tenantsStarted,
+        timing: { totalMs: Date.now() - phases.startedAt, tenantsMs: phases.tenantsDoneMs, dispatchMs: phases.dispatchDoneMs },
+      };
+      console.warn(JSON.stringify({ event: "publish_hard_stop", ...body }));
+      resolve(NextResponse.json(body));
+    }, HARD_STOP_MS);
+  });
+
+  try {
+    return await Promise.race([runPass(phases), hardStop]);
+  } finally {
+    clearTimeout(timer);
   }
 }

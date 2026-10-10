@@ -104,6 +104,24 @@ describe("Publishing engine", () => {
     expect((await engine.getJob(job.id))!.state).toBe("published");
   });
 
+  it("stops starting jobs at its deadline, leaving the rest due", async () => {
+    // dispatchDue runs every due job in the table one after another, each a platform call,
+    // after the publish pass has spent its 45s. With no limit a backlog alone outlasted the
+    // 60s function. Jobs not started must stay due, not be dropped.
+    const now = clock();
+    const engine = new SocialPublishingEngine({ now });
+    const acc = await connected(engine);
+    const at = parseSchedule("2030-06-01T09:00", "UTC")!;
+    for (let i = 0; i < 3; i++) {
+      await engine.schedule(req(acc.id, { idempotencyKey: `k${i}` }), at, "UTC");
+    }
+
+    // A deadline already in the past: nothing may start.
+    expect(await engine.dispatchDue(at + 1000, { until: Date.now() - 1 })).toHaveLength(0);
+    // And nothing was lost — the next pass, with time, takes all three.
+    expect(await engine.dispatchDue(at + 1000)).toHaveLength(3);
+  });
+
   it("dispatches a persisted schedule after a cold worker start", async () => {
     const now = clock();
     const stores = {
