@@ -68,7 +68,7 @@ export default function Docs() {
             <h2>VS Code extension</h2>
             <p>The Populr extension registers Populr with VS Code&apos;s agent mode, so there&apos;s no <code>mcp.json</code> to write.</p>
             <ol>
-              <li>Install the extension (<code>populr.populr-seo</code>).</li>
+              <li><a href="/downloads/populr-seo.vsix" download>Download the extension</a> (15 KB), then in VS Code run <b>Extensions: Install from VSIX…</b> and pick the file. It installs as <code>populr.populr-seo</code>; requires VS Code 1.101 or later.</li>
               <li>Run <b>Populr: Connect</b> from the Command Palette and paste your key. It&apos;s kept in VS Code&apos;s secret storage.</li>
               <li>Open Copilot Chat in <b>Agent</b> mode — Populr&apos;s tools are listed under the tools picker.</li>
             </ol>
@@ -76,8 +76,8 @@ export default function Docs() {
             <ul>
               <li><b>Populr: Show SEO status</b> — what&apos;s approved and waiting.</li>
               <li><b>Populr: Audit a page</b> — on-page problems of any public URL, in the Populr output panel.</li>
-              <li><b>Populr: Insert structured data</b> — the approved JSON-LD for a page, at the cursor.</li>
-              <li><b>Populr: Create llms.txt</b> — writes it to your workspace&apos;s <code>public/</code> folder.</li>
+              <li><b>Populr: Insert structured data</b> — the approved JSON-LD for a page, at the cursor. In <code>.tsx</code>/<code>.jsx</code> files it&apos;s written the way React needs it.</li>
+              <li><b>Populr: Create llms.txt</b> — writes it to your site&apos;s <code>public/</code> folder (or <code>static/</code>, for SvelteKit and Hugo).</li>
               <li><b>Populr: Disconnect</b> — forgets the key.</li>
             </ul>
           </section>

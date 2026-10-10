@@ -122,7 +122,10 @@ export default function Developers() {
             <p className="dv-kicker">VS Code extension</p>
             <h2>Or skip the config.</h2>
             <p className="dv-lead">The Populr extension connects VS Code&apos;s agent mode to Populr, keeps your key in VS Code&apos;s secret storage, and adds commands to audit a page, insert structured data and create llms.txt.</p>
-            <a href="/developers/docs#vscode" className="dv-btn ghost">Extension guide</a>
+            <div className="dv-ext-cta">
+              <a href="/downloads/populr-seo.vsix" download className="dv-btn">Download for VS Code</a>
+              <a href="/developers/docs#vscode" className="dv-btn ghost">Extension guide</a>
+            </div>
           </div>
           <div>
             <p className="dv-kicker">Security</p>

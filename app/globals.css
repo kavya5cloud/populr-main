@@ -5167,6 +5167,7 @@ body:has(.dv){background:#f3f4ef}
 .dv-btn.ghost{background:transparent;color:var(--dv-fg)!important;border-color:var(--dv-line)}
 .dv-btn.ghost:hover{border-color:var(--dv-fg);background:transparent}
 .dv-btn.small{padding:7px 13px;font-size:13px}
+.dv-ext-cta{display:flex;flex-wrap:wrap;gap:10px}
 .dv-works{margin:20px 0 0;font-size:12.5px;color:var(--dv-dim)}
 .dv-works b{color:var(--dv-fg);font-weight:500}
 

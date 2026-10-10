@@ -1,0 +1,114 @@
+{
+  "name": "populr-seo",
+  "displayName": "Populr SEO",
+  "description": "Apply the SEO fixes you approve in Populr from VS Code's agent mode — titles, descriptions, structured data and llms.txt, in your site's code.",
+  "version": "1.0.0",
+  "publisher": "populr",
+  "icon": "media/icon.png",
+  "homepage": "https://www.trypopulr.in/developers",
+  "bugs": {
+    "email": "team@trypopulr.in"
+  },
+  "engines": {
+    "vscode": "^1.101.0"
+  },
+  "categories": [
+    "AI",
+    "Chat",
+    "Other"
+  ],
+  "keywords": [
+    "seo",
+    "mcp",
+    "structured data",
+    "json-ld",
+    "llms.txt",
+    "agent"
+  ],
+  "galleryBanner": {
+    "color": "#0b0b0b",
+    "theme": "dark"
+  },
+  "main": "./out/extension.js",
+  "activationEvents": [],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": true
+  },
+  "contributes": {
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "populr",
+        "label": "Populr SEO"
+      }
+    ],
+    "commands": [
+      {
+        "command": "populr.connect",
+        "title": "Connect",
+        "category": "Populr"
+      },
+      {
+        "command": "populr.status",
+        "title": "Show SEO status",
+        "category": "Populr"
+      },
+      {
+        "command": "populr.auditPage",
+        "title": "Audit a page",
+        "category": "Populr"
+      },
+      {
+        "command": "populr.insertStructuredData",
+        "title": "Insert structured data",
+        "category": "Populr"
+      },
+      {
+        "command": "populr.createLlmsTxt",
+        "title": "Create llms.txt",
+        "category": "Populr"
+      },
+      {
+        "command": "populr.disconnect",
+        "title": "Disconnect",
+        "category": "Populr"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "populr.insertStructuredData",
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "populr.createLlmsTxt",
+          "when": "workspaceFolderCount > 0"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Populr",
+      "properties": {
+        "populr.serverUrl": {
+          "type": "string",
+          "default": "https://www.trypopulr.in/api/mcp",
+          "scope": "application",
+          "markdownDescription": "Populr's MCP server. Change this only if Populr asks you to. It can be set in user settings only — a workspace can't redirect your key."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -w -p .",
+    "package": "npm run compile && npx @vscode/vsce package --skip-license --out populr-seo.vsix",
+    "vscode:prepublish": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "@types/vscode": "~1.101.0",
+    "typescript": "^5.9.3"
+  }
+}
