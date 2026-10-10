@@ -5060,8 +5060,10 @@ body:has(.missions) ::-webkit-scrollbar-thumb{background:#d3d5d9;border-color:#f
 .landing header.hero-clean{position:relative;isolation:isolate;overflow:hidden}
 .landing header.hero-clean::before{
   content:"";position:absolute;inset:-60px;z-index:-1;
-  background:url(/hero/park.jpg) center/cover no-repeat;
-  filter:blur(36px) saturate(1.1) brightness(.92);transform:scale(1.08);
+  /* The landscape photograph behind the frame — wide, so it fills the full-width field
+     better than the tall aerial one, which stays sharp in the panel. */
+  background:url(/hero/park-trees.jpg) center/cover no-repeat;
+  filter:blur(28px) saturate(1.1) brightness(.95);transform:scale(1.08);
 }
 /* Over a photograph the corner label sits on whatever is beneath it; more glass keeps it legible on a busy patch. */
 .landing .hc-media .hc-corner{background:rgba(255,255,255,.82);backdrop-filter:blur(8px)}
