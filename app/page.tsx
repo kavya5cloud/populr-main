@@ -7,7 +7,7 @@ import { captureReferral } from "@/lib/referral-client";
 // said 31 languages when there were 32 — a number on a landing page is a claim, and a
 // hardcoded one is a claim with an expiry date nobody sees pass.
 import { LANGUAGE_CODES } from "@/lib/i18n/languages";
-import { REFUSAL_REASONS } from "@/lib/refusals/types";
+import { EMITTED_REFUSAL_REASONS } from "@/lib/refusals/types";
 
 const INDIAN_LANGUAGES = LANGUAGE_CODES.filter((c) => c.endsWith("-IN")).length;
 
@@ -349,7 +349,7 @@ export default function Landing() {
               </div>
               <div className="dec-stat">
                 <span className="dec-k">Reasons it can give for declining</span>
-                <b>{REFUSAL_REASONS.length}</b>
+                <b>{EMITTED_REFUSAL_REASONS.length}</b>
                 <em>a closed set, so they can be counted</em>
               </div>
             </div>

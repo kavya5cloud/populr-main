@@ -50,10 +50,17 @@ const NAV: Item[] = [
     match: (p) => p === "/studio/social" || p === "/studio/publishing",
   },
   {
-    // The nine agents and what they each produced. It had no nav entry at all — reachable
-    // only by typing the URL — which is a strange place to leave the thing the product is.
-    href: "/studio/launch", label: "Team",
+    // The nine agents and what they each did today, across the workspace. "Team" used to
+    // open the launch workspace below, while the dashboard's "team" link opened this — two
+    // destinations under one name. Now there is one Team, and the launch workspace is
+    // called what it is.
+    href: "/app/team", label: "Team",
     icon: svg(<><circle cx="9" cy="8" r="3" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0" /><path d="M16 5.5a3 3 0 0 1 0 5.6" /><path d="M17.5 19a5.5 5.5 0 0 0-2-4.2" /></>),
+  },
+  {
+    // A launch plan and the agents' work on it, step by step.
+    href: "/studio/launch", label: "Launch",
+    icon: svg(<><path d="M5 19c1-4 3-7 7-11l4-4 4 4-4 4c-4 4-7 6-11 7z" /><path d="M9 15l-2 2" /></>),
   },
   {
     href: "/studio/intelligence", label: "Intelligence",

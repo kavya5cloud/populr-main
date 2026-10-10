@@ -38,6 +38,15 @@ export const REFUSAL_REASONS: RefusalReason[] = [
   "duplicate_effort", "better_use_of_time", "no_evidence",
 ];
 
+/**
+ * The reasons the product actually gives today. The full set above is the ledger's
+ * vocabulary; "unwinnable_search" and "duplicate_effort" are declared but nothing produces
+ * them yet. Anything that tells a visitor how many reasons Populr gives counts these, not
+ * the vocabulary — the landing page said six while the product only ever gave four.
+ * tests/refusal-reasons-emitted.test.ts derives this list from the code, so it can't drift.
+ */
+export const EMITTED_REFUSAL_REASONS: RefusalReason[] = ["wrong_audience", "low_intent", "better_use_of_time", "no_evidence"];
+
 /** Whether the refusal turned out to be right. */
 export type Verdict =
   /** Measured evidence that declining was correct. */
