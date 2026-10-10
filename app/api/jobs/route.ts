@@ -24,6 +24,8 @@ export async function POST(req: NextRequest) {
   }
   const priority = (["high", "normal", "low"].includes(String(body.priority)) ? body.priority : "normal") as JobPriority;
   const key = await workspaceKey((body.wsid as string) ?? null);
+  // A job with no owner could never be read back by anyone, so don't make one.
+  if (!key) return NextResponse.json({ error: "no_key" }, { status: 400 });
   const input: JobInput = {
     requestType: body.requestType as string | undefined,
     workspaceKey: key ?? undefined,

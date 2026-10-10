@@ -1,4 +1,5 @@
 "use client";
+import { workspaceId } from "@/lib/store";
 import { useCallback, useState } from "react";
 import { usePoll } from "@/app/components/usePoll";
 
@@ -39,7 +40,7 @@ export default function JobsDashboard() {
   // entirely while the tab is hidden.
   const load = useCallback(async () => {
     try {
-      const r = await fetch("/api/jobs/dashboard", { cache: "no-store" });
+      const r = await fetch(`/api/jobs/dashboard?wsid=${encodeURIComponent(workspaceId())}`, { cache: "no-store" });
       const d = await r.json();
       setMetrics(d.metrics); setJobs(d.jobs ?? []);
     } catch { /* a missed tick is not a failure; the next one will say */ }

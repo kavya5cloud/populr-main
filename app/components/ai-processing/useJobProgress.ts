@@ -1,4 +1,5 @@
 "use client";
+import { workspaceId } from "@/lib/store";
 import { useEffect, useRef, useState } from "react";
 import { jobDisplayStages, type Stage } from "./stages";
 import type { AIProcessingState } from "./useAIProcessing";
@@ -37,7 +38,7 @@ export function useJobProgress(jobId: string | null | undefined): AIProcessingSt
 
     const poll = async () => {
       try {
-        const r = await fetch(`/api/jobs/${jobId}`, { cache: "no-store" });
+        const r = await fetch(`/api/jobs/${jobId}?wsid=${encodeURIComponent(workspaceId())}`, { cache: "no-store" });
         const d = await r.json();
         if (cancelled) return;
         if (d?.progress) {
