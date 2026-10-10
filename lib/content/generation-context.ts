@@ -56,15 +56,33 @@ export type ContextInput = {
   platforms?: SocialPlatform[];
 };
 
+const RESEARCH_WAIT_MS = 4_000;
+
+/** Resolves to the value, or to null once `ms` passes — without cancelling the work. */
+function withinMs<T>(p: Promise<T>, ms: number): Promise<T | null> {
+  let t: ReturnType<typeof setTimeout> | undefined;
+  return Promise.race([
+    p.finally(() => clearTimeout(t)),
+    new Promise<null>((resolve) => { t = setTimeout(() => resolve(null), ms); }),
+  ]);
+}
+
 export async function assembleGenerationContext(input: ContextInput): Promise<GenerationContext> {
   const missing: string[] = [];
   const sql = db();
 
   const [accounts, brief, memory, brand, patterns, written, references] = await Promise.all([
     socialEngine().listAccounts(input.tenant).catch(() => { missing.push("connected platforms"); return []; }),
-    marketPlatform().research.run({
+    // Real sources now, so real latency. Writing a post must not wait on the news: if the
+    // research is not back in RESEARCH_WAIT_MS the post is written without it and says so in
+    // `missing`. The request is not cancelled — it finishes into the aggregator's cache, so
+    // the next post for this business, a moment later, gets it for free.
+    withinMs(marketPlatform().research.run({
       tenant: input.tenant, terms: input.terms.filter(Boolean).slice(0, 3),
       competitors: [], industry: "saas", audience: input.audience,
+    }), RESEARCH_WAIT_MS).then((r) => {
+      if (r === null) missing.push("market intelligence");
+      return r;
     }).catch(() => { missing.push("market intelligence"); return null; }),
     marketPlatform().memory.list(input.tenant, undefined, 12).catch(() => { missing.push("market memory"); return []; }),
     learningEngine(sql).brand.latest(input.tenant).catch(() => { missing.push("brand DNA"); return null; }),
