@@ -24,6 +24,23 @@ const CONSTRAINTS: Record<SocialPlatform, Omit<PlatformConstraints, "platform">>
   pinterest:           { maxText: 500, maxAssets: 1, allowsVideo: false, allowsScheduling: true, requiresAsset: true },
 };
 
+/** Marks a failure that retrying cannot fix. The engine sends these straight to dead letter. */
+export const NOT_LIVE = "not_live";
+
+/**
+ * The reference adapter publishes nowhere. It returned success with a populr:// permalink,
+ * which in development is the point — and in production meant every platform without app
+ * credentials marked posts "published" that no account ever showed. A founder who approves a
+ * post and never sees it is told the truth now: it failed, and why.
+ *
+ * SOCIAL_REFERENCE_PUBLISH=true keeps the old behaviour for a staging demo, deliberately.
+ */
+function referenceRefusal(platform: SocialPlatform, at: number): PublishResult | null {
+  if (process.env.NODE_ENV !== "production" || process.env.SOCIAL_REFERENCE_PUBLISH === "true") return null;
+  const name = platform.charAt(0).toUpperCase() + platform.slice(1);
+  return { ok: false, platform, at, error: `${NOT_LIVE}: ${name} publishing isn't switched on for Populr yet, so nothing was posted.` };
+}
+
 class ReferenceSocialAdapter implements SocialAdapter {
   private oauth: OAuthService;
   constructor(readonly platform: SocialPlatform, private now: () => number = () => 0) {
@@ -43,6 +60,8 @@ class ReferenceSocialAdapter implements SocialAdapter {
   }
 
   async publish(req: PublishRequest, _token: OAuthToken): Promise<PublishResult> {
+    const notLive = referenceRefusal(this.platform, this.now());
+    if (notLive) return notLive;
     const err = this.check(req);
     if (err) return { ok: false, platform: this.platform, error: err, at: this.now() };
     const externalId = hash(`${this.platform}:${req.accountId}:${req.content.text}:${req.assets.map((a) => a.id).join(",")}`);
@@ -53,6 +72,8 @@ class ReferenceSocialAdapter implements SocialAdapter {
   }
 
   async schedule(req: PublishRequest, token: OAuthToken, at: number): Promise<PublishResult> {
+    const notLive = referenceRefusal(this.platform, at);
+    if (notLive) return notLive;
     if (!CONSTRAINTS[this.platform].allowsScheduling) {
       return { ok: false, platform: this.platform, error: "native scheduling not supported — Populr will dispatch at time", at };
     }

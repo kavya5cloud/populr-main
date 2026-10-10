@@ -1,3 +1,4 @@
+import { NOT_LIVE } from "./adapters";
 import { AdapterRegistry, createAdapterRegistry } from "./registry";
 import {
   OAuthService, InMemoryCredentialStore, sealToken, openToken, type CredentialStore,
@@ -197,7 +198,10 @@ export class SocialPublishingEngine {
   }
 
   private async finalizeFailure(job: PublishJob) {
-    if (job.attempts <= job.maxRetries) {
+    // A platform that isn't connected to a real provider won't be by the next retry; trying
+    // again five times only delays telling the founder.
+    const permanent = (job.error ?? "").startsWith(NOT_LIVE);
+    if (!permanent && job.attempts <= job.maxRetries) {
       job.state = "queued";
       job.nextAttemptAt = this.now() + backoffMs(job.attempts);
       this.log(job, "warn", `Retry ${job.attempts}/${job.maxRetries} after backoff (${backoffMs(job.attempts)}ms): ${job.error}`);
