@@ -16,6 +16,14 @@ describe("which messages go to the live agents", () => {
     }
   });
 
+  it("leaves advice questions with the CMO, even with a time phrase or market word", () => {
+    // "this week" alone once routed this to research, which searched the news for
+    // "linkedin grocery" and answered from a court case and an RBI rule.
+    for (const q of ["What should I post on LinkedIn this week for my grocery store?", "how do I beat my competitors?", "what should we do about the market slowdown?"]) {
+      expect(isResearchQuestion(q), q).toBe(false);
+    }
+  });
+
   it("leaves requests to write something with the writer", () => {
     for (const q of ["Write a LinkedIn post about the latest trend", "draft a thread on market news", "give me a post about competitors"]) {
       expect(isResearchQuestion(q), q).toBe(false);

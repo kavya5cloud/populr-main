@@ -5058,3 +5058,42 @@ body:has(.missions) ::-webkit-scrollbar-thumb{background:#d3d5d9;border-color:#f
   .landing .hero-media{min-height:0}
   .landing header h1{max-width:none}
 }
+
+/* ---- Voice call with the CMO -------------------------------------------- */
+.appui .vc-start{margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:100px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:12px;font-weight:500;cursor:pointer}
+.appui .vc-start svg{width:14px;height:14px}
+.appui .vc-start:hover{border-color:var(--green-ink);color:var(--green-ink)}
+.appui .col-head:has(.vc-start){display:flex;align-items:center}
+
+.vc-overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;
+  background:rgba(10,12,11,.55);backdrop-filter:blur(8px)}
+.vc-card{width:min(460px,100%);max-height:min(720px,92vh);display:flex;flex-direction:column;align-items:center;gap:14px;
+  padding:28px 22px 20px;border-radius:24px;background:#fff;color:#15171a;box-shadow:0 40px 100px -30px rgba(0,0,0,.5)}
+.vc-orb{position:relative;width:120px;height:120px;flex:0 0 auto}
+.vc-orb span{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 35% 30%,#e8ffb0,#9fd14a 55%,#4a6b00)}
+.vc-orb span:nth-child(2){inset:-10px;opacity:.25}
+.vc-orb span:nth-child(3){inset:-22px;opacity:.12}
+.vc-orb.listening span:nth-child(n+2){animation:vc-breathe 2.6s ease-in-out infinite}
+.vc-orb.hearing span:nth-child(n+2){animation:vc-breathe .7s ease-in-out infinite}
+.vc-orb.thinking span:first-child{animation:vc-spin 1.4s linear infinite;background:conic-gradient(#4a6b00,#e8ffb0,#9fd14a,#4a6b00)}
+.vc-orb.speaking span:nth-child(n+2){animation:vc-breathe .45s ease-in-out infinite}
+.vc-orb.error span{filter:grayscale(1);opacity:.5}
+@keyframes vc-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes vc-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.vc-orb span{animation:none!important}}
+.vc-status{margin:0;font-size:15px;font-weight:500}
+.vc-error{margin:0;font-size:13px;color:#a8341f;text-align:center}
+.vc-hint{margin:0;font-size:13.5px;color:#5c6165;text-align:center;line-height:1.5}
+.vc-lines{width:100%;flex:1 1 auto;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 2px;min-height:60px}
+.vc-line{display:flex;flex-direction:column;gap:2px}
+.vc-line.you{align-items:flex-end}
+.vc-line p{margin:0;padding:9px 13px;border-radius:14px;font-size:14px;line-height:1.45;max-width:88%}
+.vc-line.you p{background:#eef5dc;border-radius:14px 14px 4px 14px}
+.vc-line.cmo p{background:#f3f3f3;border-radius:14px 14px 14px 4px}
+.vc-who{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#5c6165}
+.vc-sources{margin:4px 0 0;padding-left:18px;font-size:12px;color:#5c6165;max-width:88%}
+.vc-sources a{color:#15171a}
+.vc-controls{display:flex;gap:10px;width:100%}
+.vc-btn{flex:1;padding:12px;border-radius:12px;border:1px solid #e7e8ea;background:#fff;color:#15171a;font-size:14px;font-weight:500;cursor:pointer}
+.vc-btn.on{background:#15171a;color:#fff}
+.vc-btn.end{background:#a8341f;border-color:#a8341f;color:#fff}

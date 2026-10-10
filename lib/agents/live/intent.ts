@@ -7,12 +7,18 @@ import { terms as contentWords } from "@/lib/market/util";
 export type ResearchBrand = { name?: string; oneLiner?: string; audience?: string; competitors?: string[] };
 
 /** Market questions, as opposed to requests to write something. Deterministic, no model. */
-const RESEARCH_RE = /\b(trend(s|ing)?|news|what'?s (happening|new|going on)|what is (happening|new|going on)|market|competitors?|competition|rivals?|reddit|people (are )?(saying|talking)|buzz|this week|latest|industry)\b/i;
+// "this week" and "latest" used to count on their own, which sent "What should I post on
+// LinkedIn this week?" to market research — it searched the news for "linkedin grocery" and
+// came back with a court case and an RBI rule. A time phrase isn't a market question; a
+// market word is.
+const RESEARCH_RE = /\b(trend(s|ing)?|news|what'?s (happening|new|going on)|what is (happening|new|going on)|market|competitors?|competition|rivals?|reddit|people (are )?(saying|talking)|buzz|industry)\b/i;
+/** Asking for advice is a question for the CMO, not a search, even with a market word in it. */
+const ADVICE_RE = /\b(should (i|we)|what (do|should|can) (i|we) (post|write|do|say)|how (do|should|can) (i|we))\b/i;
 const WRITE_RE = /\b(write|draft|create|generate|compose|make me|give me (a|an|some) (post|thread|caption|email|blog))\b/i;
 
 export function isResearchQuestion(text: string): boolean {
   const t = (text || "").trim();
-  return t.length > 0 && RESEARCH_RE.test(t) && !WRITE_RE.test(t);
+  return t.length > 0 && RESEARCH_RE.test(t) && !WRITE_RE.test(t) && !ADVICE_RE.test(t);
 }
 
 /**

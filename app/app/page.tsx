@@ -5,6 +5,7 @@ import AccountConnections from "@/app/components/AccountConnections";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { loadLocal, loadState, saveState, workspaceId, type Saved, type Profile, type Draft, type ChatMsg, type ChatAction, type FeedEntry, type ChatAgentStep, type ChatSource } from "@/lib/store";
 import { isResearchQuestion } from "@/lib/agents/live/intent";
+import VoiceCall, { unlockedPlayer } from "./VoiceCall";
 import { CHANNEL_LABELS, formatWindowLabel, channelSchedule, type PublishChannel } from "@/lib/publish-times";
 import { matchGscSite, displaySite } from "@/lib/gsc-match";
 import { fetchPushStatus, subscribePush, unsubscribePush, type PushStatus } from "@/lib/push-client";
@@ -53,6 +54,14 @@ function isSafeNext(v: string): boolean {
 
 export default function AppPage() {
   const [entered, setEntered] = useState(false);
+  // Voice calls with the CMO. The button appears only when the server can actually do
+  // speech, so nobody taps "Call" to be told it isn't set up.
+  const [voiceReady, setVoiceReady] = useState(false);
+  const [calling, setCalling] = useState(false);
+  const callPlayer = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => {
+    fetch("/api/voice/turn").then((r) => r.json()).then((d) => setVoiceReady(!!d?.available)).catch(() => {});
+  }, []);
   // True until the saved workspace has been read. Without it the first paint has to guess
   // which screen someone is on, and it guesses "new visitor" for every returning one.
   const [hydrating, setHydrating] = useState(true);
@@ -1354,7 +1363,18 @@ Output ONLY this JSON, nothing else: {"impressions":<integer>,"clicks":<integer>
 
           {/* CHAT */}
           <div className={"col" + (mtab === "chat" ? " mactive" : "")}>
-            <div className="col-head"><span className="ct">Talk to AI CMO</span></div>
+            <div className="col-head">
+              <span className="ct">Talk to AI CMO</span>
+              {voiceReady && (
+                <button type="button" className="vc-start" onClick={() => { callPlayer.current = unlockedPlayer(); setCalling(true); }} aria-label="Start a voice call with your AI CMO">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" />
+                  </svg>
+                  Call
+                </button>
+              )}
+            </div>
+            {calling && <VoiceCall profile={{ name: profile?.name, oneLiner: profile?.oneLiner, audience: profile?.audience }} player={callPlayer.current} onClose={() => setCalling(false)} />}
             <div className="col-body chat-body" ref={chatBodyRef}>
               <div className="chat-tools">
                 <div className="chat-mode" role="tablist" aria-label="Chat mode">
