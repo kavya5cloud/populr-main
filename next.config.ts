@@ -22,6 +22,9 @@ const csp = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "connect-src 'self' https://vitals.vercel-insights.com",
+  // The CMO's voice replies arrive as data: WAV. Without media-src, default-src 'self'
+  // blocked every one of them and calls were silent in production.
+  "media-src 'self' data: blob:",
   "worker-src 'self'",
   "manifest-src 'self'",
   ...(isDev ? [] : ["upgrade-insecure-requests"]),
@@ -58,7 +61,11 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          // microphone=(self): voice calls with the CMO need it on our own pages. It was
+          // microphone=(), which refused the microphone everywhere — including here — so the
+          // call feature would have failed on its first step in production. Still denied to
+          // any embedded third party.
+          { key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=()" },
         ],
       },
     ];
