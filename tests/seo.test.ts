@@ -78,11 +78,13 @@ describe("per-page metadata", () => {
   // state this site was actually in — every page inherited the root title — so it is worth
   // asserting rather than eyeballing.
   async function collect() {
-    const [root, ea, privacy, terms] = await Promise.all([
+    const [root, ea, privacy, terms, dev, devDocs] = await Promise.all([
       import("@/app/layout"),
       import("@/app/early-access/layout"),
       import("@/app/privacy/page"),
       import("@/app/terms/page"),
+      import("@/app/developers/page"),
+      import("@/app/developers/docs/page"),
     ]);
     const title = (m: { title?: unknown }) =>
       typeof m.title === "string" ? m.title : String((m.title as { default?: string })?.default ?? "");
@@ -91,6 +93,8 @@ describe("per-page metadata", () => {
       { path: "/early-access", title: title(ea.metadata), meta: ea.metadata },
       { path: "/privacy", title: title(privacy.metadata), meta: privacy.metadata },
       { path: "/terms", title: title(terms.metadata), meta: terms.metadata },
+      { path: "/developers", title: title(dev.metadata), meta: dev.metadata },
+      { path: "/developers/docs", title: title(devDocs.metadata), meta: devDocs.metadata },
     ];
   }
 

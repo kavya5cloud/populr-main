@@ -19,6 +19,8 @@ export const dynamic = "force-static";
 const ROUTE_LABEL: Record<string, string> = {
   "/": "Home",
   "/early-access": "Early Access",
+  "/developers": "Populr MCP server for developers",
+  "/developers/docs": "MCP server documentation",
   "/guides": "Guides",
   "/privacy": "Privacy",
   "/terms": "Terms",

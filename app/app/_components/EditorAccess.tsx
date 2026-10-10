@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { workspaceId } from "@/lib/store";
+import { installTabs } from "@/lib/mcp/install";
+import { InstallTabs } from "@/app/developers/DevClient";
 
 // "Use in your code editor": access keys for Populr's MCP server and VS Code extension.
 //
@@ -10,8 +12,6 @@ import { workspaceId } from "@/lib/store";
 // characters with when each was last used, so a stale one is easy to spot and revoke.
 
 type Key = { id: string; name: string; hint: string; createdAt: number; lastUsedAt: number | null };
-
-const MCP_URL = "https://www.trypopulr.in/api/mcp";
 
 function ago(t: number | null) {
   if (!t) return "never used";
@@ -47,7 +47,6 @@ export default function EditorAccess() {
     load();
   };
 
-  const claude = fresh ? `claude mcp add --transport http populr ${MCP_URL} --header "Authorization: Bearer ${fresh}"` : "";
 
   return (
     <section className="ap-card">
@@ -58,8 +57,8 @@ export default function EditorAccess() {
         <div className="ek-fresh" role="status">
           <p><b>Copy this key now — it won&apos;t be shown again.</b></p>
           <div className="ap-tag"><code>{fresh}</code><button className="ap-secondary" onClick={() => navigator.clipboard?.writeText(fresh).then(() => setNote("Key copied."))}>Copy</button></div>
-          <p className="ap-hint">For Claude Code, run:</p>
-          <div className="ap-tag"><code>{claude}</code><button className="ap-secondary" onClick={() => navigator.clipboard?.writeText(claude).then(() => setNote("Command copied."))}>Copy</button></div>
+          <p className="ap-hint">Then add Populr to your editor — your key is already filled in:</p>
+          <InstallTabs tabs={installTabs(fresh)} />
           <button className="ap-link" onClick={() => setFresh(null)}>I&apos;ve saved it</button>
         </div>
       )}

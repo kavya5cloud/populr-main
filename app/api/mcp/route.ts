@@ -27,7 +27,7 @@ function unauthorized(message: string) {
 export async function POST(req: NextRequest) {
   const auth = req.headers.get("authorization") ?? "";
   const key = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
-  if (!key) return unauthorized("Missing access key. Create one in Populr → SEO autopilot → Use in your code editor, and send it as Authorization: Bearer <key>.");
+  if (!key) return unauthorized("Missing access key. Create one at https://www.trypopulr.in/app/keys and send it as Authorization: Bearer <key>.");
 
   const workspace = await keyStore().resolve(key, Date.now()).catch(() => null);
   if (!workspace) return unauthorized("That access key isn't valid. It may have been revoked.");

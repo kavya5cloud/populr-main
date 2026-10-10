@@ -33,7 +33,7 @@ type Tool = {
   run(workspace: string, args: Record<string, unknown>, deps: ToolDeps): Promise<ToolResult>;
 };
 
-const NOT_SET_UP = "Populr's SEO autopilot isn't set up for this workspace yet. Open Populr → Analytics → SEO and set it up — it takes a minute — then try again.";
+const NOT_SET_UP = "Populr's SEO autopilot isn't set up for this workspace yet. Set it up at https://www.trypopulr.in/app/keys — it takes a minute — then try again.";
 
 const fetchHtml = async (url: string, deps: ToolDeps) =>
   deps.fetchPage ? deps.fetchPage(url) : (await safeFetchText(url, { timeoutMs: 15_000, maxBytes: 3_000_000 })).text;
