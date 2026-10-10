@@ -145,8 +145,20 @@ export default function Landing() {
     };
   }, []);
 
+  // The hero frame carries its own nav, so the site's sticky nav waits until the hero has
+  // scrolled away. Rendered with the class already on, so it never flashes in and out on
+  // load; this only takes it off (and back) as the visitor scrolls.
+  useEffect(() => {
+    const root = document.querySelector(".landing");
+    const hero = document.querySelector("header.hero-clean");
+    if (!root || !hero || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([e]) => root.classList.toggle("hero-visible", e.intersectionRatio > 0.2), { threshold: [0, 0.2, 0.5] });
+    io.observe(hero);
+    return () => io.disconnect();
+  }, []);
+
   return (
-    <div className="landing">
+    <div className="landing hero-visible">
       <nav>
         <div className="nav-in">
           <a href="/" className="logo" aria-label="Populr home">Populr.</a>
@@ -164,105 +176,80 @@ export default function Landing() {
         </div>
       </nav>
 
-      <header>
-        {/* Behind the dots: the drifting light. Both are decoration and neither is
-            announced to a screen reader. */}
-        <div className="hero-mesh" aria-hidden="true"><i /><i /><i /><i /></div>
-        <div className="hero-grain" aria-hidden="true" />
-        <canvas className="dots" ref={dotsRef} aria-hidden="true" />
-        <div className="wrap hero-in" style={{ position: "relative", zIndex: 2 }}>
-          {/* Two columns from 1024px: the claim and the way in on the left, the product
-              doing it on the right. The right half used to be an empty gradient — a hero
-              that describes a product and shows nothing of it. */}
-          <div className="hero-copy">
-          <div className="hero-top">
-          <span className="pill"><i />now in early access</span>
-          {/* Left-aligned and pinned to the corners rather than stacked down the middle.
-              A centred hero puts every line in the same place and gives the eye nothing to
-              travel along; the reference anchors the statement top-left and the action
-              below it, and lets the bloom hold the rest of the frame. */}
-          <h1>Your AI CMO. <span className="headline-tail">It decides what is worth doing, then does it.</span></h1>
+      <header className="hero-clean">
+        {/* The dot field's effect still looks for its canvas; kept, and hidden, rather than
+            unpicking an effect the rest of the page never sees. */}
+        <canvas className="dots" ref={dotsRef} aria-hidden="true" hidden />
+
+        {/* After the reference the founder chose: one white frame, clean and quiet. Copy on
+            the left with its own small nav; a soft green panel on the right with nothing on
+            it but three tags. The product demo that used to crowd this panel now has a
+            section of its own, just below. */}
+        <div className="hc-frame">
+          <div className="hc-left">
+            <div className="hc-nav">
+              <a href="/" className="hc-logo" aria-label="Populr home">Populr.</a>
+              {/* role="navigation" on a div, not a <nav>: the site nav is styled and hidden by
+                  `.landing nav` rules, and a <nav> here caught all of them — including the one
+                  that hides the site nav while the hero is on screen. */}
+              <div className="hc-pills" role="navigation" aria-label="Main">
+                <a href="#how">How it works</a>
+                <a href="#pricing">Pricing</a>
+                <a href="/app" className="on">Start free</a>
+              </div>
+            </div>
+
+            <div className="hc-copy">
+              <p className="hc-eyebrow"><i aria-hidden="true" />Now in early access</p>
+              <h1>Your AI CMO. <span>It decides what is worth doing, then does it.</span></h1>
+              <hr />
+              <p className="hc-sub">
+                Paste your website. Populr reads it, works out your positioning, and builds today&apos;s
+                plan — and tells you what it refused.
+              </p>
+              {/* Still a plain GET form that works with JavaScript off; /app reads ?url= and
+                  starts on arrival. type="text" because type="url" rejects "linear.app" for
+                  lacking a scheme, and nobody types https://. */}
+              <form
+                className="hc-form"
+                action="/app"
+                method="get"
+                onSubmit={(e) => {
+                  const field = e.currentTarget.elements.namedItem("url") as HTMLInputElement | null;
+                  if (field) field.value = field.value.trim();
+                }}
+              >
+                <input type="text" name="url" placeholder="yourcompany.com" aria-label="Your website"
+                  inputMode="url" autoComplete="url" autoCapitalize="off" autoCorrect="off" spellCheck={false}
+                  enterKeyHint="go" required />
+                {/* " my site" drops on narrow phones, where the full label squeezed the field
+                    until its placeholder read "yourcompany.con". */}
+                <button type="submit">Analyze<span className="hc-btn-more"> my site</span></button>
+              </form>
+              <p className="hc-under">Free for a month · no card · you approve anything that matters</p>
+            </div>
           </div>
 
-          {/* The action band, pinned to the foot of the panel. */}
-          <div className="hero-act">
-          <p className="sub">Paste your website. Populr reads it, works out your positioning, and builds today&apos;s plan — and tells you what it refused.</p>
-
-          {/* The input is the hero.
-              It used to be two buttons here and the real thing a page away, which asks
-              somebody to commit before they have seen anything. The product's whole promise
-              is that one URL is enough — so the page should ask for one URL, and the fastest
-              way to believe a claim is to watch it happen.
-
-              A plain GET form: no JavaScript needed to submit, and /app reads ?url= and
-              starts on arrival. */}
-          {/* Still a plain GET form that works with JavaScript off; the handler only tidies
-              what gets sent. Someone pasting a URL brings whatever was on the clipboard with
-              it — a trailing space, a newline out of a doc — and while canonicalSource trims
-              it later, the address bar in between should not show %20%20. */}
-          <form
-            className="hero-form"
-            action="/app"
-            method="get"
-            onSubmit={(e) => {
-              const field = e.currentTarget.elements.namedItem("url") as HTMLInputElement | null;
-              if (field) field.value = field.value.trim();
-            }}
-          >
-            {/* type="text", not type="url".
-                
-                With type="url" the browser refuses "linear.app" before any of our code runs —
-                it demands a scheme and shows its own "Please enter a URL" bubble. Nobody types
-                https://. canonicalSource() has always prepended it for a bare domain, so the
-                only thing rejecting the shorter form was the input itself.
-                
-                inputMode="url" still gets the URL keyboard on a phone, which is the part of
-                type="url" worth keeping. autoCapitalize is off because iOS capitalises the
-                first letter of a text field by default and "Linear.app" is not a host. */}
-            <input
-              type="text"
-              name="url"
-              placeholder="yourcompany.com"
-              aria-label="Your website"
-              inputMode="url"
-              autoComplete="url"
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-              /* "Go" on the phone keyboard rather than a newline glyph. The field submits,
-                 so the key that submits it should say so. */
-              enterKeyHint="go"
-              required
-            />
-            <button type="submit" aria-label="Analyze my website">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M5 12h13M12 5l7 7-7 7" />
-              </svg>
-            </button>
-          </form>
-          {/* Kept honest for what ships next.
-              This said "nothing publishes without you", which is true today and stops being
-              true the moment routine posts publish on their own. A line that has to be
-              retracted is worse than a weaker one that holds. */}
-          <p className="under">free for a month · no card · you approve anything that matters</p>
-          </div>
-          </div>
-
-          {/* The right half of the frame: a soft green field with the product on it, the
-              way the reference sets a photograph beside its copy. The field is drawn in CSS
-              from the brand's own greens rather than a stock photo, so it carries no image
-              weight and matches whichever theme the visitor's device is in. */}
-          <span className="hero-star" aria-hidden="true">✱</span>
-          <div className="hero-media">
-            <HeroDemo />
-            <div className="hero-tags" aria-hidden="true">
+          <div className="hc-media" aria-hidden="true">
+            <span className="hc-corner">{LANGUAGE_CODES.length} languages</span>
+            <div className="hc-tags">
               <span>Reads your site</span>
               <span>Decides</span>
-              <span>Then does it</span>
+              <span className="wide">Then does it, every day</span>
             </div>
           </div>
         </div>
       </header>
+
+      {/* The product, working. A replay of a real run of the research and strategy agents,
+          moved here from the hero so the first screen can stay quiet. */}
+      <section className="hc-demo-band" aria-labelledby="hc-demo-h">
+        <div className="wrap">
+          <p className="hc-demo-eyebrow">See it work</p>
+          <h2 id="hc-demo-h">Ask about your market. Watch it check before it answers.</h2>
+          <HeroDemo />
+        </div>
+      </section>
 
       {/* The product, shown rather than described.
           It used to sit inside the hero, under the input, which made the first screen carry
