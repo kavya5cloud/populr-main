@@ -235,7 +235,7 @@ export default function Landing() {
             {/* The founder's chosen photograph: people, from above — who the marketing is for.
                 next/image serves it resized and in a modern format, and `priority` because it is
                 the largest thing on the first screen. Decorative, so no alt text to announce. */}
-            <Image src="/hero/park.jpg" alt="" fill priority sizes="(min-width: 960px) 50vw, 100vw" className="hc-photo" />
+            <Image src="/hero/park-trees.jpg" alt="" fill priority sizes="(min-width: 960px) 50vw, 100vw" className="hc-photo" />
             <span className="hc-corner">{LANGUAGE_CODES.length} languages</span>
             <div className="hc-tags">
               <span>Reads your site</span>

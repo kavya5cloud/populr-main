@@ -81,7 +81,7 @@ export default async function LocalizedLanding({ params }: { params: Promise<{ l
             </div>
           </div>
           <div className="hc-media" aria-hidden="true">
-            <Image src="/hero/park.jpg" alt="" fill priority sizes="(min-width: 960px) 50vw, 100vw" className="hc-photo" />
+            <Image src="/hero/park-trees.jpg" alt="" fill priority sizes="(min-width: 960px) 50vw, 100vw" className="hc-photo" />
             <div className="hc-tags">
               <span>{c.tags[0]}</span><span>{c.tags[1]}</span><span className="wide">{c.tags[2]}</span>
             </div>
