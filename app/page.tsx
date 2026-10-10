@@ -1,4 +1,5 @@
 "use client";
+import HeroDemo from "./components/HeroDemo";
 import { useEffect, useRef } from "react";
 import { captureReferral } from "@/lib/referral-client";
 // Counted from the real tables rather than typed in. The first version of this section
@@ -170,6 +171,10 @@ export default function Landing() {
         <div className="hero-grain" aria-hidden="true" />
         <canvas className="dots" ref={dotsRef} aria-hidden="true" />
         <div className="wrap hero-in" style={{ position: "relative", zIndex: 2 }}>
+          {/* Two columns from 1024px: the claim and the way in on the left, the product
+              doing it on the right. The right half used to be an empty gradient — a hero
+              that describes a product and shows nothing of it. */}
+          <div className="hero-copy">
           <div className="hero-top">
           <span className="pill"><i />now in early access</span>
           {/* Left-aligned and pinned to the corners rather than stacked down the middle.
@@ -241,7 +246,21 @@ export default function Landing() {
               retracted is worse than a weaker one that holds. */}
           <p className="under">free for a month · no card · you approve anything that matters</p>
           </div>
+          </div>
 
+          {/* The right half of the frame: a soft green field with the product on it, the
+              way the reference sets a photograph beside its copy. The field is drawn in CSS
+              from the brand's own greens rather than a stock photo, so it carries no image
+              weight and matches whichever theme the visitor's device is in. */}
+          <span className="hero-star" aria-hidden="true">✱</span>
+          <div className="hero-media">
+            <HeroDemo />
+            <div className="hero-tags" aria-hidden="true">
+              <span>Reads your site</span>
+              <span>Decides</span>
+              <span>Then does it</span>
+            </div>
+          </div>
         </div>
       </header>
 
