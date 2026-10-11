@@ -59,7 +59,7 @@ export default function Docs() {
 
           <section id="connect">
             <h2>Connect your editor</h2>
-            <p>Every client sends the key as <code>Authorization: Bearer &lt;key&gt;</code>. Replace <code>YOUR_POPULR_KEY</code> with yours, and keep keys out of version control.</p>
+            <p>Every client sends the key as <code>Authorization: Bearer &lt;key&gt;</code> — or as <code>X-Populr-Key: &lt;key&gt;</code>, for gateways that can&apos;t add the <code>Bearer</code> prefix. Replace <code>YOUR_POPULR_KEY</code> with yours, and keep keys out of version control. Listing the tools works without a key; running one needs it.</p>
             <InstallTabs tabs={installTabs()} />
             <p><b>Other clients:</b> any MCP client that supports the Streamable HTTP transport with a custom header will work. Point it at the server URL above.</p>
           </section>

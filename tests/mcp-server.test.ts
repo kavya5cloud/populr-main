@@ -135,10 +135,26 @@ describe("POST /api/mcp", () => {
     vi.doMock("@/lib/seo/autopilot-store", async (orig) => ({ ...(await orig<object>()), autopilotStore: () => new InMemoryAutopilotStore() }));
     const { POST } = await import("@/app/api/mcp/route");
     const req = (auth: string | null, body: unknown) => new NextRequest("http://x/api/mcp", { method: "POST", body: JSON.stringify(body), headers: { "Content-Type": "application/json", ...(auth ? { Authorization: auth } : {}) } });
-    expect((await POST(req(null, { jsonrpc: "2.0", id: 1, method: "ping" }))).status).toBe(401);
+    // Without a key, Populr can be described but not used.
+    const listed = await POST(req(null, { jsonrpc: "2.0", id: 1, method: "tools/list" }));
+    expect(listed.status).toBe(200);
+    expect((await listed.json()).result.tools.length).toBe(7);
+    expect((await POST(req(null, { jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18" } }))).status).toBe(200);
+    const call = await POST(req(null, { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "seo_status", arguments: {} } }));
+    expect(call.status).toBe(401);
+    expect(call.headers.get("www-authenticate")).toContain("Bearer");
+    expect((await POST(req(null, { jsonrpc: "2.0", id: 3, method: "resources/list" }))).status).toBe(401);
+    // A key that's presented must be valid, even just to list.
+    expect((await POST(req("Bearer pop_wrong", { jsonrpc: "2.0", id: 1, method: "tools/list" }))).status).toBe(401);
     expect((await POST(req("Bearer pop_wrong", { jsonrpc: "2.0", id: 1, method: "ping" }))).status).toBe(401);
+    expect((await POST(req(null, null))).status).toBe(400);
     expect((await POST(req(`Bearer ${c.key}`, { jsonrpc: "2.0", method: "notifications/initialized" }))).status).toBe(202);
     expect(await (await POST(req(`Bearer ${c.key}`, { jsonrpc: "2.0", id: 7, method: "ping" }))).json()).toEqual({ jsonrpc: "2.0", id: 7, result: {} });
+    // X-Populr-Key, for gateways that pass a header through but can't add "Bearer ".
+    const viaHeader = new NextRequest("http://x/api/mcp", { method: "POST", body: JSON.stringify({ jsonrpc: "2.0", id: 8, method: "tools/call", params: { name: "seo_status", arguments: {} } }), headers: { "Content-Type": "application/json", "X-Populr-Key": c.key } });
+    const r = await POST(viaHeader);
+    expect(r.status).toBe(200);
+    expect((await r.json()).result.content[0].text).toContain("isn't set up");
   });
 });
 
