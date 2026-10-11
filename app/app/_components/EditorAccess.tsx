@@ -111,7 +111,7 @@ export default function EditorAccess({ intro = true }: { intro?: boolean }) {
             <a className="ek-install" href={cursorInstallUrl(fresh)}>Add to Cursor</a>
             <a className="ek-install" href={VSCODE_INSTALL_URL} onClick={copy}>Add to VS Code</a>
           </div>
-          <p className="ek-oneclick-note">Add to VS Code also copies your key — paste it when VS Code asks.</p>
+          <p className="ek-oneclick-note">Add to VS Code installs the Populr extension and copies your key — run “Populr: Connect” and paste it.</p>
           <p className="ek-step">Or set it up by hand — your key is already filled in:</p>
           <InstallTabs tabs={installTabs(fresh)} />
           <button className="ek-done" onClick={() => setFresh(null)}>Done</button>

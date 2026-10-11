@@ -323,3 +323,13 @@ describe("/api/mcp/keys needs an account", () => {
     expect(await keys.resolve((await made.json()).key, 1)).toBe("user:u1");
   });
 });
+
+describe("server identity", () => {
+  it("announces Populr's logo and website when a client connects", async () => {
+    const r = (await handle({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-11-25" } }, "", { autopilot: new InMemoryAutopilotStore() })) as { result: { serverInfo: { icons: { src: string; mimeType: string }[]; websiteUrl: string } } };
+    const { icons, websiteUrl } = r.result.serverInfo;
+    expect(websiteUrl).toBe("https://www.trypopulr.in/developers");
+    expect(icons.map((i) => i.mimeType)).toEqual(["image/svg+xml", "image/png"]);
+    for (const i of icons) expect(i.src.startsWith("https://www.trypopulr.in/")).toBe(true);
+  });
+});

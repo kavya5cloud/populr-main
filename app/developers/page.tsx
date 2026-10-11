@@ -93,7 +93,7 @@ export default function Developers() {
           <div className="dv-ext-cta dv-oneclick">
             <a href={VSCODE_INSTALL_URL} className="dv-btn ghost">Add to VS Code</a>
             <a href="https://cursor.directory/plugins/populr" target="_blank" rel="noopener" className="dv-btn ghost">Add to Cursor</a>
-            <span className="dv-oneclick-note">One click. VS Code asks for your key; Cursor asks when you install the plugin.</span>
+            <span className="dv-oneclick-note">VS Code installs the Populr extension — run “Populr: Connect” and paste your key. Cursor asks for it when you install the plugin.</span>
           </div>
           <InstallTabs tabs={tabs} />
         </section>

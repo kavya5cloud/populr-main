@@ -5,17 +5,14 @@ export const MCP_URL = "https://www.trypopulr.in/api/mcp";
 
 // One-click install links. The editor opens them itself and asks before adding anything.
 //
-// VS Code's link asks for the key when the server first starts and keeps it in secret
-// storage, so the link carries no key and can sit on a public page. Cursor's link can't
-// prompt, so it's built only with a key — right after one is created — and is handed to Cursor
-// by the operating system; it isn't sent to any website.
-export const VSCODE_INSTALL_URL = "vscode:mcp/install?" + encodeURIComponent(JSON.stringify({
-  name: "populr",
-  type: "http",
-  url: MCP_URL,
-  headers: { Authorization: "Bearer ${input:populr-key}" },
-  inputs: [{ type: "promptString", id: "populr-key", description: "Populr access key (starts with pop_)", password: true }],
-}));
+// VS Code's opens the Populr extension's page in VS Code — with its logo, description and an
+// Install button. (A bare MCP install link can't carry a logo, and VS Code's MCP gallery
+// doesn't list Populr.) The extension keeps the key in secret storage and adds the Populr
+// commands. Cursor's link can't prompt for a key, so it's built only with one — right after a
+// key is created — and is handed to Cursor by the operating system; it isn't sent to any
+// website.
+export const VSCODE_EXTENSION_ID = "Populr.populr-seo";
+export const VSCODE_INSTALL_URL = `vscode:extension/${VSCODE_EXTENSION_ID}`;
 
 export function cursorInstallUrl(key: string): string {
   const config = btoa(JSON.stringify({ url: MCP_URL, headers: { Authorization: `Bearer ${key}` } }));

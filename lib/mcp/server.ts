@@ -10,7 +10,18 @@ import { findTool, TOOLS, type ToolDeps } from "./tools";
 export const SUPPORTED_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26"] as const;
 const LATEST = SUPPORTED_VERSIONS[0];
 
-export const SERVER_INFO = { name: "populr", title: "Populr SEO", version: "1.0.0" };
+// icons and websiteUrl are part of serverInfo from protocol 2025-11-25; editors show the icon
+// next to Populr's tools (VS Code's tools picker reads it). Older clients ignore them.
+export const SERVER_INFO = {
+  name: "populr",
+  title: "Populr SEO",
+  version: "1.0.0",
+  websiteUrl: "https://www.trypopulr.in/developers",
+  icons: [
+    { src: "https://www.trypopulr.in/icon.svg", mimeType: "image/svg+xml", sizes: ["any"] },
+    { src: "https://www.trypopulr.in/apple-icon.png", mimeType: "image/png", sizes: ["180x180"] },
+  ],
+};
 
 const INSTRUCTIONS = [
   "Populr manages SEO for this workspace's website. The site owner approves changes in Populr; you apply them in the site's code.",

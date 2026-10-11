@@ -171,15 +171,12 @@ describe("extension manifest", () => {
 });
 
 describe("one-click install links", () => {
-  it("VS Code's link asks for the key instead of carrying one", async () => {
-    const { VSCODE_INSTALL_URL } = await import("@/lib/mcp/install");
-    expect(VSCODE_INSTALL_URL.startsWith("vscode:mcp/install?")).toBe(true);
-    // VS Code reads the query as URI-encoded JSON with a name and the server config.
-    const cfg = JSON.parse(decodeURIComponent(VSCODE_INSTALL_URL.slice("vscode:mcp/install?".length)));
-    expect(cfg).toMatchObject({ name: "populr", type: "http", url: MCP_URL });
-    expect(cfg.headers.Authorization).toBe("Bearer ${input:populr-key}");
-    expect(cfg.inputs).toEqual([expect.objectContaining({ id: "populr-key", type: "promptString", password: true })]);
-    expect(VSCODE_INSTALL_URL).not.toMatch(/pop_[A-Za-z0-9]/);
+  it("VS Code's link opens the published Populr extension, and carries no key", async () => {
+    const { VSCODE_INSTALL_URL, VSCODE_EXTENSION_ID } = await import("@/lib/mcp/install");
+    expect(VSCODE_INSTALL_URL).toBe(`vscode:extension/${VSCODE_EXTENSION_ID}`);
+    // The Marketplace id: the publisher is "Populr" there; ids are case-insensitive in VS Code.
+    expect(VSCODE_EXTENSION_ID.toLowerCase()).toBe(`${manifest.publisher}.${manifest.name}`);
+    expect(VSCODE_INSTALL_URL).not.toMatch(/pop_/);
   });
 
   it("Cursor's link carries the new key in base64 server config, the way Cursor decodes it", async () => {
