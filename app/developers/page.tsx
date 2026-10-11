@@ -124,7 +124,7 @@ export default function Developers() {
             <p className="dv-lead">The Populr extension connects your editor&apos;s agent to Populr, keeps your key in the editor&apos;s secret storage, and adds commands to audit a page, insert structured data and create llms.txt.</p>
             <div className="dv-ext-cta">
               <a href="https://open-vsx.org/extension/populr/populr-seo" target="_blank" rel="noopener" className="dv-btn">Get it for Cursor</a>
-              <a href="/downloads/populr-seo.vsix" download className="dv-btn ghost">Download for VS Code</a>
+              <a href="https://marketplace.visualstudio.com/items?itemName=Populr.populr-seo" target="_blank" rel="noopener" className="dv-btn ghost">Get it for VS Code</a>
               <a href="/developers/docs#vscode" className="dv-btn ghost">Extension guide</a>
             </div>
           </div>
