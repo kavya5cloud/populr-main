@@ -23,3 +23,20 @@ describe("signedInUrl", () => {
     expect(signedInUrl("https://www.trypopulr.in", "/app?x=1")).toBe("https://www.trypopulr.in/app?x=1&auth=ok");
   });
 });
+
+describe("sign-in providers", () => {
+  it("offers only providers that have a sign-in route, even when another network's keys are set", async () => {
+    const { existsSync } = await import("node:fs");
+    const prev = { ...process.env };
+    Object.assign(process.env, { GOOGLE_CLIENT_ID: "g", GOOGLE_CLIENT_SECRET: "g", X_CLIENT_ID: "x", X_CLIENT_SECRET: "x", FACEBOOK_CLIENT_ID: "f", FACEBOOK_CLIENT_SECRET: "f" });
+    try {
+      const { GET } = await import("@/app/api/auth/providers/route");
+      const offered = await (await GET()).json();
+      for (const [name, on] of Object.entries(offered)) {
+        expect(on, name).toBe(existsSync(`app/api/auth/${name}/route.ts`));
+      }
+    } finally {
+      process.env = prev;
+    }
+  });
+});
