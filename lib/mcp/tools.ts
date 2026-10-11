@@ -90,7 +90,9 @@ export const TOOLS: Tool[] = [
           `FAQs: ${c.faq.length}`,
           `Pages with approved fixes, ready to apply in code: ${approved.length ? approved.join(", ") : "none"}`,
           `Pages with drafts waiting for the owner's approval in Populr: ${waiting.length ? waiting.join(", ") : "none"}`,
-          `Script snippet: ${c.enabled ? (c.seen.count ? `installed, seen on ${c.seen.paths.length} page(s)` : "switched on, not seen on the site yet") : "off"}`,
+          // Agents read this line; without the note they offered to "wire up" the snippet,
+          // which applying the fixes in code makes unnecessary.
+          `Script snippet: ${c.enabled ? (c.seen.count ? `installed, seen on ${c.seen.paths.length} page(s)` : "switched on, not seen on the site yet") : "off"} (optional — fixes applied in the site's code don't need it)`,
           "",
           "Next: call get_seo_fixes to get everything approved, with where each change goes.",
         ].join("\n"),
