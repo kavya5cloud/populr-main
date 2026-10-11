@@ -169,3 +169,19 @@ describe("/api/mcp/keys and /api/seo/autopilot rate limits", () => {
     expect((await k.GET(get("/api/mcp/keys"))).status).toBe(200);
   });
 });
+
+describe("MCP Registry listing (mcp/server.json)", () => {
+  it("points at the live server, carries its version, and asks for the key as a secret bearer header", async () => {
+    const { readFileSync } = await import("node:fs");
+    const listing = JSON.parse(readFileSync("mcp/server.json", "utf8"));
+    const { MCP_URL } = await import("@/lib/mcp/install");
+    const { SERVER_INFO } = await import("@/lib/mcp/server");
+    expect(listing.name).toBe("in.trypopulr/seo");
+    expect(listing.version).toBe(SERVER_INFO.version);
+    expect(listing.description.length).toBeLessThanOrEqual(100);
+    const [remote] = listing.remotes;
+    expect(remote).toMatchObject({ type: "streamable-http", url: MCP_URL });
+    expect(remote.headers[0]).toMatchObject({ name: "Authorization", isSecret: true, isRequired: true, value: "Bearer {populr_key}" });
+    expect(remote.headers[0].variables.populr_key.isSecret).toBe(true);
+  });
+});

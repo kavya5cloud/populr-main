@@ -1,0 +1,44 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "in.trypopulr/seo",
+  "title": "Populr SEO",
+  "description": "Apply the SEO fixes you approve in Populr — titles, descriptions, JSON-LD, llms.txt — in your code.",
+  "version": "1.0.0",
+  "websiteUrl": "https://www.trypopulr.in/developers",
+  "repository": {
+    "url": "https://github.com/kavya5cloud/populr-main",
+    "source": "github"
+  },
+  "icons": [
+    {
+      "src": "https://www.trypopulr.in/apple-icon.png",
+      "mimeType": "image/png",
+      "sizes": [
+        "180x180"
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://www.trypopulr.in/api/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Bearer followed by your Populr access key. Create one at https://www.trypopulr.in/app/keys",
+          "isRequired": true,
+          "isSecret": true,
+          "format": "string",
+          "value": "Bearer {populr_key}",
+          "variables": {
+            "populr_key": {
+              "description": "Your Populr access key (starts with pop_)",
+              "isRequired": true,
+              "isSecret": true
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
