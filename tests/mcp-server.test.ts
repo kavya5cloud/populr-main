@@ -46,7 +46,7 @@ describe("the protocol", () => {
 
   it("rejects unknown methods, unknown tools and missing arguments as protocol errors", async () => {
     const { autopilot } = await setup();
-    expect(await handle({ jsonrpc: "2.0", id: 1, method: "resources/list" }, "ws-a", { autopilot })).toMatchObject({ error: { code: -32601 } });
+    expect(await handle({ jsonrpc: "2.0", id: 1, method: "sampling/createMessage" }, "ws-a", { autopilot })).toMatchObject({ error: { code: -32601 } });
     expect(await handle(call("drop_database"), "ws-a", { autopilot })).toMatchObject({ error: { code: -32602 } });
     expect(await handle(call("audit_page", {}), "ws-a", { autopilot })).toMatchObject({ error: { code: -32602 } });
   });
@@ -143,7 +143,16 @@ describe("POST /api/mcp", () => {
     const call = await POST(req(null, { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "seo_status", arguments: {} } }));
     expect(call.status).toBe(401);
     expect(call.headers.get("www-authenticate")).toContain("Bearer");
-    expect((await POST(req(null, { jsonrpc: "2.0", id: 3, method: "resources/list" }))).status).toBe(401);
+    // Anything else a directory asks gets a normal answer, not a 401 a gateway would turn
+    // into a sign-in prompt.
+    const resources = await POST(req(null, { jsonrpc: "2.0", id: 3, method: "resources/list" }));
+    expect(resources.status).toBe(200);
+    expect((await resources.json()).result).toEqual({ resources: [] });
+    const prompts = await POST(req(null, { jsonrpc: "2.0", id: 4, method: "prompts/list" }));
+    expect((await prompts.json()).result.prompts.map((p: { name: string }) => p.name)).toEqual(["apply_seo_fixes", "seo_audit"]);
+    const unknown = await POST(req(null, { jsonrpc: "2.0", id: 5, method: "triggers/list" }));
+    expect(unknown.status).toBe(200);
+    expect((await unknown.json()).error.code).toBe(-32601);
     // A key that's presented must be valid, even just to list.
     expect((await POST(req("Bearer pop_wrong", { jsonrpc: "2.0", id: 1, method: "tools/list" }))).status).toBe(401);
     expect((await POST(req("Bearer pop_wrong", { jsonrpc: "2.0", id: 1, method: "ping" }))).status).toBe(401);
@@ -199,5 +208,30 @@ describe("MCP Registry listing (mcp/server.json)", () => {
     expect(remote).toMatchObject({ type: "streamable-http", url: MCP_URL });
     expect(remote.headers[0]).toMatchObject({ name: "Authorization", isSecret: true, isRequired: true, value: "Bearer {populr_key}" });
     expect(remote.headers[0].variables.populr_key.isSecret).toBe(true);
+  });
+});
+
+describe("MCP prompts", () => {
+  const deps = () => ({ autopilot: new InMemoryAutopilotStore() });
+
+  it("declares prompts and builds apply_seo_fixes for one page or all", async () => {
+    const init = await handle({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18" } }, "ws", deps());
+    expect((init as { result: { capabilities: Record<string, unknown> } }).result.capabilities).toHaveProperty("prompts");
+    const one = await handle({ jsonrpc: "2.0", id: 2, method: "prompts/get", params: { name: "apply_seo_fixes", arguments: { path: "/pricing" } } }, "ws", deps());
+    const text = (one as { result: { messages: { content: { text: string } }[] } }).result.messages[0].content.text;
+    expect(text).toContain("only the page /pricing");
+    expect(text).toContain('get_seo_fixes with path "/pricing"');
+    expect(text).toContain("verify_page");
+    const all = await handle({ jsonrpc: "2.0", id: 3, method: "prompts/get", params: { name: "apply_seo_fixes" } }, "ws", deps());
+    expect((all as { result: { messages: { content: { text: string } }[] } }).result.messages[0].content.text).not.toContain("only the page");
+  });
+
+  it("requires seo_audit's url, and rejects unknown prompts", async () => {
+    const missing = await handle({ jsonrpc: "2.0", id: 1, method: "prompts/get", params: { name: "seo_audit", arguments: {} } }, "ws", deps());
+    expect((missing as { error: { code: number } }).error.code).toBe(-32602);
+    const ok = await handle({ jsonrpc: "2.0", id: 2, method: "prompts/get", params: { name: "seo_audit", arguments: { url: "https://example.com/about" } } }, "ws", deps());
+    expect((ok as { result: { messages: { content: { text: string } }[] } }).result.messages[0].content.text).toContain("https://example.com/about");
+    const nope = await handle({ jsonrpc: "2.0", id: 3, method: "prompts/get", params: { name: "nope" } }, "ws", deps());
+    expect((nope as { error: { code: number } }).error.code).toBe(-32602);
   });
 });

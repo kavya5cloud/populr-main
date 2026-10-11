@@ -14,7 +14,7 @@ export const maxDuration = 60;
 //
 // Authenticated by an access key created in Populr. The key decides the workspace; nothing in
 // the request can name a different one. Each key is rate limited on its own; requests with no
-// key can only describe the server (see DISCOVERY), and are rate limited by address.
+// key can only describe the server (see NEEDS_KEY), and are rate limited by address.
 
 const JSON_HEADERS = { "Content-Type": "application/json", "Cache-Control": "no-store" };
 
@@ -25,11 +25,13 @@ function unauthorized(message: string) {
   });
 }
 
-// Describing the server needs no key: initialize, ping and tools/list say what Populr offers,
-// which the docs already publish. So directories (the MCP Registry's clients, Smithery) can
-// scan the tools and an editor can show them before a key is set up. Anything that touches a
-// workspace — tools/call — still needs one.
-const DISCOVERY = new Set(["initialize", "ping", "tools/list"]);
+// Only running a tool needs a key: tools/call is the one method that reads a workspace.
+// Everything else — initialize, ping, tools/list, prompts, the (empty) resource lists, and
+// methods Populr doesn't support — describes the server, which the docs already publish. So
+// directories (the MCP Registry's clients, Smithery) can scan it, and an editor can show the
+// tools before a key is set up. Unsupported methods get "method not found", not a 401 that a
+// gateway would turn into a sign-in prompt.
+const NEEDS_KEY = new Set(["tools/call"]);
 
 const MISSING_KEY = "Missing access key. Create one at https://www.trypopulr.in/app/keys and send it as Authorization: Bearer <key>.";
 
@@ -77,7 +79,7 @@ export async function POST(req: NextRequest) {
   if (isNotification(msg)) return new NextResponse(null, { status: 202 });
 
   if (!workspace) {
-    if (!DISCOVERY.has(msg.method)) return unauthorized(MISSING_KEY);
+    if (NEEDS_KEY.has(msg.method)) return unauthorized(MISSING_KEY);
     return NextResponse.json(await handle(msg, "", { autopilot: autopilotStore() }), { headers: JSON_HEADERS });
   }
 

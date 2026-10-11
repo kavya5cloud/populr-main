@@ -151,7 +151,8 @@ export default function Docs() {
             <ul>
               <li>Transport: Streamable HTTP. <code>POST</code> JSON-RPC 2.0 to <code>{MCP_URL}</code>; responses are <code>application/json</code>. No server-sent stream (<code>GET</code> returns 405) and no sessions.</li>
               <li>Protocol versions: {SUPPORTED_VERSIONS.join(", ")}. An unsupported request gets the latest.</li>
-              <li>Methods: <code>initialize</code>, <code>ping</code>, <code>tools/list</code>, <code>tools/call</code>. Notifications are accepted with 202.</li>
+              <li>Methods: <code>initialize</code>, <code>ping</code>, <code>tools/list</code>, <code>tools/call</code>, <code>prompts/list</code>, <code>prompts/get</code>. Notifications are accepted with 202. Only <code>tools/call</code> needs a key.</li>
+              <li>Prompts: <code>apply_seo_fixes</code> (optional <code>path</code>) and <code>seo_audit</code> (<code>url</code>) — clients that support prompts offer them as commands.</li>
               <li>Tool failures come back as results with <code>isError: true</code>, so the assistant can read them; protocol problems are JSON-RPC errors.</li>
             </ul>
             <CopyBlock label="Try it" code={`curl -s ${MCP_URL} \\\n  -H "Authorization: Bearer $POPULR_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`} />
