@@ -1,0 +1,33 @@
+{
+  "name": "populr",
+  "owner": {
+    "name": "Populr",
+    "email": "team@trypopulr.in"
+  },
+  "metadata": {
+    "description": "Populr plugins for Cursor"
+  },
+  "plugins": [
+    {
+      "name": "populr-seo",
+      "source": "plugins/populr-seo",
+      "description": "Apply the SEO fixes you approve in Populr — titles, descriptions, JSON-LD and llms.txt — in your site's code.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Populr",
+        "email": "team@trypopulr.in"
+      },
+      "homepage": "https://www.trypopulr.in/developers",
+      "repository": "https://github.com/kavya5cloud/populr-main",
+      "license": "MIT",
+      "keywords": [
+        "seo",
+        "structured-data",
+        "json-ld",
+        "llms-txt",
+        "mcp"
+      ],
+      "category": "marketing"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+---
+description: How to apply SEO head tags from Populr without creating duplicates or breaking JSX
+alwaysApply: false
+---
+
+When applying SEO changes from Populr (`get_seo_fixes`, `get_structured_data`):
+
+- One `<title>` and one `<meta name="description">` per page. Replace existing ones; never add a second.
+- Prefer the framework's metadata API (Next.js `metadata` / `generateMetadata`, Nuxt `useHead`, Remix `meta`, `<svelte:head>`) over hand-written tags.
+- JSON-LD: one block per `@type`. Replace an existing block of the same type. In JSX, render it with `dangerouslySetInnerHTML` and escape `<` as `<`.
+- Apply only what Populr returns as approved. Suggest other changes through `draft_page_fix`, which the owner approves in Populr.

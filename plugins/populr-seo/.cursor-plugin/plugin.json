@@ -1,0 +1,22 @@
+{
+  "name": "populr-seo",
+  "version": "1.0.0",
+  "description": "Apply the SEO fixes you approve in Populr — titles, meta descriptions, JSON-LD structured data and llms.txt — directly in your site's code, then verify them live.",
+  "author": { "name": "Populr", "email": "team@trypopulr.in" },
+  "homepage": "https://www.trypopulr.in/developers",
+  "repository": "https://github.com/kavya5cloud/populr-main",
+  "license": "MIT",
+  "keywords": ["seo", "structured-data", "json-ld", "llms-txt", "metadata", "mcp", "marketing"],
+  "logo": "assets/logo.svg",
+  "variables": {
+    "type": "object",
+    "properties": {
+      "POPULR_KEY": {
+        "type": "string",
+        "title": "Populr access key",
+        "description": "Starts with pop_. Create one at https://www.trypopulr.in/app/keys"
+      }
+    },
+    "required": ["POPULR_KEY"]
+  }
+}

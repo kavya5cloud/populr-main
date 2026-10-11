@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "populr": {
+      "url": "https://www.trypopulr.in/api/mcp",
+      "headers": {
+        "Authorization": "Bearer ${POPULR_KEY}"
+      }
+    }
+  }
+}
