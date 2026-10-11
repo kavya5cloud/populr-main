@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { hashKey, InMemoryKeyStore, looksLikeKey } from "@/lib/mcp/keys";
 import { handle, SUPPORTED_VERSIONS } from "@/lib/mcp/server";
+import { TOOLS } from "@/lib/mcp/tools";
+import Ajv from "ajv";
 import { InMemoryAutopilotStore } from "@/lib/seo/autopilot-store";
 
 // Populr's MCP server. Verified with the official MCP Inspector before these were written:
@@ -233,5 +235,66 @@ describe("MCP prompts", () => {
     expect((ok as { result: { messages: { content: { text: string } }[] } }).result.messages[0].content.text).toContain("https://example.com/about");
     const nope = await handle({ jsonrpc: "2.0", id: 3, method: "prompts/get", params: { name: "nope" } }, "ws", deps());
     expect((nope as { error: { code: number } }).error.code).toBe(-32602);
+  });
+});
+
+describe("structured output", () => {
+  // Clients (VS Code, Claude Code, the TypeScript SDK) reject a successful result whose
+  // structuredContent doesn't match the tool's outputSchema — so check every path.
+  const ajv = new Ajv({ strict: false, allErrors: true });
+  const validators = new Map(TOOLS.map((t) => [t.name, ajv.compile(t.outputSchema)]));
+  const PAGE = `<html><head><title>Shop A — groceries</title><meta name="description" content="Fresh groceries from Shop A in Pune, delivered to your door every day of the week."><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Store","name":"Shop A"},{"@type":"WebSite","name":"Shop A"}]}</script></head><body><h1>Shop A</h1></body></html>`;
+
+  async function check(name: string, args: Record<string, unknown>, ws: string, deps: Parameters<typeof handle>[2]) {
+    const r = (await handle(call(name, args), ws, deps)) as { result: { isError: boolean; structuredContent?: Record<string, unknown> } };
+    if (r.result.isError) {
+      expect(r.result.structuredContent, `${name} error result`).toBeUndefined();
+      return null;
+    }
+    const v = validators.get(name)!;
+    expect(r.result.structuredContent, `${name} has structured content`).toBeDefined();
+    expect(v(r.result.structuredContent), `${name}: ${JSON.stringify(v.errors)}`).toBe(true);
+    return r.result.structuredContent!;
+  }
+
+  it("declares an outputSchema for every tool, listed in tools/list", async () => {
+    const { autopilot } = await setup();
+    const list = (await handle({ jsonrpc: "2.0", id: 1, method: "tools/list" }, "ws-a", { autopilot })) as { result: { tools: { name: string; outputSchema?: { type: string } }[] } };
+    for (const t of list.result.tools) expect(t.outputSchema?.type, t.name).toBe("object");
+  });
+
+  it("matches the schema on every success path, for a set-up workspace", async () => {
+    const { autopilot } = await setup();
+    const deps = {
+      autopilot,
+      fetchPage: async () => PAGE,
+      suggest: async () => ({ ok: true as const, fix: { title: "Shop A — fresh groceries in Pune", description: "Order fresh groceries from Shop A in Pune, delivered to your door every day.", status: "suggested" as const, before: { title: "Shop A — groceries", description: null }, at: 0 } }),
+    };
+    expect((await check("seo_status", {}, "ws-a", deps))?.status).toBe("ready");
+    expect((await check("get_seo_fixes", {}, "ws-a", deps))?.status).toBe("ok");
+    expect((await check("get_seo_fixes", { path: "/nope" }, "ws-a", deps))?.status).toBe("unknown_page");
+    expect((await check("get_structured_data", { path: "/" }, "ws-a", deps))?.status).toBe("ok");
+    expect((await check("audit_page", { url: "https://a.example/" }, "ws-a", deps))?.status).toBe("ok");
+    expect((await check("draft_page_fix", { path: "/" }, "ws-a", deps))?.status).toBe("not_saved_already_approved");
+    expect((await check("draft_page_fix", { path: "/pricing" }, "ws-a", deps))?.status).toBe("saved");
+    expect((await check("generate_llms_txt", {}, "ws-a", deps))?.status).toBe("ok");
+    expect((await check("verify_page", { url: "https://a.example/" }, "ws-a", deps))?.status).toBe("live");
+    // A page with no fix of its own is still checked for the site-wide structured data.
+    expect((await check("verify_page", { url: "https://a.example/pricing" }, "ws-a", deps))?.status).toBe("live");
+    // Error paths: text only.
+    expect(await check("verify_page", { url: "https://elsewhere.example/" }, "ws-a", deps)).toBeNull();
+    expect(await check("audit_page", { url: "not a url" }, "ws-a", deps)).toBeNull();
+  });
+
+  it("matches the schema when nothing is set up, or the business details are missing", async () => {
+    const autopilot = new InMemoryAutopilotStore();
+    await autopilot.save({ workspace: "ws-c", site: "https://c.example", enabled: false, business: null, faq: [], pages: {} });
+    for (const t of TOOLS.filter((t) => t.name !== "audit_page")) {
+      const args = t.name === "verify_page" ? { url: "https://x.example/" } : t.name === "draft_page_fix" ? { path: "/" } : {};
+      expect((await check(t.name, args, "ws-none", { autopilot }))?.status, t.name).toBe("not_set_up");
+    }
+    expect((await check("get_structured_data", {}, "ws-c", { autopilot }))?.status).toBe("needs_business_details");
+    expect((await check("generate_llms_txt", {}, "ws-c", { autopilot }))?.status).toBe("needs_business_details");
+    expect((await check("verify_page", { url: "https://c.example/" }, "ws-c", { autopilot, fetchPage: async () => "<html></html>" }))?.status).toBe("no_approved_fixes");
   });
 });

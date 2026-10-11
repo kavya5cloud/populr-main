@@ -82,7 +82,7 @@ export async function handle(msg: JsonRpcRequest, workspace: string, deps: ToolD
       return ok(msg.id, {});
     case "tools/list":
       return ok(msg.id, {
-        tools: TOOLS.map(({ name, title, description, inputSchema, annotations }) => ({ name, title, description, inputSchema, annotations })),
+        tools: TOOLS.map(({ name, title, description, inputSchema, outputSchema, annotations }) => ({ name, title, description, inputSchema, outputSchema, annotations })),
       });
     case "prompts/list":
       return ok(msg.id, { prompts: PROMPTS.map(({ name, title, description, arguments: a }) => ({ name, title, description, arguments: a })) });
@@ -115,8 +115,9 @@ export async function handle(msg: JsonRpcRequest, workspace: string, deps: ToolD
       }
       try {
         const r = await tool.run(workspace, args, deps);
-        // Tool failures are results the model can read and react to, not protocol errors.
-        return ok(msg.id, { content: [{ type: "text", text: r.text }], isError: !!r.isError });
+        // Tool failures are results the model can read and react to, not protocol errors. A
+        // successful result also carries structured content matching the tool's outputSchema.
+        return ok(msg.id, { content: [{ type: "text", text: r.text }], ...(r.data && !r.isError ? { structuredContent: r.data } : {}), isError: !!r.isError });
       } catch {
         return ok(msg.id, { content: [{ type: "text", text: "Populr hit an error running that tool. Try again in a moment." }], isError: true });
       }

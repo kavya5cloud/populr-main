@@ -17,7 +17,7 @@ const KEBAB = /^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/;
 function files(d: string): string[] {
   return readdirSync(d).flatMap((f) => (statSync(path.join(d, f)).isDirectory() ? files(path.join(d, f)) : [path.join(d, f)]));
 }
-const frontmatter = (text: string) => Object.fromEntries((text.match(/^---\n([\s\S]*?)\n---/)?.[1] ?? "").split("\n").map((l) => l.split(/:\s(.*)/s).slice(0, 2)).filter(([k]) => k));
+const frontmatter = (text: string) => Object.fromEntries((text.match(/^---\n([\s\S]*?)\n---/)?.[1] ?? "").split("\n").map((l) => l.split(/:\s([\s\S]*)/).slice(0, 2)).filter(([k]) => k));
 
 describe("Cursor plugin", () => {
   it("is listed by the repo's marketplace manifest", () => {
