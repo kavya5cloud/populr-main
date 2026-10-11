@@ -131,6 +131,39 @@ export function structuredDataSnippet(objects: unknown[], languageId: string, in
   return blocks.join(`\n${indent}`);
 }
 
+// One line of MCP over stdio, forwarded to Populr over HTTP with the key as a header — for
+// editors that can run a local MCP server but can't send headers to a remote one (Cursor's
+// extension API keeps only the URL). Returns the line to write back, or null for nothing
+// (a notification). A failure becomes a JSON-RPC error for that request id, so the editor
+// shows a reason instead of hanging.
+export async function forwardLine(url: string, key: string, line: string, opts: { fetch?: Fetch } = {}): Promise<string | null> {
+  let msg: { id?: string | number | null };
+  try { msg = JSON.parse(line); } catch {
+    return JSON.stringify({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "Parse error" } });
+  }
+  const id = msg && typeof msg === "object" && "id" in msg ? msg.id ?? null : undefined;
+  const fail = (message: string) => (id === undefined ? null : JSON.stringify({ jsonrpc: "2.0", id, error: { code: -32603, message } }));
+
+  let res: Response;
+  try {
+    res = await (opts.fetch ?? fetch)(url, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", Accept: "application/json, text/event-stream", "MCP-Protocol-Version": PROTOCOL_VERSION },
+      body: line,
+    });
+  } catch {
+    return fail("Couldn't reach Populr. Check your connection.");
+  }
+  const body = await res.text();
+  if (res.status === 202 || !body.trim()) return null;
+  const parsed = parseBody(body, res.headers.get("content-type") ?? "");
+  if (parsed && ("result" in parsed || "error" in parsed)) {
+    // Keep the caller's id even when the server answered an auth or rate-limit error with null.
+    return JSON.stringify({ ...parsed, jsonrpc: "2.0", id: id === undefined ? null : id });
+  }
+  return fail(`Populr answered with an error (HTTP ${res.status}).`);
+}
+
 export function describeError(e: unknown): string {
   if (e instanceof PopulrError) return e.message;
   return "Something went wrong talking to Populr. Try again in a moment.";

@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 const SECTIONS = [
-  ["overview", "Overview"], ["quickstart", "Quickstart"], ["connect", "Connect your editor"], ["vscode", "VS Code extension"],
+  ["overview", "Overview"], ["quickstart", "Quickstart"], ["connect", "Connect your editor"], ["vscode", "VS Code & Cursor extension"],
   ["workflow", "The workflow"], ["tools", "Tools reference"], ["keys", "Access keys & security"], ["limits", "Limits"],
   ["troubleshooting", "Troubleshooting"], ["protocol", "Protocol details"],
 ] as const;
@@ -65,13 +65,19 @@ export default function Docs() {
           </section>
 
           <section id="vscode">
-            <h2>VS Code extension</h2>
-            <p>The Populr extension registers Populr with VS Code&apos;s agent mode, so there&apos;s no <code>mcp.json</code> to write.</p>
+            <h2>VS Code &amp; Cursor extension</h2>
+            <p>The Populr extension registers Populr with your editor&apos;s agent, so there&apos;s no <code>mcp.json</code> to write. It installs as <code>populr.populr-seo</code>.</p>
             <ol>
-              <li><a href="/downloads/populr-seo.vsix" download>Download the extension</a> (15 KB), then in VS Code run <b>Extensions: Install from VSIX…</b> and pick the file. It installs as <code>populr.populr-seo</code>; requires VS Code 1.101 or later.</li>
-              <li>Run <b>Populr: Connect</b> from the Command Palette and paste your key. It&apos;s kept in VS Code&apos;s secret storage.</li>
-              <li>Open Copilot Chat in <b>Agent</b> mode — Populr&apos;s tools are listed under the tools picker.</li>
+              <li>Install it:
+                <ul>
+                  <li><b>Cursor</b> — search <b>Populr SEO</b> in the Extensions panel (it&apos;s on <a href="https://open-vsx.org/extension/populr/populr-seo" target="_blank" rel="noopener">Open VSX</a>).</li>
+                  <li><b>VS Code</b> — <a href="/downloads/populr-seo.vsix" download>download the extension</a>, then run <b>Extensions: Install from VSIX…</b> and pick the file. Requires VS Code 1.101 or later.</li>
+                </ul>
+              </li>
+              <li>Run <b>Populr: Connect</b> from the Command Palette and paste your key. It&apos;s kept in the editor&apos;s secret storage.</li>
+              <li>Ask the agent. In VS Code, open chat in <b>Agent</b> mode — Populr&apos;s tools are in the tools picker. In Cursor, Populr is listed under MCP servers and its tools are available to the agent.</li>
             </ol>
+            <p>In Cursor, the extension runs a small local relay that adds your key to each request — Cursor&apos;s extension API can&apos;t send it to a remote server directly. The relay gets the key through its environment, never its command line, and stops when you disconnect.</p>
             <p>Commands it adds:</p>
             <ul>
               <li><b>Populr: Show SEO status</b> — what&apos;s approved and waiting.</li>

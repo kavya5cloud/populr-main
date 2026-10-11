@@ -1,8 +1,8 @@
 {
   "name": "populr-seo",
   "displayName": "Populr SEO",
-  "description": "Apply the SEO fixes you approve in Populr from VS Code's agent mode — titles, descriptions, structured data and llms.txt, in your site's code.",
-  "version": "1.0.0",
+  "description": "Apply the SEO fixes you approve in Populr from your editor's AI agent — titles, descriptions, structured data and llms.txt, in your site's code. Works in VS Code and Cursor.",
+  "version": "1.0.1",
   "license": "MIT",
   "publisher": "populr",
   "pricing": "Free",
@@ -30,7 +30,8 @@
     "structured data",
     "json-ld",
     "llms.txt",
-    "agent"
+    "agent",
+    "cursor"
   ],
   "galleryBanner": {
     "color": "#0b0b0b",

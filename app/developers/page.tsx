@@ -30,7 +30,7 @@ const STEPS = [
 const FAQ = [
   { q: "Do I need the Populr script on my site as well?", a: "No. The script applies approved fixes in the browser, which Google reads. Applying them in code puts them in the HTML itself, which every crawler and link preview reads. Many teams start with the script and move fixes into code as they ship." },
   { q: "Can the assistant change anything in Populr?", a: "One tool writes: draft_page_fix saves a draft for the owner to approve. Nothing an assistant does through Populr publishes, approves or changes a live site — your own deploy does that." },
-  { q: "Which editors work?", a: "Any client that speaks MCP over HTTP: Claude Code, Cursor, VS Code (with or without the Populr extension), Windsurf, and others. The server is stateless and needs only an Authorization header." },
+  { q: "Which editors work?", a: "Any client that speaks MCP over HTTP: Claude Code, Cursor and VS Code (with or without the Populr extension), Windsurf, and others. The server is stateless and needs only an Authorization header." },
   { q: "What does a key give access to?", a: "Exactly one workspace's SEO settings. Keys are created and revoked in Populr, shown once, stored only as a fingerprint, and rate limited." },
   { q: "Does it cost extra?", a: "No. It's part of Populr — the first month is free." },
 ];
@@ -119,11 +119,12 @@ export default function Developers() {
 
         <section className="dv-sec dv-split">
           <div>
-            <p className="dv-kicker">VS Code extension</p>
+            <p className="dv-kicker">VS Code &amp; Cursor extension</p>
             <h2>Or skip the config.</h2>
-            <p className="dv-lead">The Populr extension connects VS Code&apos;s agent mode to Populr, keeps your key in VS Code&apos;s secret storage, and adds commands to audit a page, insert structured data and create llms.txt.</p>
+            <p className="dv-lead">The Populr extension connects your editor&apos;s agent to Populr, keeps your key in the editor&apos;s secret storage, and adds commands to audit a page, insert structured data and create llms.txt.</p>
             <div className="dv-ext-cta">
-              <a href="/downloads/populr-seo.vsix" download className="dv-btn">Download for VS Code</a>
+              <a href="https://open-vsx.org/extension/populr/populr-seo" target="_blank" rel="noopener" className="dv-btn">Get it for Cursor</a>
+              <a href="/downloads/populr-seo.vsix" download className="dv-btn ghost">Download for VS Code</a>
               <a href="/developers/docs#vscode" className="dv-btn ghost">Extension guide</a>
             </div>
           </div>

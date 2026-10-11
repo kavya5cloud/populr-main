@@ -1,18 +1,26 @@
 import * as vscode from "vscode";
+import { createHash, randomBytes } from "node:crypto";
 import {
   callTool, checkServerUrl, DEFAULT_SERVER_URL, describeError, isKeyShaped, jsonLdFrom, KEYS_URL,
   listTools, llmsTxtFrom, PopulrError, structuredDataSnippet,
 } from "./core";
 
-// Populr SEO for VS Code.
+// Populr SEO for VS Code (and Cursor).
 //
-// Registers Populr's MCP server with VS Code, so its tools show up in agent mode with no
+// Registers Populr's MCP server with the editor, so its tools show up in the agent with no
 // mcp.json to write, and adds a few commands that use the same tools directly. The access key
-// lives in VS Code's secret storage and is only ever sent to the Populr server URL.
+// lives in the editor's secret storage and is only ever sent to the Populr server URL.
+//
+// VS Code takes the HTTP server directly. Cursor's extension API can't send headers to a
+// remote server, so there the extension registers a small local stdio relay (proxy.ts) that
+// adds the key — run by Cursor's own runtime, so nothing else needs installing.
 
 const SECRET = "populr.key";
 const PROVIDER_ID = "populr";
 const LABEL = "Populr SEO";
+
+type CursorMcp = { registerServer(config: unknown): void | Promise<void>; unregisterServer(name: string): void | Promise<void> };
+const cursorMcp = (vscode as unknown as { cursor?: { mcp?: CursorMcp } }).cursor?.mcp;
 
 export function activate(context: vscode.ExtensionContext) {
   const out = vscode.window.createOutputChannel("Populr");
@@ -70,7 +78,55 @@ export function activate(context: vscode.ExtensionContext) {
       return server;
     },
   };
-  if (vscode.lm?.registerMcpServerDefinitionProvider) {
+  // Cursor: (re)register the relay when the key or server URL changes, and drop it on
+  // disconnect. The key travels in the relay's environment, not its arguments. Changes run one
+  // at a time — an unregister racing a register can leave a relay Cursor no longer tracks.
+  //
+  // Each registration also gets a one-time session token in a file only this extension
+  // writes. The relay exits as soon as the file is gone or holds a different token, so
+  // disconnecting (or replacing the key) stops it even if Cursor leaves the process running.
+  const sessionFile = vscode.Uri.joinPath(context.globalStorageUri, "relay-session");
+  let registered: string | null = null;
+  let queue: Promise<void> = Promise.resolve();
+  const syncCursor = () => {
+    queue = queue.then(async () => {
+      if (!cursorMcp) return;
+      const [url, key] = [serverUrl(), await getKey()];
+      const want = url && key ? createHash("sha256").update(`${url}\n${key}`).digest("hex") : null;
+      if (want === registered) return;
+      if (registered) {
+        await Promise.resolve(cursorMcp.unregisterServer(PROVIDER_ID)).catch(() => undefined);
+        registered = null;
+      }
+      if (!url || !key || !want) {
+        await vscode.workspace.fs.delete(sessionFile).then(undefined, () => undefined);
+        return;
+      }
+      const session = randomBytes(16).toString("hex");
+      await vscode.workspace.fs.createDirectory(context.globalStorageUri);
+      await vscode.workspace.fs.writeFile(sessionFile, new TextEncoder().encode(session));
+      await Promise.resolve(cursorMcp.registerServer({
+        name: PROVIDER_ID,
+        server: {
+          command: process.execPath,
+          args: [context.asAbsolutePath("out/proxy.js")],
+          env: { ELECTRON_RUN_AS_NODE: "1", POPULR_URL: url, POPULR_KEY: key, POPULR_SESSION_FILE: sessionFile.fsPath, POPULR_SESSION: session },
+        },
+      }));
+      registered = want;
+    }).catch(() => undefined);
+    return queue;
+  };
+
+  if (cursorMcp) {
+    context.subscriptions.push(changed.event(() => void syncCursor()), {
+      dispose: () => {
+        try { void Promise.resolve(cursorMcp.unregisterServer(PROVIDER_ID)).catch(() => undefined); } catch { /* gone */ }
+        void vscode.workspace.fs.delete(sessionFile).then(undefined, () => undefined);
+      },
+    });
+    void syncCursor();
+  } else if (vscode.lm?.registerMcpServerDefinitionProvider) {
     context.subscriptions.push(vscode.lm.registerMcpServerDefinitionProvider(PROVIDER_ID, provider));
   }
 
@@ -132,7 +188,8 @@ export function activate(context: vscode.ExtensionContext) {
     try {
       const tools = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: "Checking your key with Populr…" }, () => listTools(url, key.trim()));
       await context.secrets.store(SECRET, key.trim());
-      const a = await vscode.window.showInformationMessage(`Populr connected — ${tools.length} tools are ready in chat (agent mode).`, "Show SEO status");
+      const where = cursorMcp ? "Cursor's agent" : "chat (agent mode)";
+      const a = await vscode.window.showInformationMessage(`Populr connected — ${tools.length} tools are ready in ${where}.`, "Show SEO status");
       if (a) await vscode.commands.executeCommand("populr.status");
     } catch (e) {
       void vscode.window.showErrorMessage(describeError(e));
@@ -141,7 +198,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   command("populr.disconnect", async () => {
     await context.secrets.delete(SECRET);
-    void vscode.window.showInformationMessage("Populr disconnected. The key is no longer stored in VS Code — revoke it in Populr if you won't use it again.");
+    void vscode.window.showInformationMessage(`Populr disconnected. The key is no longer stored in ${vscode.env.appName} — revoke it in Populr if you won't use it again.`);
   });
 
   command("populr.status", async () => {

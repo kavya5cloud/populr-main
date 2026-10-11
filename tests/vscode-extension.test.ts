@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import {
-  callTool, checkServerUrl, DEFAULT_SERVER_URL, isKeyShaped, jsonLdFrom, listTools, llmsTxtFrom, PopulrError, structuredDataSnippet,
+  callTool, checkServerUrl, DEFAULT_SERVER_URL, forwardLine, isKeyShaped, jsonLdFrom, listTools, llmsTxtFrom, PopulrError, structuredDataSnippet,
 } from "../extensions/vscode/src/core";
 import { newKey } from "@/lib/mcp/keys";
 import { MCP_URL } from "@/lib/mcp/install";
@@ -94,6 +94,44 @@ describe("extension client", () => {
     // The object literal inside is valid JavaScript that evaluates to the same data.
     const literal = s.slice(s.indexOf("JSON.stringify(") + 15, s.lastIndexOf(").replace"));
     expect(new Function(`return ${literal}`)()).toEqual({ "@type": "Store", name: "A </script> B" });
+  });
+});
+
+describe("Cursor relay", () => {
+  it("forwards a request with the key and returns the answer under the caller's id", async () => {
+    const f = fakeFetch(200, { jsonrpc: "2.0", id: 4, result: { tools: [] } });
+    const out = await forwardLine(MCP_URL, "pop_k", JSON.stringify({ jsonrpc: "2.0", id: 4, method: "tools/list" }), { fetch: f.fn });
+    expect(JSON.parse(out!)).toEqual({ jsonrpc: "2.0", id: 4, result: { tools: [] } });
+    expect((f.calls[0].init.headers as Record<string, string>).Authorization).toBe("Bearer pop_k");
+    expect(f.calls[0].init.body).toBe(JSON.stringify({ jsonrpc: "2.0", id: 4, method: "tools/list" }));
+  });
+
+  it("writes nothing back for a notification", async () => {
+    const f = fakeFetch(202, "");
+    expect(await forwardLine(MCP_URL, "pop_k", JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }), { fetch: f.fn })).toBeNull();
+  });
+
+  it("ties a rejected key to the request that hit it, so the editor shows why", async () => {
+    // Populr answers 401 with id null (it can't trust the body before checking the key).
+    const f = fakeFetch(401, { jsonrpc: "2.0", id: null, error: { code: -32001, message: "That access key isn't valid. It may have been revoked." } });
+    const out = JSON.parse((await forwardLine(MCP_URL, "pop_k", JSON.stringify({ jsonrpc: "2.0", id: "a", method: "tools/list" }), { fetch: f.fn }))!);
+    expect(out).toMatchObject({ id: "a", error: { code: -32001, message: expect.stringContaining("revoked") } });
+  });
+
+  it("answers an outage or a garbled reply with an error instead of hanging", async () => {
+    const down = (async () => { throw new TypeError("fetch failed"); }) as unknown as typeof fetch;
+    expect(JSON.parse((await forwardLine(MCP_URL, "pop_k", JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" }), { fetch: down }))!)).toMatchObject({ id: 1, error: { code: -32603 } });
+    const html = fakeFetch(502, "<html>Bad gateway</html>", "text/html");
+    expect(JSON.parse((await forwardLine(MCP_URL, "pop_k", JSON.stringify({ jsonrpc: "2.0", id: 2, method: "ping" }), { fetch: html.fn }))!)).toMatchObject({ id: 2, error: { message: expect.stringContaining("502") } });
+    expect(JSON.parse((await forwardLine(MCP_URL, "pop_k", "not json", { fetch: html.fn }))!)).toMatchObject({ id: null, error: { code: -32700 } });
+  });
+
+  it("is launched with the key in its environment, never its arguments", () => {
+    const at = extensionSrc.indexOf("cursorMcp.registerServer(");
+    const call = extensionSrc.slice(at, extensionSrc.indexOf("}));", at));
+    expect(call).toMatch(/args: \[context\.asAbsolutePath\("out\/proxy\.js"\)\]/);
+    expect(call).toMatch(/env: \{[^}]*POPULR_KEY: key/);
+    expect(call).toMatch(/POPULR_SESSION_FILE/);
   });
 });
 
