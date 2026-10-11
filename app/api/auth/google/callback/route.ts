@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { db, ensureSchema } from "@/lib/db";
 import { createSession } from "@/lib/auth";
 import { baseUrl } from "@/lib/base-url";
+import { safeNext, signedInUrl } from "@/lib/auth-next";
 
 export const runtime = "nodejs";
 
@@ -14,7 +15,9 @@ export async function GET(req: NextRequest) {
 
   const c = await cookies();
   const expected = c.get("oauth_login_state")?.value;
+  const next = safeNext(c.get("oauth_login_next")?.value);
   c.delete("oauth_login_state");
+  c.delete("oauth_login_next");
 
   if (!sql) return NextResponse.redirect(origin + "/app?auth=no_db");
   if (!code || !state || state !== expected) return NextResponse.redirect(origin + "/app?auth=denied");
@@ -50,7 +53,7 @@ export async function GET(req: NextRequest) {
       await sql`INSERT INTO users (id, email, password_hash) VALUES (${userId}, ${email}, ${"oauth:google"})`;
     }
     await createSession(userId, email);
-    return NextResponse.redirect(origin + "/app?auth=ok");
+    return NextResponse.redirect(signedInUrl(origin, next));
   } catch {
     return NextResponse.redirect(origin + "/app?auth=error");
   }

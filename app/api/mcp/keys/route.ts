@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { rateLimit, requestKey } from "@/lib/throttle";
 import { workspaceKey } from "@/lib/intel";
 import { keyStore } from "@/lib/mcp/keys";
@@ -16,6 +17,9 @@ export const runtime = "nodejs";
 // limit — sharing one with create/revoke meant an open page could lock itself out.
 async function ws(req: NextRequest, wsid: string | null, write = false): Promise<{ error: NextResponse } | { w: string }> {
   const session = await getSession();
+  // Keys belong to an account: signed out, there's nothing to list, make or revoke. (Without a
+  // database — local development — there are no accounts, so the browser workspace stands in.)
+  if (!session && db()) return { error: NextResponse.json({ error: "sign_in_required" }, { status: 401 }) };
   const who = requestKey(req.headers, session?.userId);
   const limit = write
     ? rateLimit(`mcpkeys:w:${who}`, session ? 30 : 10, 60_000)

@@ -18,10 +18,12 @@ const EDITORS = [
   { name: "Windsurf", glyph: "≋" },
 ];
 
-export default function KeysHeader() {
+export default function KeysHeader({ enabled = true }: { enabled?: boolean }) {
   const [s, setS] = useState<State | null>(null);
 
   useEffect(() => {
+    // Signed out, there's nothing to read — the routes would refuse it.
+    if (!enabled) return;
     const ws = encodeURIComponent(workspaceId());
     const load = () => Promise.all([
       fetch(`/api/mcp/keys?wsid=${ws}`, { cache: "no-store" }).then((r) => r.json()).catch(() => null),
@@ -39,7 +41,7 @@ export default function KeysHeader() {
     const back = () => { if (visible()) load(); };
     document.addEventListener("visibilitychange", back);
     return () => { clearInterval(id); document.removeEventListener("visibilitychange", back); };
-  }, []);
+  }, [enabled]);
 
   const steps = [
     { t: "Create a key", d: "Shown once — copy it straight into your editor.", done: !!s?.hasKey },

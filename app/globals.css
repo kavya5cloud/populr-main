@@ -5177,6 +5177,8 @@ body:has(.missions) ::-webkit-scrollbar-thumb{background:#d3d5d9;border-color:#f
 .appui .ek-note{margin:0;font-size:12.5px;color:var(--fg)}
 .appui .ek-fine{margin:0;display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--faint)}
 .appui .ek-fine svg{width:13px;height:13px;flex:none;color:var(--green-ink)}
+.appui .ek-loading{min-height:150px}
+.appui .ek-signin-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .appui .ek-fresh{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,.95);background:rgba(255,255,255,.78);backdrop-filter:blur(10px);box-shadow:0 0 0 1px color-mix(in srgb,var(--green-ink) 14%,transparent),0 10px 24px -18px color-mix(in srgb,var(--green-ink) 60%,transparent)}
 .appui .ek-fresh p{margin:0}
 .appui .ek-fresh-t{font-size:12px;font-weight:500;color:var(--dim)}

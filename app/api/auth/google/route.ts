@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { baseUrl } from "@/lib/base-url";
+import { safeNext } from "@/lib/auth-next";
 
 export const runtime = "nodejs";
 
@@ -15,6 +16,14 @@ export async function GET(req: NextRequest) {
   const state = crypto.randomUUID();
   const c = await cookies();
   c.set("oauth_login_state", state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 600,
+  });
+  // Where to return after signing in (e.g. the keys page). Only a path on this site.
+  c.set("oauth_login_next", safeNext(req.nextUrl.searchParams.get("next")), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

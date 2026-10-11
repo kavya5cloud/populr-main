@@ -10,7 +10,7 @@ import { InMemoryAutopilotStore } from "@/lib/seo/autopilot-store";
 // it initialised, listed seven tools and called seo_status, get_seo_fixes and verify_page
 // against a real public site. These pin the protocol, the key handling, and the tenant line.
 
-afterEach(() => { vi.resetModules(); vi.doUnmock("@/lib/auth"); vi.doUnmock("@/lib/mcp/keys"); vi.doUnmock("@/lib/seo/autopilot-store"); });
+afterEach(() => { vi.resetModules(); vi.doUnmock("@/lib/auth"); vi.doUnmock("@/lib/db"); vi.doUnmock("@/lib/mcp/keys"); vi.doUnmock("@/lib/seo/autopilot-store"); });
 
 async function setup() {
   const autopilot = new InMemoryAutopilotStore();
@@ -296,5 +296,30 @@ describe("structured output", () => {
     expect((await check("get_structured_data", {}, "ws-c", { autopilot }))?.status).toBe("needs_business_details");
     expect((await check("generate_llms_txt", {}, "ws-c", { autopilot }))?.status).toBe("needs_business_details");
     expect((await check("verify_page", { url: "https://c.example/" }, "ws-c", { autopilot, fetchPage: async () => "<html></html>" }))?.status).toBe("no_approved_fixes");
+  });
+});
+
+describe("/api/mcp/keys needs an account", () => {
+  it("refuses to list, make or revoke keys when signed out, once accounts are on", async () => {
+    vi.doMock("@/lib/auth", async (orig) => ({ ...(await orig<object>()), getSession: async () => null }));
+    vi.doMock("@/lib/db", async (orig) => ({ ...(await orig<object>()), db: () => (() => []) as unknown }));
+    const k = await import("@/app/api/mcp/keys/route");
+    const ip = { "x-forwarded-for": "203.0.113.90" };
+    const get = await k.GET(new NextRequest("http://x/api/mcp/keys?wsid=ws-x", { headers: ip }));
+    expect(get.status).toBe(401);
+    expect(await get.json()).toEqual({ error: "sign_in_required" });
+    expect((await k.POST(new NextRequest("http://x/api/mcp/keys", { method: "POST", headers: { ...ip, "Content-Type": "application/json" }, body: JSON.stringify({ wsid: "ws-x", name: "x" }) }))).status).toBe(401);
+    expect((await k.DELETE(new NextRequest("http://x/api/mcp/keys?wsid=ws-x&id=k1", { method: "DELETE", headers: ip }))).status).toBe(401);
+  });
+
+  it("works for a signed-in account, under that account's workspace", async () => {
+    const keys = new InMemoryKeyStore();
+    vi.doMock("@/lib/auth", async (orig) => ({ ...(await orig<object>()), getSession: async () => ({ userId: "u1", email: "a@b.c" }) }));
+    vi.doMock("@/lib/db", async (orig) => ({ ...(await orig<object>()), db: () => (() => []) as unknown }));
+    vi.doMock("@/lib/mcp/keys", async (orig) => ({ ...(await orig<object>()), keyStore: () => keys }));
+    const k = await import("@/app/api/mcp/keys/route");
+    const made = await k.POST(new NextRequest("http://x/api/mcp/keys", { method: "POST", headers: { "x-forwarded-for": "203.0.113.91", "Content-Type": "application/json" }, body: JSON.stringify({ wsid: "anything", name: "Laptop" }) }));
+    expect(made.status).toBe(200);
+    expect(await keys.resolve((await made.json()).key, 1)).toBe("user:u1");
   });
 });
