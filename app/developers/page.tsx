@@ -3,6 +3,15 @@ import { TOOLS } from "@/lib/mcp/tools";
 import { installTabs, MCP_URL } from "@/lib/mcp/install";
 import { CopyBlock, InstallTabs, SessionDemo } from "./DevClient";
 
+// Where Populr's MCP server, extension and plugin are published.
+const LISTINGS = [
+  { name: "MCP Registry", url: "https://registry.modelcontextprotocol.io/?q=in.trypopulr" },
+  { name: "Smithery", url: "https://smithery.ai/servers/kavyax888/populr-seo" },
+  { name: "Cursor Directory", url: "https://cursor.directory/plugins/populr" },
+  { name: "VS Code Marketplace", url: "https://marketplace.visualstudio.com/items?itemName=Populr.populr-seo" },
+  { name: "Open VSX", url: "https://open-vsx.org/extension/populr/populr-seo" },
+];
+
 // /developers — Populr's MCP server, for the people who ship the site.
 //
 // One idea, said several ways: the owner approves SEO changes in Populr, and the developer's
@@ -62,6 +71,12 @@ export default function Developers() {
                 <a href="/developers/docs" className="dv-btn ghost">Read the docs</a>
               </div>
               <p className="dv-works">Works with <b>Claude Code</b> · <b>Cursor</b> · <b>VS Code</b> · <b>Windsurf</b></p>
+              <p className="dv-works dv-listed">
+                Listed on{" "}
+                {LISTINGS.map((l, i) => (
+                  <span key={l.name}>{i > 0 && " · "}<a href={l.url} target="_blank" rel="noopener">{l.name}</a></span>
+                ))}
+              </p>
             </div>
           </div>
           <div className="dv-right">

@@ -5227,6 +5227,9 @@ body:has(.dv){background:#f3f4ef}
 .dv-ext-cta{display:flex;flex-wrap:wrap;gap:10px}
 .dv-works{margin:20px 0 0;font-size:12.5px;color:var(--dv-dim)}
 .dv-works b{color:var(--dv-fg);font-weight:500}
+.dv-listed{margin-top:6px}
+.dv-listed a{color:var(--dv-fg);text-decoration:none;border-bottom:1px solid var(--dv-line)}
+.dv-listed a:hover{border-bottom-color:var(--dv-fg)}
 
 .dv-right{border-radius:clamp(14px,1.8vw,22px);overflow:hidden;background:radial-gradient(70% 60% at 30% 20%,#2a3b1a,transparent 70%),radial-gradient(60% 60% at 90% 90%,#1d2a12,transparent 70%),#0d110c;display:flex;align-items:center;justify-content:center;padding:clamp(16px,3vw,40px);min-height:420px}
 .dv-term{margin:0;width:100%;max-width:580px;border-radius:14px;background:#0a0d0b;border:1px solid rgba(255,255,255,.08);box-shadow:0 40px 80px -30px rgba(0,0,0,.7);overflow:hidden;font-family:'Geist Mono',monospace;font-size:12.5px;line-height:1.7}

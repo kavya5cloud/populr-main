@@ -48,6 +48,13 @@ describe("Cursor plugin", () => {
     }
   });
 
+  it("shows the JSX-safe JSON-LD escape as working code wherever it's described", () => {
+    // A shell once turned the escape into a literal "<", leaving "escape < as <".
+    for (const rel of ["skills/populr-seo/SKILL.md", "rules/populr-seo-head-tags.mdc"]) {
+      expect(read(rel), rel).toContain('.replace(/</g, "\\\\u003c")');
+    }
+  });
+
   it("carries no access key", () => {
     for (const f of files(dir).concat(path.join(root, ".cursor-plugin/marketplace.json"))) {
       expect(readFileSync(f, "utf8"), f).not.toMatch(/pop_[A-Za-z0-9_-]{20,}/);
