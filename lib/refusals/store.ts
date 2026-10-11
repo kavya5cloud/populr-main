@@ -99,6 +99,14 @@ async function ensure(sql: Sql) {
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     resolved_at TIMESTAMPTZ
   )`;
+    // Columns added after the table first shipped. CREATE TABLE IF NOT EXISTS does nothing when
+  // the table already exists, so a table created before these columns existed never gets them
+  // from the statement above. Rows recorded before this have no instead_channel, so they are
+  // never graded and stay unknown, which is the honest state for them.
+  await sql`ALTER TABLE refusals ADD COLUMN IF NOT EXISTS instead_channel TEXT`;
+  await sql`ALTER TABLE refusals ADD COLUMN IF NOT EXISTS instead_outcome TEXT NOT NULL DEFAULT 'unknown'`;
+  await sql`ALTER TABLE refusals ADD COLUMN IF NOT EXISTS instead_evidence TEXT`;
+  await sql`ALTER TABLE refusals ADD COLUMN IF NOT EXISTS instead_resolved_at TIMESTAMPTZ`;
   await sql`CREATE INDEX IF NOT EXISTS idx_refusals_ws ON refusals (workspace_key, created_at DESC)`;
   // The grading pass asks for exactly this: unresolved, and now checkable. Without the index
   // it is a full scan on a table that only ever grows.
