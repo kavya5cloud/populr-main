@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { workspaceId } from "@/lib/store";
+import BackLink from "@/app/components/BackLink";
 
 // "What Actually Worked" — recommendations ranked by measured outcome (association
 // scores from before/after Search Console snapshots), plus the per-channel funnel.
@@ -67,7 +68,7 @@ export default function Worked() {
     <div className="appui">
       <div className="worked">
         <div className="w-top">
-          <a href="/app">← Back to dashboard</a>
+          <BackLink />
           <span className="w-wordmark">Populr.</span>
         </div>
 

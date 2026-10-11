@@ -12,6 +12,7 @@ import {
 import { describeWhen, headline } from "@/lib/assistant/status";
 import type { SocialPlatform } from "@/lib/social/types";
 import Icon from "@/app/components/Icon";
+import BackLink from "@/app/components/BackLink";
 
 // The Marketing Assistant.
 //
@@ -39,7 +40,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div className="appui">
       <div className="asst-wrap">
         <div className="asst-top">
-          <a href="/app">← Back to dashboard</a>
+          <BackLink />
           <span className="app-wordmark">Populr.</span>
         </div>
         {children}

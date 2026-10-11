@@ -6,6 +6,7 @@ import EditorAccess from "../_components/EditorAccess";
 import SeoAutopilot from "../_components/SeoAutopilot";
 import { AuthModal } from "../_components/AuthModal";
 import KeysHeader from "./KeysHeader";
+import BackLink from "@/app/components/BackLink";
 
 // /app/keys — where "Get an access key" lands.
 //
@@ -36,7 +37,7 @@ export default function KeysPage() {
     <div className="appui">
       <div className="keys-wrap">
         <div className="asst-top">
-          <a href="/app">← Back to dashboard</a>
+          <BackLink />
           <span className="app-wordmark">Populr.</span>
         </div>
         <KeysHeader enabled={!!me && !signedOut} />

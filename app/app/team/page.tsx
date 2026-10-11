@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { workspaceId } from "@/lib/store";
+import BackLink from "@/app/components/BackLink";
 
 // The AI team, in one place.
 //
@@ -56,7 +57,7 @@ export default function TeamPage() {
     <div className="appui">
       <div className="team-wrap">
         <div className="asst-top">
-          <a href="/app">← Back to dashboard</a>
+          <BackLink />
           <span className="app-wordmark">Populr.</span>
         </div>
 

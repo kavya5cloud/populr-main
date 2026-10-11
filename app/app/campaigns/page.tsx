@@ -6,6 +6,7 @@ import { CAMPAIGN_GOALS, type CampaignTask } from "@/lib/services/contracts";
 import type { AssetRow } from "@/lib/services/assets";
 import { extractJson } from "@/lib/llm-json";
 import Icon from "@/app/components/Icon";
+import BackLink from "@/app/components/BackLink";
 
 // Marketing Missions — the AI CMO assigns work, not tips.
 // Flow (decision-first, enforced): pick a mission → decision engine ranks channels
@@ -402,7 +403,7 @@ Give 4-8 tasks total across the timeline, each concrete enough to execute. Never
   return (
     <div className="missions">
       <div className="m-top">
-        <a href="/app">← Back to dashboard</a>
+        <BackLink />
         <span className="m-wordmark">Populr.</span>
       </div>
 
