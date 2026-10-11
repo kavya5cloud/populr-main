@@ -72,7 +72,7 @@ export default function Docs() {
               <li>Install it:
                 <ul>
                   <li><b>Cursor</b> — search <b>Populr SEO</b> in the Extensions panel (it&apos;s on <a href="https://open-vsx.org/extension/populr/populr-seo" target="_blank" rel="noopener">Open VSX</a>).</li>
-                  <li><b>VS Code</b> — search <b>Populr SEO</b> in the Extensions view (it&apos;s on the <a href="https://marketplace.visualstudio.com/items?itemName=Populr.populr-seo" target="_blank" rel="noopener">Visual Studio Marketplace</a>). Requires VS Code 1.101 or later. Offline or locked down? <a href="/downloads/populr-seo.vsix" download>Download the .vsix</a> and run <b>Extensions: Install from VSIX…</b></li>
+                  <li><b>VS Code</b> — search <b>Populr SEO</b> in the Extensions view (it&apos;s on the <a href="https://marketplace.visualstudio.com/items?itemName=Populr.populr-seo" target="_blank" rel="noopener">Visual Studio Marketplace</a>). Works in VS Code 1.82+; the agent tools need 1.100 or later. Offline or locked down? <a href="/downloads/populr-seo.vsix" download>Download the .vsix</a> and run <b>Extensions: Install from VSIX…</b></li>
                 </ul>
               </li>
               <li>Run <b>Populr: Connect</b> from the Command Palette and paste your key. It&apos;s kept in the editor&apos;s secret storage.</li>

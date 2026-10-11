@@ -38,7 +38,7 @@ Full reference: [trypopulr.in/developers/docs](https://www.trypopulr.in/develope
 - In Cursor, the relay gets the key through its environment, not its command line, and stops as soon as you disconnect.
 - A key works only for the workspace that created it. Revoke it any time at [trypopulr.in/app/keys](https://www.trypopulr.in/app/keys).
 
-Requires VS Code 1.101 or later, or a recent Cursor.
+Works in VS Code 1.82 or later and Cursor. Using Populr from the agent needs VS Code 1.100 or later (on 1.100, VS Code asks for your key once more the first time the agent uses Populr).
 
 ## License
 

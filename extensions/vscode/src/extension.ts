@@ -56,15 +56,45 @@ export function activate(context: vscode.ExtensionContext) {
     }),
   );
 
-  // The MCP server, offered to VS Code only while a key is stored.
-  const definition = (url: string, key: string) =>
-    new vscode.McpHttpServerDefinition(LABEL, vscode.Uri.parse(url), { Authorization: `Bearer ${key}` }, "1.0.0");
+  // ── How Populr reaches the editor's agent depends on the editor and its version ──
+  //
+  //   VS Code 1.101+   the MCP server-definition provider API: the key goes in a header, from
+  //                    secret storage, and nothing is written to settings.
+  //   VS Code 1.100    MCP servers came from settings ("mcp.servers"). Populr is written
+  //                    there with the key as a VS Code input, so VS Code asks for it once and
+  //                    keeps it in its own secret storage — never in settings.json.
+  //   Cursor           a local stdio relay (see below).
+  //   anything older   the commands still work; the agent needs a newer editor. (1.99 had
+  //                    MCP, but not the HTTP transport Populr's server uses.)
+  //
+  // The types for the newer APIs are declared here rather than taken from @types/vscode, which
+  // has to match the oldest version the extension supports.
+  type HttpDef = { uri: vscode.Uri; headers: Record<string, string> };
+  type HttpDefCtor = new (label: string, uri: vscode.Uri, headers?: Record<string, string>, version?: string) => HttpDef;
+  type Provider = {
+    onDidChangeMcpServerDefinitions?: vscode.Event<void>;
+    provideMcpServerDefinitions(token: vscode.CancellationToken): Promise<HttpDef[]>;
+    resolveMcpServerDefinition?(server: HttpDef, token: vscode.CancellationToken): Promise<HttpDef | undefined>;
+  };
+  const api = vscode as unknown as { lm?: { registerMcpServerDefinitionProvider?(id: string, p: Provider): vscode.Disposable }; McpHttpServerDefinition?: HttpDefCtor };
+  const [major, minor] = vscode.version.split(".").map((n) => parseInt(n, 10));
+  const atLeast = (m: number) => major > 1 || (major === 1 && minor >= m);
+  const isVsCode = vscode.env.appName.startsWith("Visual Studio Code");
+  // The provider API exists in 1.100 too, but as a proposal: calling it there throws, which
+  // stopped the whole extension from activating. So it's used only once it's final (1.101).
+  const HttpDefinition = atLeast(101) ? api.McpHttpServerDefinition : undefined;
+  const settingsMode = isVsCode && atLeast(100) ? "settings" : "none";
+  let mode: "provider" | "settings" | "cursor" | "none" =
+    cursorMcp ? "cursor"
+    : HttpDefinition && api.lm?.registerMcpServerDefinitionProvider ? "provider"
+    : settingsMode;
 
-  const provider: vscode.McpServerDefinitionProvider<vscode.McpHttpServerDefinition> = {
+  // VS Code 1.101+: the MCP server, offered only while a key is stored.
+  const provider: Provider = {
     onDidChangeMcpServerDefinitions: changed.event,
     provideMcpServerDefinitions: async () => {
       const [url, key] = [serverUrl(), await getKey()];
-      return url && key ? [definition(url, key)] : [];
+      return url && key && HttpDefinition ? [new HttpDefinition(LABEL, vscode.Uri.parse(url), { Authorization: `Bearer ${key}` }, "1.0.0")] : [];
     },
     // Read the key again when VS Code starts the server, so a replaced key is the one used.
     resolveMcpServerDefinition: async (server) => {
@@ -78,6 +108,29 @@ export function activate(context: vscode.ExtensionContext) {
       return server;
     },
   };
+
+  // VS Code 1.100: keep Populr's entry in the user's "mcp" settings in step with the
+  // connection. Only Populr's own entry and input are touched.
+  const INPUT_ID = "populr-key";
+  const syncSettings = async () => {
+    const [url, key] = [serverUrl(), await getKey()];
+    const cfg = vscode.workspace.getConfiguration("mcp");
+    const servers: Record<string, unknown> = { ...(cfg.get<Record<string, unknown>>("servers") ?? {}) };
+    const inputs = (cfg.get<{ id?: string }[]>("inputs") ?? []).filter((i) => i?.id !== INPUT_ID);
+    if (url && key) {
+      servers[PROVIDER_ID] = { type: "http", url, headers: { Authorization: `Bearer \${input:${INPUT_ID}}` } };
+      inputs.push({ type: "promptString", id: INPUT_ID, description: "Populr access key (starts with pop_) — the same key you connected with", password: true } as { id: string });
+    } else {
+      delete servers[PROVIDER_ID];
+    }
+    try {
+      await cfg.update("servers", servers, vscode.ConfigurationTarget.Global);
+      await cfg.update("inputs", inputs, vscode.ConfigurationTarget.Global);
+    } catch {
+      out.appendLine("Couldn't add Populr to VS Code's MCP settings. Update VS Code to use Populr in agent mode.");
+    }
+  };
+
   // Cursor: (re)register the relay when the key or server URL changes, and drop it on
   // disconnect. The key travels in the relay's environment, not its arguments. Changes run one
   // at a time — an unregister racing a register can leave a relay Cursor no longer tracks.
@@ -118,7 +171,7 @@ export function activate(context: vscode.ExtensionContext) {
     return queue;
   };
 
-  if (cursorMcp) {
+  if (mode === "cursor" && cursorMcp) {
     context.subscriptions.push(changed.event(() => void syncCursor()), {
       dispose: () => {
         try { void Promise.resolve(cursorMcp.unregisterServer(PROVIDER_ID)).catch(() => undefined); } catch { /* gone */ }
@@ -126,9 +179,26 @@ export function activate(context: vscode.ExtensionContext) {
       },
     });
     void syncCursor();
-  } else if (vscode.lm?.registerMcpServerDefinitionProvider) {
-    context.subscriptions.push(vscode.lm.registerMcpServerDefinitionProvider(PROVIDER_ID, provider));
+  } else if (mode === "provider" && api.lm?.registerMcpServerDefinitionProvider) {
+    try {
+      context.subscriptions.push(api.lm.registerMcpServerDefinitionProvider(PROVIDER_ID, provider));
+    } catch {
+      // An editor that has the API but won't let this extension use it: fall back rather
+      // than fail to activate, which would take the commands down with it.
+      mode = settingsMode;
+    }
   }
+  if (mode === "settings") {
+    context.subscriptions.push(changed.event(() => void syncSettings()));
+  }
+
+  // Where the tools appear, for the "connected" message.
+  const agentNote = (tools: number) => ({
+    cursor: `${tools} tools are ready in Cursor's agent.`,
+    provider: `${tools} tools are ready in chat (agent mode).`,
+    settings: `${tools} tools are ready in chat (agent mode). VS Code will ask for your key once more when the agent first uses Populr — paste the same key.`,
+    none: `the commands work. To use Populr from the agent, update ${vscode.env.appName} — this version doesn't support MCP.`,
+  })[mode];
 
   // Everything a command needs before it can call a tool. Offers to connect when there's no key.
   const session = async (): Promise<{ url: string; key: string } | null> => {
@@ -188,8 +258,7 @@ export function activate(context: vscode.ExtensionContext) {
     try {
       const tools = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: "Checking your key with Populr…" }, () => listTools(url, key.trim()));
       await context.secrets.store(SECRET, key.trim());
-      const where = cursorMcp ? "Cursor's agent" : "chat (agent mode)";
-      const a = await vscode.window.showInformationMessage(`Populr connected — ${tools.length} tools are ready in ${where}.`, "Show SEO status");
+      const a = await vscode.window.showInformationMessage(`Populr connected — ${agentNote(tools.length)}`, "Show SEO status");
       if (a) await vscode.commands.executeCommand("populr.status");
     } catch (e) {
       void vscode.window.showErrorMessage(describeError(e));
