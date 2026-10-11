@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { workspaceId } from "@/lib/store";
-import { installTabs } from "@/lib/mcp/install";
+import { cursorInstallUrl, installTabs, VSCODE_INSTALL_URL } from "@/lib/mcp/install";
 import { InstallTabs } from "@/app/developers/DevClient";
 
 // "Access keys": keys for Populr's MCP server and VS Code extension.
@@ -106,7 +106,13 @@ export default function EditorAccess({ intro = true }: { intro?: boolean }) {
             <button className="ek-copy" onClick={copy}>{copied ? "Copied" : "Copy"}</button>
           </div>
           <p className="ek-warn">Copy it now — it won&apos;t be shown again. Populr keeps only a fingerprint.</p>
-          <p className="ek-step">Add Populr to your editor — your key is already filled in:</p>
+          <p className="ek-step">Add Populr to your editor in one click — the editor asks before adding anything:</p>
+          <div className="ek-oneclick">
+            <a className="ek-install" href={cursorInstallUrl(fresh)}>Add to Cursor</a>
+            <a className="ek-install" href={VSCODE_INSTALL_URL} onClick={copy}>Add to VS Code</a>
+          </div>
+          <p className="ek-oneclick-note">Add to VS Code also copies your key — paste it when VS Code asks.</p>
+          <p className="ek-step">Or set it up by hand — your key is already filled in:</p>
           <InstallTabs tabs={installTabs(fresh)} />
           <button className="ek-done" onClick={() => setFresh(null)}>Done</button>
         </div>

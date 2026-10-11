@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { TOOLS } from "@/lib/mcp/tools";
-import { installTabs, MCP_URL } from "@/lib/mcp/install";
+import { installTabs, MCP_URL, VSCODE_INSTALL_URL } from "@/lib/mcp/install";
 import { CopyBlock, InstallTabs, SessionDemo } from "./DevClient";
 
 // Where Populr's MCP server, extension and plugin are published.
@@ -90,6 +90,11 @@ export default function Developers() {
           <p className="dv-kicker">Install</p>
           <h2>One line of config.</h2>
           <p className="dv-lead"><a href="/app/keys">Create an access key</a> in Populr, then add Populr to your editor. The key page fills it into these for you.</p>
+          <div className="dv-ext-cta dv-oneclick">
+            <a href={VSCODE_INSTALL_URL} className="dv-btn ghost">Add to VS Code</a>
+            <a href="https://cursor.directory/plugins/populr" target="_blank" rel="noopener" className="dv-btn ghost">Add to Cursor</a>
+            <span className="dv-oneclick-note">One click. VS Code asks for your key; Cursor asks when you install the plugin.</span>
+          </div>
           <InstallTabs tabs={tabs} />
         </section>
 
