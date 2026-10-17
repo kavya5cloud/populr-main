@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, requestKey } from "@/lib/throttle";
 import { keyStore } from "@/lib/mcp/keys";
+import { db } from "@/lib/db";
 import { handle, isNotification, RPC, type JsonRpcRequest } from "@/lib/mcp/server";
 import { autopilotStore } from "@/lib/seo/autopilot-store";
 
@@ -55,6 +56,12 @@ export async function POST(req: NextRequest) {
     // A key that's presented must be valid, even for discovery — a revoked key should say so.
     workspace = await keyStore().resolve(key, Date.now()).catch(() => null);
     if (!workspace) return unauthorized("That access key isn't valid. It may have been revoked.");
+    // Keys belong to accounts. One made signed out, before that rule, resolves to a browser
+    // workspace nobody can see or revoke any more — so it stops working. (Without a
+    // database there are no accounts, and the browser workspace still stands in.)
+    if (workspace.startsWith("anon:") && db()) {
+      return unauthorized("This key was created without signing in, and keys now belong to an account. Sign in at https://www.trypopulr.in/app/keys and create a new one.");
+    }
     // Per key, not per IP: an assistant can make many calls in a burst, and one leaked key
     // shouldn't be able to run unbounded fetches through Populr.
     const limit = rateLimit(`mcp:${workspace}:${key.slice(-8)}`, 60, 60_000);

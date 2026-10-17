@@ -333,3 +333,31 @@ describe("server identity", () => {
     for (const i of icons) expect(i.src.startsWith("https://www.trypopulr.in/")).toBe(true);
   });
 });
+
+describe("keys made signed out", () => {
+  const call = (key: string) => new NextRequest("http://x/api/mcp", { method: "POST", body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "seo_status", arguments: {} } }), headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}`, "x-forwarded-for": "203.0.113.120" } });
+
+  it("stop working once accounts are on; account keys keep working", async () => {
+    const keys = new InMemoryKeyStore();
+    const anon = (await keys.create("anon:browser-ws", "old", 1))!;
+    const owned = (await keys.create("user:u1", "laptop", 1))!;
+    vi.doMock("@/lib/db", async (orig) => ({ ...(await orig<object>()), db: () => (() => []) as unknown }));
+    vi.doMock("@/lib/mcp/keys", async (orig) => ({ ...(await orig<object>()), keyStore: () => keys }));
+    vi.doMock("@/lib/seo/autopilot-store", async (orig) => ({ ...(await orig<object>()), autopilotStore: () => new InMemoryAutopilotStore() }));
+    const { POST } = await import("@/app/api/mcp/route");
+    const refused = await POST(call(anon.key));
+    expect(refused.status).toBe(401);
+    expect((await refused.json()).error.message).toContain("create a new one");
+    expect((await POST(call(owned.key))).status).toBe(200);
+  });
+
+  it("still work without a database (local development has no accounts)", async () => {
+    const keys = new InMemoryKeyStore();
+    const anon = (await keys.create("anon:browser-ws", "dev", 1))!;
+    vi.doMock("@/lib/db", async (orig) => ({ ...(await orig<object>()), db: () => null }));
+    vi.doMock("@/lib/mcp/keys", async (orig) => ({ ...(await orig<object>()), keyStore: () => keys }));
+    vi.doMock("@/lib/seo/autopilot-store", async (orig) => ({ ...(await orig<object>()), autopilotStore: () => new InMemoryAutopilotStore() }));
+    const { POST } = await import("@/app/api/mcp/route");
+    expect((await POST(call(anon.key))).status).toBe(200);
+  });
+});
