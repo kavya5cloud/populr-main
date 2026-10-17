@@ -8,10 +8,17 @@ export function db() {
 
 export type Sql = NonNullable<ReturnType<typeof db>>;
 
-// In production, schema is owned by migrations (npm run db:migrate) and request-time DDL
-// is disabled with SKIP_RUNTIME_DDL=true. In dev/test the ensure* guards still create
-// tables on first use so the app runs without a manual migrate step. Either way the DDL
-// is idempotent (IF NOT EXISTS) and each ensure* runs at most once per process.
+// Two things can build the schema, and each must be able to do it alone:
+//   - db/migrations/*.sql, applied with npm run db:migrate;
+//   - the ensure* steps, which run idempotent CREATE/ALTER on first use in each process,
+//     unless SKIP_RUNTIME_DDL=true.
+// Production has relied on the ensure* steps: tables that existed only in code (api_keys,
+// seo_autopilot) work there. The two once drifted apart — 20 tables existed only in code —
+// so tests/schema-migrations.test.ts now builds both on a real Postgres and fails if the
+// code creates anything migrations don't. Only set SKIP_RUNTIME_DDL=true after running
+// every migration against the database.
+// Schema statements can't interpolate values: sql`` sends ${…} as a parameter, and Postgres
+// refuses parameters in CREATE/ALTER.
 export const RUNTIME_DDL = process.env.SKIP_RUNTIME_DDL !== "true";
 
 let schemaReady = false;

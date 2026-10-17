@@ -92,3 +92,13 @@ describe("Pattern Library", () => {
       .toBe(JSON.stringify(searchPatterns(patterns, { platform: "youtube" })));
   });
 });
+
+describe("learn_patterns schema", () => {
+  it("writes the UNATTRIBUTED default as a literal (Postgres rejects parameters in DDL)", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { UNATTRIBUTED } = await import("@/lib/learning/patterns");
+    const src = readFileSync("lib/learning/patterns.ts", "utf8");
+    expect(src).not.toMatch(/DEFAULT \$\{/);
+    expect(src.match(/DEFAULT '([^']+)'/g)?.filter((d) => d.includes("unattributed"))).toEqual([`DEFAULT '${UNATTRIBUTED}'`, `DEFAULT '${UNATTRIBUTED}'`]);
+  });
+});

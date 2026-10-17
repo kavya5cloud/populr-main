@@ -111,7 +111,7 @@ async function ensurePatternTable(sql: Sql) {
   if (!RUNTIME_DDL) { patReady = true; return; }
   await sql`CREATE TABLE IF NOT EXISTS learn_patterns (
     id TEXT PRIMARY KEY,
-    workspace_key TEXT NOT NULL DEFAULT ${UNATTRIBUTED},
+    workspace_key TEXT NOT NULL DEFAULT '__unattributed__',
     kind TEXT NOT NULL,
     performance REAL NOT NULL DEFAULT 0,
     confidence REAL NOT NULL DEFAULT 0,
@@ -123,7 +123,12 @@ async function ensurePatternTable(sql: Sql) {
   // Existing deployments have the table without the column. Added separately so an upgrade
   // does not depend on the CREATE running, and defaulted to the sentinel so rows written
   // before ownership existed stay unreadable rather than being handed to whoever asks next.
-  await sql`ALTER TABLE learn_patterns ADD COLUMN IF NOT EXISTS workspace_key TEXT NOT NULL DEFAULT ${UNATTRIBUTED}`;
+  //
+  // The default is written out rather than interpolated: sql`` sends ${…} as a query
+  // parameter, and Postgres refuses parameters in CREATE/ALTER ("bind message supplies 1
+  // parameters, but prepared statement requires 0") — which made this whole step fail. It
+  // must equal UNATTRIBUTED; tests/learning-performance-patterns.test.ts checks that.
+  await sql`ALTER TABLE learn_patterns ADD COLUMN IF NOT EXISTS workspace_key TEXT NOT NULL DEFAULT '__unattributed__'`;
   await sql`CREATE INDEX IF NOT EXISTS idx_learn_pat_kind ON learn_patterns (kind, performance DESC)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_learn_pat_ws ON learn_patterns (workspace_key, performance DESC)`;
   patReady = true;
