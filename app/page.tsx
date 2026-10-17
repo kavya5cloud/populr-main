@@ -195,6 +195,7 @@ export default function Landing() {
                   that hides the site nav while the hero is on screen. */}
               <div className="hc-pills" role="navigation" aria-label="Main">
                 <a href="#how">How it works</a>
+                <a href="/check">Free SEO check</a>
                 <a href="#pricing">Pricing</a>
                 <a href="/app" className="on">Start free</a>
               </div>
@@ -520,6 +521,7 @@ export default function Landing() {
                 crawler has no signal that anything on the site considers them worth linking
                 to. Footer links are the cheapest way to say otherwise. */}
             <a href="/guides" style={{ color: "var(--faint)", textDecoration: "none" }}>guides</a>
+            <a href="/check" style={{ color: "var(--faint)", textDecoration: "none" }}>free SEO check</a>
             <a href="/worked" style={{ color: "var(--faint)", textDecoration: "none" }}>what worked</a>
             <a href="/early-access" style={{ color: "var(--faint)", textDecoration: "none" }}>early access</a>
             <a href="mailto:team@trypopulr.in" style={{ color: "var(--faint)", textDecoration: "none" }}>contact</a>

@@ -56,6 +56,7 @@ export default function Developers() {
               <div className="dv-pills">
                 <a href="#install">Install</a>
                 <a href="/developers/docs">Docs</a>
+                <a href="/check">Free check</a>
                 <a href="/app/keys" className="on">Get a key</a>
               </div>
             </nav>

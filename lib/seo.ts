@@ -59,6 +59,7 @@ export const PUBLIC_ROUTES: { path: string; priority: number; changeFrequency: "
   // layout; it is NOT disallowed in robots, because a crawler that cannot fetch the page
   // cannot read the noindex either.
   { path: "/guides", priority: 0.9, changeFrequency: "weekly" },
+  { path: "/check", priority: 0.9, changeFrequency: "monthly" },
   { path: "/developers", priority: 0.8, changeFrequency: "monthly" },
   { path: "/developers/docs", priority: 0.7, changeFrequency: "monthly" },
   { path: "/privacy", priority: 0.3, changeFrequency: "yearly" },
