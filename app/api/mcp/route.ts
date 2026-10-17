@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { rateLimit, requestKey } from "@/lib/throttle";
 import { keyStore } from "@/lib/mcp/keys";
 import { db } from "@/lib/db";
 import { handle, isNotification, RPC, type JsonRpcRequest } from "@/lib/mcp/server";
+import { usageEvent, usageStore } from "@/lib/mcp/usage";
 import { autopilotStore } from "@/lib/seo/autopilot-store";
 
 export const runtime = "nodejs";
@@ -85,12 +86,13 @@ export async function POST(req: NextRequest) {
   // Notifications (no id) get 202 and no body, per the transport spec.
   if (isNotification(msg)) return new NextResponse(null, { status: 202 });
 
-  if (!workspace) {
-    if (NEEDS_KEY.has(msg.method)) return unauthorized(MISSING_KEY);
-    return NextResponse.json(await handle(msg, "", { autopilot: autopilotStore() }), { headers: JSON_HEADERS });
-  }
+  if (!workspace && NEEDS_KEY.has(msg.method)) return unauthorized(MISSING_KEY);
 
-  const res = await handle(msg, workspace, { autopilot: autopilotStore() });
+  const res = await handle(msg, workspace ?? "", { autopilot: autopilotStore() });
+  // Counted after the response is sent, so it never slows a call or fails one.
+  const event = usageEvent(msg, res, workspace);
+  const count = () => usageStore().record(event, Date.now()).catch(() => undefined);
+  try { after(count); } catch { void count(); } // after() needs a request scope; tests have none
   return NextResponse.json(res, { headers: JSON_HEADERS });
 }
 

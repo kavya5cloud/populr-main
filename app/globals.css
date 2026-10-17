@@ -5386,3 +5386,32 @@ body:has(.dv){background:#f3f4ef}
 .dv-right{position:relative}
 .dv-right::after{content:"";position:absolute;inset:auto 10% -30% 10%;height:60%;background:radial-gradient(closest-side,rgba(213,255,114,.18),transparent);filter:blur(30px);pointer-events:none}
 .dv-term{position:relative;z-index:1}
+
+/* ── /admin/mcp — MCP usage ───────────────────────────────────────────────────────── */
+.appui .mu{max-width:1040px;margin:0 auto;padding:32px 20px 64px;display:flex;flex-direction:column;gap:18px}
+.appui .mu-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.appui .mu-eyebrow{margin:0;font:500 11px/1 'Geist Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.appui .mu h1{margin:6px 0 4px;font-size:26px;font-weight:600;letter-spacing:-.01em}
+.appui .mu-sub,.appui .mu-foot,.appui .mu-empty,.appui .mu-note{margin:0;font-size:12.5px;color:var(--dim)}
+.appui .mu-range{display:flex;gap:4px;padding:3px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.appui .mu-range button{padding:6px 11px;border:0;border-radius:7px;background:none;color:var(--dim);font-size:12.5px;cursor:pointer}
+.appui .mu-range button.on{background:var(--bg);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.appui .mu-skel{height:120px;border-radius:12px;background:var(--panel)}
+.appui .mu-funnel{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.appui .mu-step{display:flex;flex-direction:column;gap:3px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.appui .mu-step:last-child{border-color:color-mix(in srgb,var(--green-ink) 40%,var(--line));background:color-mix(in srgb,var(--green-ink) 5%,var(--bg))}
+.appui .mu-n{font:600 26px/1 'Geist Mono',monospace;letter-spacing:-.02em}
+.appui .mu-l{font-size:12.5px;font-weight:500}
+.appui .mu-s{font-size:11.5px;color:var(--dim);min-height:15px}
+.appui .mu-card{padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--bg);display:flex;flex-direction:column;gap:10px;min-width:0}
+.appui .mu-card h2{margin:0;font-size:14px;font-weight:600}
+.appui .mu-two{display:grid;grid-template-columns:2fr 1fr;gap:18px}
+.appui .mu-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.appui .mu-table th{text-align:left;font-weight:500;color:var(--dim);padding:6px 8px;border-bottom:1px solid var(--line)}
+.appui .mu-table td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.appui .mu-table code{font:12px 'Geist Mono',monospace}
+.appui .mu-outcomes{display:flex;flex-wrap:wrap;gap:4px}
+.appui .mu-outcomes span{padding:2px 7px;border-radius:100px;background:var(--panel2);font:11px 'Geist Mono',monospace;color:var(--dim)}
+.appui .mu-outcomes span.good{background:color-mix(in srgb,var(--green-ink) 10%,var(--bg));color:var(--green-ink)}
+.appui .mu-outcomes span.bad{background:color-mix(in srgb,var(--redd) 9%,var(--bg));color:var(--redd)}
+@media (max-width:820px){.appui .mu-funnel{grid-template-columns:repeat(2,minmax(0,1fr))}.appui .mu-two{grid-template-columns:1fr}}
