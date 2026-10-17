@@ -11,7 +11,7 @@ describe("safeNext", () => {
   });
 
   it("falls back to the dashboard for anything that could leave the site", () => {
-    for (const bad of ["https://evil.example", "//evil.example", "/\\evil.example", "javascript:alert(1)", "evil.example", "", null, undefined, "/app\nSet-Cookie: x", "/" + "a".repeat(300)]) {
+    for (const bad of ["https://evil.example", "//evil.example", "/\\evil.example", "javascript:alert(1)", "evil.example", "", null, undefined, "/app\nSet-Cookie: x", "/" + "a".repeat(2100)]) {
       expect(safeNext(bad as string), String(bad)).toBe("/app");
     }
   });

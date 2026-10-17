@@ -82,6 +82,7 @@ export const DISALLOWED = [
   "/account",
   "/early-access/admin",
   "/admin/", "/admin",
+  "/oauth/",
   // Personal invitation links — one per user, none of them useful in a search result. The
   // page also carries noindex, which is what actually keeps it out if someone links to it.
   "/join/", "/join",

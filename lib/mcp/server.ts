@@ -15,7 +15,7 @@ const LATEST = SUPPORTED_VERSIONS[0];
 export const SERVER_INFO = {
   name: "populr",
   title: "Populr SEO",
-  version: "1.0.0",
+  version: "1.1.0",
   websiteUrl: "https://www.trypopulr.in/developers",
   icons: [
     { src: "https://www.trypopulr.in/icon.svg", mimeType: "image/svg+xml", sizes: ["any"] },

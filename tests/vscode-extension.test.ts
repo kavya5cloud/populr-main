@@ -179,6 +179,12 @@ describe("one-click install links", () => {
     expect(VSCODE_INSTALL_URL).not.toMatch(/pop_/);
   });
 
+  it("Cursor's link without a key carries just the URL, so Cursor signs in itself", async () => {
+    const { cursorInstallUrl } = await import("@/lib/mcp/install");
+    const url = new URL(cursorInstallUrl());
+    expect(JSON.parse(Buffer.from(url.searchParams.get("config")!, "base64").toString("utf8"))).toEqual({ url: MCP_URL });
+  });
+
   it("Cursor's link carries the new key in base64 server config, the way Cursor decodes it", async () => {
     const { cursorInstallUrl } = await import("@/lib/mcp/install");
     const key = newKey().key;

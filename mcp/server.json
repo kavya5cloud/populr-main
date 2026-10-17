@@ -3,7 +3,7 @@
   "name": "in.trypopulr/seo",
   "title": "Populr SEO",
   "description": "Apply the SEO fixes you approve in Populr — titles, descriptions, JSON-LD, llms.txt — in your code.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "websiteUrl": "https://www.trypopulr.in/developers",
   "repository": {
     "url": "https://github.com/kavya5cloud/populr-main",
@@ -25,15 +25,15 @@
       "headers": [
         {
           "name": "Authorization",
-          "description": "Bearer followed by your Populr access key. Create one at https://www.trypopulr.in/app/keys",
-          "isRequired": true,
+          "description": "Optional — editors that support MCP authorization sign in with Populr (OAuth) instead. Otherwise: Bearer followed by a Populr access key from https://www.trypopulr.in/app/keys",
+          "isRequired": false,
           "isSecret": true,
           "format": "string",
           "value": "Bearer {populr_key}",
           "variables": {
             "populr_key": {
               "description": "Your Populr access key (starts with pop_)",
-              "isRequired": true,
+              "isRequired": false,
               "isSecret": true
             }
           }

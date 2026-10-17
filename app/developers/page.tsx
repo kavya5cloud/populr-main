@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { TOOLS } from "@/lib/mcp/tools";
-import { installTabs, MCP_URL, VSCODE_INSTALL_URL } from "@/lib/mcp/install";
+import { cursorInstallUrl, installTabs, MCP_URL, VSCODE_INSTALL_URL } from "@/lib/mcp/install";
 import { CopyBlock, InstallTabs, SessionDemo } from "./DevClient";
 
 // Where Populr's MCP server, extension and plugin are published.
@@ -89,12 +89,12 @@ export default function Developers() {
       <main>
         <section id="install" className="dv-sec">
           <p className="dv-kicker">Install</p>
-          <h2>One line of config.</h2>
-          <p className="dv-lead"><a href="/app/keys">Create an access key</a> in Populr, then add Populr to your editor. The key page fills it into these for you.</p>
+          <h2>One line. Then sign in.</h2>
+          <p className="dv-lead">Add Populr to your editor and sign in with your Populr account when it asks — there&apos;s no key to copy. Prefer a key? <a href="/app/keys">Create one</a> and the keys page fills it into these for you.</p>
           <div className="dv-ext-cta dv-oneclick">
             <a href={VSCODE_INSTALL_URL} className="dv-btn ghost">Add to VS Code</a>
-            <a href="https://cursor.directory/plugins/populr" target="_blank" rel="noopener" className="dv-btn ghost">Add to Cursor</a>
-            <span className="dv-oneclick-note">VS Code installs the Populr extension — run “Populr: Connect” and paste your key. Cursor asks for it when you install the plugin.</span>
+            <a href={cursorInstallUrl()} className="dv-btn ghost">Add to Cursor</a>
+            <span className="dv-oneclick-note">Cursor adds Populr and asks you to sign in. VS Code installs the Populr extension.</span>
           </div>
           <InstallTabs tabs={tabs} />
         </section>

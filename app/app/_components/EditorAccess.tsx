@@ -16,6 +16,7 @@ import { InstallTabs } from "@/app/developers/DevClient";
 // a new key, and revoking confirms in the row instead of in a browser dialog.
 
 type Key = { id: string; name: string; hint: string; createdAt: number; lastUsedAt: number | null };
+type App = { family: string; clientName: string; grantedAt: number; lastUsedAt: number | null };
 
 const DAY = 86_400_000;
 
@@ -37,12 +38,18 @@ export default function EditorAccess({ intro = true }: { intro?: boolean }) {
   const [confirming, setConfirming] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [apps, setApps] = useState<App[]>([]);
   const nameRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
-    const d = await fetch(`/api/mcp/keys?wsid=${encodeURIComponent(workspaceId())}`, { cache: "no-store" }).then((r) => r.json()).catch(() => null);
+    const ws = encodeURIComponent(workspaceId());
+    const [d, g] = await Promise.all([
+      fetch(`/api/mcp/keys?wsid=${ws}`, { cache: "no-store" }).then((r) => r.json()).catch(() => null),
+      fetch(`/api/oauth/grants?wsid=${ws}`, { cache: "no-store" }).then((r) => r.json()).catch(() => null),
+    ]);
     // On a failed re-read, keep showing the list already on screen.
     if (d?.ok) { setKeys(d.keys); setLoadFailed(false); } else setLoadFailed(true);
+    if (g?.ok) setApps(g.apps);
   }, []);
   // Reload when the tab comes back into view: you make a key, connect your editor in another
   // window, and on return the key shows as in use.
@@ -70,6 +77,13 @@ export default function EditorAccess({ intro = true }: { intro?: boolean }) {
     load();
   };
 
+  const disconnect = async (family: string) => {
+    setConfirming(null);
+    const r = await fetch(`/api/oauth/grants?wsid=${encodeURIComponent(workspaceId())}&family=${encodeURIComponent(family)}`, { method: "DELETE" });
+    setNote(r.ok ? "Disconnected. That app has to sign in again to use Populr." : "Couldn't disconnect it. Try again.");
+    load();
+  };
+
   const copy = () => {
     if (!fresh) return;
     navigator.clipboard?.writeText(fresh).then(() => setCopied(true), () => setNote("Couldn't copy — select the key and copy it."));
@@ -83,7 +97,7 @@ export default function EditorAccess({ intro = true }: { intro?: boolean }) {
           <p className="ek-sub">
             {intro
               ? <>Let your coding assistant apply your approved SEO fixes in your site&apos;s code. </>
-              : <>One key per editor or machine, so you can revoke one without touching the others. </>}
+              : <>Most editors sign in on their own — no key needed. Make a key for anything that can&apos;t; one per editor or machine, so you can revoke one alone. </>}
             <a href="/developers/docs" target="_blank" rel="noopener">Setup guide</a>
           </p>
         </div>
@@ -148,8 +162,33 @@ export default function EditorAccess({ intro = true }: { intro?: boolean }) {
         <p className="ek-empty">Couldn&apos;t load your keys. <button className="ek-quiet" onClick={load}>Try again</button></p>
       )}
 
-      {keys && keys.length === 0 && !adding && !fresh && (
-        <p className="ek-empty">No keys yet. Create one for each editor you use.</p>
+      {apps.length > 0 && (
+        <>
+          <h4 className="ek-subhead">Signed-in apps</h4>
+          <ul className="ek-list">
+            {apps.map((a) => (
+              <li key={a.family}>
+                <span className={`ek-dot ${a.lastUsedAt ? "active" : "never"}`} aria-hidden="true" />
+                <div className="ek-who">
+                  <b>{a.clientName}</b>
+                  <span>Signed in {created(a.grantedAt)} · {used(a.lastUsedAt)}</span>
+                </div>
+                {confirming === a.family ? (
+                  <span className="ek-confirm">
+                    <button className="ek-danger" onClick={() => disconnect(a.family)}>Disconnect</button>
+                    <button className="ek-quiet" onClick={() => setConfirming(null)}>Keep</button>
+                  </span>
+                ) : (
+                  <button className="ek-quiet ek-revoke" onClick={() => setConfirming(a.family)} aria-label={`Disconnect ${a.clientName}`}>Disconnect</button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      {keys && keys.length === 0 && apps.length === 0 && !adding && !fresh && (
+        <p className="ek-empty">Nothing connected yet. Most editors sign in to Populr on their own — add the address <code>https://www.trypopulr.in/api/mcp</code> and they&apos;ll ask. Create a key for anything that can&apos;t.</p>
       )}
 
       {note && <p className="ek-note" role="status">{note}</p>}

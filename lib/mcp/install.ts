@@ -8,18 +8,48 @@ export const MCP_URL = "https://www.trypopulr.in/api/mcp";
 // VS Code's opens the Populr extension's page in VS Code — with its logo, description and an
 // Install button. (A bare MCP install link can't carry a logo, and VS Code's MCP gallery
 // doesn't list Populr.) The extension keeps the key in secret storage and adds the Populr
-// commands. Cursor's link can't prompt for a key, so it's built only with one — right after a
-// key is created — and is handed to Cursor by the operating system; it isn't sent to any
-// website.
+// commands. Cursor's link carries just the server URL and Cursor signs in to Populr itself;
+// right after a key is created, the keys page offers one with the key in it instead. Either
+// is handed to Cursor by the operating system — it isn't sent to any website.
 export const VSCODE_EXTENSION_ID = "Populr.populr-seo";
 export const VSCODE_INSTALL_URL = `vscode:extension/${VSCODE_EXTENSION_ID}`;
 
-export function cursorInstallUrl(key: string): string {
-  const config = btoa(JSON.stringify({ url: MCP_URL, headers: { Authorization: `Bearer ${key}` } }));
+/** Without a key, Cursor adds the server and signs in to Populr itself (OAuth); with one, the key is in the config. */
+export function cursorInstallUrl(key?: string): string {
+  const config = btoa(JSON.stringify(key ? { url: MCP_URL, headers: { Authorization: `Bearer ${key}` } } : { url: MCP_URL }));
   return `cursor://anysphere.cursor-deeplink/mcp/install?${new URLSearchParams({ name: "populr", config })}`;
 }
 
-export function installTabs(key = "YOUR_POPULR_KEY") {
+/**
+ * Setup instructions per editor. Without a key: just the server URL — the editor signs in to
+ * Populr in the browser the first time it connects (OAuth), so there's nothing to copy. With
+ * a key (the keys page, right after creating one): the key-based config.
+ */
+export function installTabs(key?: string) {
+  if (!key) {
+    return [
+      {
+        id: "claude", name: "Claude Code", where: "In your project's terminal:",
+        code: `claude mcp add --transport http populr ${MCP_URL}`,
+        note: "Then run /mcp in Claude Code, pick populr and choose Authenticate — a browser tab opens to sign in to Populr.",
+      },
+      {
+        id: "cursor", name: "Cursor", where: "In ~/.cursor/mcp.json (or .cursor/mcp.json in the project):",
+        code: JSON.stringify({ mcpServers: { populr: { url: MCP_URL } } }, null, 2),
+        note: "Cursor shows Populr as needing a login — click it and sign in.",
+      },
+      {
+        id: "vscode", name: "VS Code", where: "Install the Populr extension — or add this to .vscode/mcp.json:",
+        code: JSON.stringify({ servers: { populr: { type: "http", url: MCP_URL } } }, null, 2),
+        note: "VS Code asks you to sign in to Populr the first time it starts the server.",
+      },
+      {
+        id: "windsurf", name: "Windsurf", where: "In ~/.codeium/windsurf/mcp_config.json:",
+        code: JSON.stringify({ mcpServers: { populr: { serverUrl: MCP_URL } } }, null, 2),
+        note: "If your Windsurf doesn't offer to sign in, create a key on the keys page and add it as an Authorization header.",
+      },
+    ];
+  }
   return [
     {
       id: "claude", name: "Claude Code", where: "In your project's terminal:",

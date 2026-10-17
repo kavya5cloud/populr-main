@@ -141,7 +141,11 @@ describe("POST /api/mcp", () => {
     const listed = await POST(req(null, { jsonrpc: "2.0", id: 1, method: "tools/list" }));
     expect(listed.status).toBe(200);
     expect((await listed.json()).result.tools.length).toBe(TOOLS.length);
-    expect((await POST(req(null, { jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18" } }))).status).toBe(200);
+    // Connecting without credentials asks the client to sign in (Sign in with Populr).
+    const init = await POST(req(null, { jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18" } }));
+    expect(init.status).toBe(401);
+    // Outside production the issuer is the request's own origin (here http://x).
+    expect(init.headers.get("www-authenticate")).toBe('Bearer realm="populr", resource_metadata="http://x/.well-known/oauth-protected-resource"');
     const call = await POST(req(null, { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "seo_status", arguments: {} } }));
     expect(call.status).toBe(401);
     expect(call.headers.get("www-authenticate")).toContain("Bearer");
@@ -208,7 +212,8 @@ describe("MCP Registry listing (mcp/server.json)", () => {
     expect(listing.description.length).toBeLessThanOrEqual(100);
     const [remote] = listing.remotes;
     expect(remote).toMatchObject({ type: "streamable-http", url: MCP_URL });
-    expect(remote.headers[0]).toMatchObject({ name: "Authorization", isSecret: true, isRequired: true, value: "Bearer {populr_key}" });
+    // Optional: editors that support MCP authorization sign in with OAuth instead.
+    expect(remote.headers[0]).toMatchObject({ name: "Authorization", isSecret: true, isRequired: false, value: "Bearer {populr_key}" });
     expect(remote.headers[0].variables.populr_key.isSecret).toBe(true);
   });
 });

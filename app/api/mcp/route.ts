@@ -4,6 +4,9 @@ import { keyStore } from "@/lib/mcp/keys";
 import { db } from "@/lib/db";
 import { handle, isNotification, RPC, type JsonRpcRequest } from "@/lib/mcp/server";
 import { usageEvent, usageStore } from "@/lib/mcp/usage";
+import { ACCESS_PREFIX, issuerFor, wwwAuthenticate } from "@/lib/oauth/core";
+import { workspaceForAccessToken } from "@/lib/oauth/service";
+import { oauthStore } from "@/lib/oauth/store";
 import { autopilotStore } from "@/lib/seo/autopilot-store";
 
 export const runtime = "nodejs";
@@ -20,22 +23,25 @@ export const maxDuration = 60;
 
 const JSON_HEADERS = { "Content-Type": "application/json", "Cache-Control": "no-store" };
 
-function unauthorized(message: string) {
+function unauthorized(message: string, error?: "invalid_token", issuer?: string) {
+  // WWW-Authenticate points at the protected-resource metadata, which is how an MCP client
+  // finds Populr's authorization server and starts "Sign in with Populr".
   return new NextResponse(JSON.stringify({ jsonrpc: "2.0", id: null, error: { code: -32001, message } }), {
     status: 401,
-    headers: { ...JSON_HEADERS, "WWW-Authenticate": 'Bearer realm="populr", error="invalid_token"' },
+    headers: { ...JSON_HEADERS, "WWW-Authenticate": wwwAuthenticate(error, issuer) },
   });
 }
 
-// Only running a tool needs a key: tools/call is the one method that reads a workspace.
-// Everything else — initialize, ping, tools/list, prompts, the (empty) resource lists, and
-// methods Populr doesn't support — describes the server, which the docs already publish. So
-// directories (the MCP Registry's clients, Smithery) can scan it, and an editor can show the
-// tools before a key is set up. Unsupported methods get "method not found", not a 401 that a
-// gateway would turn into a sign-in prompt.
+// Without credentials:
+//   - initialize gets a 401 pointing at Populr's OAuth metadata, so an editor that connects
+//     with just the URL starts "Sign in with Populr" (Claude Code, VS Code, Cursor, Smithery);
+//   - tools/call gets the same — it's the one method that reads a workspace;
+//   - the rest (ping, tools/list, prompts, the empty resource lists, and unsupported methods,
+//     which get "method not found") still answers: it only describes the server, as the docs
+//     already do, for directories that read the lists without connecting.
 const NEEDS_KEY = new Set(["tools/call"]);
 
-const MISSING_KEY = "Missing access key. Create one at https://www.trypopulr.in/app/keys and send it as Authorization: Bearer <key>.";
+const MISSING_KEY = "Sign in to use Populr: your editor can do it for you (Sign in with Populr), or create an access key at https://www.trypopulr.in/app/keys and send it as Authorization: Bearer <key>.";
 
 // The key, from `Authorization: Bearer <key>` or `X-Populr-Key: <key>` — the second for
 // gateways that pass a header through but can't add the "Bearer " prefix (Smithery).
@@ -50,18 +56,25 @@ function rateLimited(retryAfter: number) {
 }
 
 export async function POST(req: NextRequest) {
+  const issuer = issuerFor(req.nextUrl.origin);
   const key = keyFrom(req.headers);
   let workspace: string | null = null;
 
   if (key) {
-    // A key that's presented must be valid, even for discovery — a revoked key should say so.
-    workspace = await keyStore().resolve(key, Date.now()).catch(() => null);
-    if (!workspace) return unauthorized("That access key isn't valid. It may have been revoked.");
+    // An OAuth access token (from "Sign in with Populr") or an access key. Either way, one
+    // that's presented must be valid, even for discovery — a revoked one should say so.
+    const now = Date.now();
+    workspace = key.startsWith(ACCESS_PREFIX)
+      ? await workspaceForAccessToken(key, oauthStore(), now).catch(() => null)
+      : await keyStore().resolve(key, now).catch(() => null);
+    if (!workspace) {
+      return unauthorized(key.startsWith(ACCESS_PREFIX) ? "That sign-in has expired or was disconnected. Your editor should sign in again." : "That access key isn't valid. It may have been revoked.", "invalid_token", issuer);
+    }
     // Keys belong to accounts. One made signed out, before that rule, resolves to a browser
     // workspace nobody can see or revoke any more — so it stops working. (Without a
     // database there are no accounts, and the browser workspace still stands in.)
     if (workspace.startsWith("anon:") && db()) {
-      return unauthorized("This key was created without signing in, and keys now belong to an account. Sign in at https://www.trypopulr.in/app/keys and create a new one.");
+      return unauthorized("This key was created without signing in, and keys now belong to an account. Sign in at https://www.trypopulr.in/app/keys and create a new one.", "invalid_token", issuer);
     }
     // Per key, not per IP: an assistant can make many calls in a burst, and one leaked key
     // shouldn't be able to run unbounded fetches through Populr.
@@ -86,7 +99,10 @@ export async function POST(req: NextRequest) {
   // Notifications (no id) get 202 and no body, per the transport spec.
   if (isNotification(msg)) return new NextResponse(null, { status: 202 });
 
-  if (!workspace && NEEDS_KEY.has(msg.method)) return unauthorized(MISSING_KEY);
+  // No credentials: connecting (initialize) or running a tool asks the client to sign in.
+  // The rest — the tool and prompt lists, ping — still answers, for directories that read
+  // them without connecting.
+  if (!workspace && (NEEDS_KEY.has(msg.method) || msg.method === "initialize")) return unauthorized(MISSING_KEY, undefined, issuer);
 
   const res = await handle(msg, workspace ?? "", { autopilot: autopilotStore() });
   // Counted after the response is sent, so it never slows a call or fails one.

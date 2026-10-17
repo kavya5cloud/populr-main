@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { TOOLS } from "@/lib/mcp/tools";
 import { SUPPORTED_VERSIONS } from "@/lib/mcp/server";
-import { MCP_URL, VSCODE_INSTALL_URL, installTabs } from "@/lib/mcp/install";
+import { cursorInstallUrl, MCP_URL, VSCODE_INSTALL_URL, installTabs } from "@/lib/mcp/install";
 import { CopyBlock, InstallTabs } from "../DevClient";
 
 // The developer documentation. The tools reference is generated from the server's own tool
@@ -59,8 +59,9 @@ export default function Docs() {
 
           <section id="connect">
             <h2>Connect your editor</h2>
-            <p>Every client sends the key as <code>Authorization: Bearer &lt;key&gt;</code> — or as <code>X-Populr-Key: &lt;key&gt;</code>, for gateways that can&apos;t add the <code>Bearer</code> prefix. Replace <code>YOUR_POPULR_KEY</code> with yours, and keep keys out of version control. Listing the tools works without a key; running one needs it.</p>
-            <p><b>One click:</b> <a href={VSCODE_INSTALL_URL}>Add to VS Code</a> (installs the Populr extension; run <b>Populr: Connect</b> and paste your key — it&apos;s kept in VS Code&apos;s secret storage), or install the <a href="https://cursor.directory/plugins/populr" target="_blank" rel="noopener">Populr plugin for Cursor</a> (it asks for your key as <code>POPULR_KEY</code>). Right after you create a key, the keys page also offers <b>Add to Cursor</b> with the key filled in.</p>
+            <p><b>Sign in (recommended):</b> give your editor just the server URL. The first time it connects, it opens Populr in your browser; sign in and click <b>Allow</b>. There&apos;s nothing to copy, the sign-in renews itself, and you can disconnect the app any time on <a href="/app/keys">the keys page</a>. It&apos;s standard MCP authorization — OAuth 2.1 with PKCE — supported by Claude Code, VS Code, Cursor and Smithery.</p>
+            <p><b>Or an access key:</b> send it as <code>Authorization: Bearer &lt;key&gt;</code> — or as <code>X-Populr-Key: &lt;key&gt;</code>, for gateways that can&apos;t add the <code>Bearer</code> prefix. Keep keys out of version control.</p>
+            <p><b>One click:</b> <a href={cursorInstallUrl()}>Add to Cursor</a> (Cursor adds Populr and asks you to sign in), or <a href={VSCODE_INSTALL_URL}>Add to VS Code</a> (installs the Populr extension). There&apos;s also the <a href="https://cursor.directory/plugins/populr" target="_blank" rel="noopener">Populr plugin for Cursor</a>, with a skill, a rule and commands.</p>
             <InstallTabs tabs={installTabs()} />
             <p><b>Other clients:</b> any MCP client that supports the Streamable HTTP transport with a custom header will work. Point it at the server URL above.</p>
           </section>
