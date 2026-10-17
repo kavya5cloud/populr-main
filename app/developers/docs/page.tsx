@@ -91,19 +91,23 @@ export default function Docs() {
 
           <section id="workflow">
             <h2>The workflow</h2>
+            <p><b>Fastest:</b> ask your agent to run the <code>set_up_seo</code> prompt (in Claude Code, <code>/mcp__populr__set_up_seo</code>), or just say <i>&ldquo;Set up Populr SEO for this project.&rdquo;</i> It does every step below and asks you before saving anything.</p>
             <ol>
-              <li><code>seo_status</code> — see what&apos;s approved for which pages.</li>
-              <li><code>get_seo_fixes</code> — get the exact tags. Apply them in the page <code>&lt;head&gt;</code> or your framework&apos;s metadata API (Next.js <code>export const metadata</code>, Nuxt <code>useHead</code>, Astro&apos;s <code>&lt;head&gt;</code>). Replace existing tags; don&apos;t add duplicates.</li>
+              <li><code>seo_status</code> — what&apos;s set up, approved and waiting.</li>
+              <li>First time: <code>setup_site</code> with the site&apos;s public address, then <code>set_business_details</code> with the facts the site states. No need to open Populr.</li>
+              <li><code>draft_page_fix</code> for the main pages — Populr drafts a title and description from what each page says. Review them; <code>approve_page_fix</code> the ones you accept, with your edits.</li>
+              <li><code>get_seo_fixes</code> — the exact tags. Apply them in the page <code>&lt;head&gt;</code> or your framework&apos;s metadata API (Next.js <code>export const metadata</code>, Nuxt <code>useHead</code>, Astro&apos;s <code>&lt;head&gt;</code>). Replace existing tags; don&apos;t add duplicates.</li>
+              <li><code>generate_llms_txt</code> — save it as <code>public/llms.txt</code>.</li>
               <li>Deploy, then <code>verify_page</code> with the live URL — it checks each change is in the served HTML.</li>
             </ol>
-            <p>To propose a change instead, <code>draft_page_fix</code> drafts one from the page&apos;s own text and saves it in Populr for the owner to approve. It never replaces an approved fix.</p>
+            <p>Owners who prefer the web app can do steps 2–3 in Populr instead; the tools see the same settings.</p>
           </section>
 
           <section id="tools">
             <h2>Tools reference</h2>
             {TOOLS.map((t) => (
               <div key={t.name} className="dvd-tool" id={`tool-${t.name}`}>
-                <h3><code>{t.name}</code> <span className={"dvd-badge" + (t.annotations.readOnlyHint ? "" : " w")}>{t.annotations.readOnlyHint ? "read-only" : "writes a draft"}</span></h3>
+                <h3><code>{t.name}</code> <span className={"dvd-badge" + (t.annotations.readOnlyHint ? "" : " w")}>{t.effect ?? "read-only"}</span></h3>
                 <p>{t.description}</p>
                 {props(t).length > 0 ? (
                   <table className="dvd-params">
@@ -122,7 +126,8 @@ export default function Docs() {
               <li>A key belongs to one workspace and opens only its SEO settings. Nothing in a request can name another workspace.</li>
               <li>Keys start with <code>pop_</code> so secret scanners can recognise a leaked one. Populr stores only a SHA-256 fingerprint; the key is shown once.</li>
               <li>Revoke a key in Populr at any time; it stops working immediately. Each key shows when it was last used.</li>
-              <li>Six of the seven tools only read. <code>draft_page_fix</code> saves a draft for approval. No tool publishes, approves, or changes a live site.</li>
+              <li>{TOOLS.filter((t) => t.annotations.readOnlyHint).length} of the {TOOLS.length} tools only read. {TOOLS.filter((t) => !t.annotations.readOnlyHint).map((t, i, all) => <span key={t.name}><code>{t.name}</code>{i < all.length - 2 ? ", " : i === all.length - 2 ? " and " : ""}</span>)} change only your Populr settings, and are marked so your editor asks you before running them.</li>
+              <li>No tool edits your code or deploys. <code>approve_page_fix</code> is the one with a live effect: if Populr&apos;s snippet is installed on the site, an approved fix goes live through it.</li>
               <li>Pages are fetched only from public addresses, with every redirect re-checked.</li>
             </ul>
           </section>

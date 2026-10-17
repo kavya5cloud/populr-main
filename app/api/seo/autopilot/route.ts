@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { isSafePublicUrl, rateLimit, requestKey } from "@/lib/throttle";
+import { rateLimit, requestKey } from "@/lib/throttle";
 import { workspaceKey } from "@/lib/intel";
 import { url as siteUrl } from "@/lib/seo";
-import { pagePath, SCHEMA_TYPES, snippetTag, type AutopilotConfig, type BusinessDetails } from "@/lib/seo/autopilot";
+import { pagePath, snippetTag, type AutopilotConfig } from "@/lib/seo/autopilot";
+import { business, originOf, str } from "@/lib/seo/autopilot-input";
 import { autopilotStore } from "@/lib/seo/autopilot-store";
 import { suggestFix } from "@/lib/seo/autopilot-suggest";
 
@@ -36,30 +37,6 @@ async function ws(req: NextRequest, wsid: string | null, write = true): Promise<
 function view(c: AutopilotConfig | null) {
   if (!c) return { ok: true, configured: false };
   return { ok: true, configured: true, ...c, tag: snippetTag(c.siteKey, ORIGIN) };
-}
-
-function originOf(raw: string): string | null {
-  try {
-    const u = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
-    return isSafePublicUrl(u.toString()) ? u.origin : null;
-  } catch { return null; }
-}
-
-const str = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : undefined);
-
-function business(b: unknown): BusinessDetails | null {
-  if (!b || typeof b !== "object") return null;
-  const x = b as Record<string, unknown>;
-  const name = str(x.name, 120)?.trim();
-  if (!name) return null;
-  const a = (x.address ?? {}) as Record<string, unknown>;
-  return {
-    type: SCHEMA_TYPES.includes(x.type as never) ? (x.type as BusinessDetails["type"]) : "LocalBusiness",
-    name, description: str(x.description, 300), telephone: str(x.telephone, 40), email: str(x.email, 120), logo: str(x.logo, 300),
-    address: { street: str(a.street, 200), locality: str(a.locality, 100), region: str(a.region, 100), postalCode: str(a.postalCode, 20), country: str(a.country, 60) },
-    openingHours: Array.isArray(x.openingHours) ? x.openingHours.map((h) => str(h, 40)).filter((h): h is string => !!h).slice(0, 7) : undefined,
-    sameAs: Array.isArray(x.sameAs) ? x.sameAs.map((h) => str(h, 300)).filter((h): h is string => !!h).slice(0, 8) : undefined,
-  };
 }
 
 export async function GET(req: NextRequest) {

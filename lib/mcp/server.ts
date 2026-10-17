@@ -24,9 +24,10 @@ export const SERVER_INFO = {
 };
 
 const INSTRUCTIONS = [
-  "Populr manages SEO for this workspace's website. The site owner approves changes in Populr; you apply them in the site's code.",
-  "Start with seo_status. Use get_seo_fixes for approved titles, descriptions and structured data, and apply them in the page <head> or the framework's metadata API, replacing existing tags.",
-  "After deploying, verify_page confirms the changes are live. draft_page_fix only drafts — the owner approves in Populr before it becomes a fix.",
+  "Populr manages SEO for this workspace's website: titles, descriptions, structured data and llms.txt. You apply what's approved in the site's code.",
+  "Start with seo_status. If no site is set up, call setup_site with the project's public address, then set_business_details with facts the user confirms.",
+  "draft_page_fix drafts a page's title and description from what the page says; show the user and call approve_page_fix for the ones they accept.",
+  "get_seo_fixes returns everything approved — apply it in the page <head> or the framework's metadata API, replacing existing tags. When setting a site up, also save generate_llms_txt's output at the site root (public/llms.txt in most frameworks). After deploying, verify_page confirms each change is live.",
 ].join(" ");
 
 // Ready-made prompts. Clients that support MCP prompts offer these as commands (in Claude
@@ -35,6 +36,21 @@ type PromptArg = { name: string; description: string; required: boolean };
 type Prompt = { name: string; title: string; description: string; arguments: PromptArg[]; text(args: Record<string, string>): string };
 
 export const PROMPTS: Prompt[] = [
+  {
+    name: "set_up_seo",
+    title: "Set up Populr SEO for this project",
+    description: "From nothing to approved, applied fixes: set up the site, save the business's details, draft and approve titles and descriptions, apply them, and add llms.txt.",
+    arguments: [],
+    text: () => [
+      "Set up Populr SEO for this project, end to end. Ask me before saving anything.",
+      "1. Call seo_status. If no site is set up, find the site's public address in the project (Next.js metadataBase, a sitemap, the package's homepage, deploy config), confirm it with me, then call setup_site.",
+      "2. Find the business facts the site itself states — name, what it offers and where, phone, email, address, opening hours, social profiles. Show me what you'll save, then call set_business_details. Don't guess anything that isn't there.",
+      "3. Call draft_page_fix for the home page and up to four other key pages. Show me each draft; call approve_page_fix for the ones I accept, with my edits.",
+      "4. Call get_seo_fixes and apply everything approved in the code — the framework's metadata API or the page <head>, replacing existing tags, and JSON-LD exactly as given.",
+      "5. Call generate_llms_txt and save it at the site root (public/llms.txt in most frameworks).",
+      "6. Summarise what changed. After I deploy, call verify_page for each page.",
+    ].join("\n"),
+  },
   {
     name: "apply_seo_fixes",
     title: "Apply my Populr SEO fixes",

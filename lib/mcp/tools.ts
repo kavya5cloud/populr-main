@@ -3,6 +3,8 @@ import { readSignals } from "@/lib/seo/audit";
 import { approvedFixes, buildJsonLd, pagePath, type AutopilotConfig } from "@/lib/seo/autopilot";
 import type { AutopilotStore } from "@/lib/seo/autopilot-store";
 import { readPage, suggestFix } from "@/lib/seo/autopilot-suggest";
+import { business as businessFrom, fixText, originOf } from "@/lib/seo/autopilot-input";
+import { SCHEMA_TYPES } from "@/lib/seo/autopilot";
 
 // The tools Populr gives a coding assistant.
 //
@@ -10,9 +12,12 @@ import { readPage, suggestFix } from "@/lib/seo/autopilot-suggest";
 // engines and link previews don't. These tools hand the same approved fixes to the assistant
 // editing the site's code, so they land in the HTML as served — visible to everything.
 //
-// Every tool runs as the workspace the access key belongs to, and only ever reads that
-// workspace's settings. Nothing here publishes or changes a live site; the one tool that
-// writes (draft_page_fix) saves a draft for the founder to approve in Populr.
+// Every tool runs as the workspace the access key belongs to, and touches only that
+// workspace's settings. Most only read. Four write to Populr — setup_site, set_business_details,
+// draft_page_fix, approve_page_fix — so a developer can set the site up without leaving the
+// editor; editors ask the user before running a tool that isn't read-only. None edits code or
+// deploys. One has an effect on a live site: approving a fix makes it live through Populr's
+// snippet, where the snippet is installed — which approve_page_fix says before it's used.
 //
 // Outputs are plain text written for the assistant to act on: what to change, where, and why.
 
@@ -43,11 +48,13 @@ type Tool = {
   description: string;
   inputSchema: { type: "object"; properties: Record<string, unknown>; required?: string[]; additionalProperties: false };
   outputSchema: { type: "object"; properties: Record<string, JsonSchema>; required: string[] };
-  annotations: { readOnlyHint: boolean; destructiveHint: false; idempotentHint: boolean; openWorldHint: boolean };
+  /** For tools that change something: what, in a few words (shown on the developer pages). */
+  effect?: string;
+  annotations: { readOnlyHint: boolean; destructiveHint: boolean; idempotentHint: boolean; openWorldHint: boolean };
   run(workspace: string, args: Record<string, unknown>, deps: ToolDeps): Promise<ToolResult>;
 };
 
-const NOT_SET_UP = "Populr's SEO autopilot isn't set up for this workspace yet. Set it up at https://www.trypopulr.in/app/keys — it takes a minute — then try again.";
+const NOT_SET_UP = "Populr isn't set up for a website in this workspace yet. Call setup_site with the site's public address (find it in the project — e.g. metadataBase, a sitemap, or the package's homepage — or ask the user), or set it up at https://www.trypopulr.in/app/keys.";
 const notSetUp = (): ToolResult => ({ text: NOT_SET_UP, data: { status: "not_set_up", message: NOT_SET_UP } });
 const pageSchema = { type: "object", properties: { path: str_, title: str_, description: str_, jsonld: objArr }, required: ["path", "jsonld"] };
 
@@ -105,6 +112,65 @@ export const TOOLS: Tool[] = [
           waitingPages: waiting,
           snippet: { enabled: c.enabled, seenOnPages: c.seen.paths.length },
         },
+      };
+    },
+  },
+  {
+    name: "setup_site",
+    effect: "Saves your site in Populr",
+    title: "Set up a website in Populr",
+    description: "Starts managing a website's SEO in Populr for this workspace. Pass the site's public address (e.g. https://yourshop.in) — take it from the project (Next.js metadataBase, a sitemap, the deploy URL) or ask the user. Does nothing if a site is already set up; to switch sites, the owner changes it in Populr.",
+    inputSchema: { type: "object", properties: { site: { type: "string", description: "The website's public address, e.g. https://yourshop.in" } }, required: ["site"], additionalProperties: false },
+    outputSchema: out(["created", "already_set_up", "different_site_set_up"], { site: str_ }),
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    async run(ws, a, deps) {
+      const site = originOf(str(a.site, 300));
+      if (!site) return { text: "That isn't a public website address. Use something like https://yourshop.in.", isError: true };
+      const c = await config(ws, deps);
+      if (c && c.site === site) return { text: `Populr already manages ${site} for this workspace. Next: call seo_status.`, data: { status: "already_set_up", site } };
+      if (c) {
+        const message = `This workspace already manages ${c.site}. Switching to ${site} would discard its page fixes, so it's done by the owner in Populr: https://www.trypopulr.in/app/keys`;
+        return { text: message, data: { status: "different_site_set_up", message, site: c.site } };
+      }
+      await deps.autopilot.save({ workspace: ws, site, enabled: false, business: null, faq: [], pages: {} });
+      return {
+        text: [`Populr now manages ${site}.`, "", "Next: call set_business_details with the business's name and details (they become the site's structured data), then draft_page_fix for the main pages."].join("\n"),
+        data: { status: "created", site },
+      };
+    },
+  },
+  {
+    name: "set_business_details",
+    effect: "Saves your business details",
+    title: "Save the business's details",
+    description: "Saves the facts Populr builds structured data (schema.org JSON-LD) and llms.txt from: name, type, description, phone, email, address, opening hours and profiles elsewhere. Use only facts the user confirms or that the site itself states — never guess. Replaces any details saved before; show the user what you'll save first.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "The business's name" },
+        type: { type: "string", enum: [...SCHEMA_TYPES], description: "schema.org type; LocalBusiness if unsure" },
+        description: { type: "string", description: "One or two sentences on what it offers and where" },
+        telephone: { type: "string" },
+        email: { type: "string" },
+        logo: { type: "string", description: "Absolute URL of the logo" },
+        address: { type: "object", properties: { street: { type: "string" }, locality: { type: "string" }, region: { type: "string" }, postalCode: { type: "string" }, country: { type: "string" } }, additionalProperties: false },
+        openingHours: { type: "array", items: { type: "string" }, description: "schema.org format, e.g. \"Mo-Sa 09:00-21:00\"" },
+        sameAs: { type: "array", items: { type: "string" }, description: "Profile URLs: Instagram, LinkedIn, Google Maps…" },
+      },
+      required: ["name"],
+      additionalProperties: false,
+    },
+    outputSchema: out(["saved", "not_set_up"], { name: str_, type: str_ }),
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
+    async run(ws, a, deps) {
+      const c = await config(ws, deps);
+      if (!c) return notSetUp();
+      const b = businessFrom(a);
+      if (!b) return { text: "A business name is required.", isError: true };
+      await deps.autopilot.save({ ...c, business: b });
+      return {
+        text: [`Saved the details for ${b.name} (${b.type}).`, "", "Next: get_structured_data shows the JSON-LD they produce; draft_page_fix drafts titles and descriptions for the main pages."].join("\n"),
+        data: { status: "saved", name: b.name, type: b.type },
       };
     },
   },
@@ -194,6 +260,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: "draft_page_fix",
+    effect: "Saves a draft for approval",
     title: "Draft a title and description",
     description: "Reads one page of the managed site and drafts a better <title> and meta description from what the page actually says. The draft is saved in Populr for the owner to approve; nothing changes on the live site.",
     inputSchema: { type: "object", properties: { path: { type: "string", description: "Page path on the managed site, e.g. /pricing" } }, required: ["path"], additionalProperties: false },
@@ -234,6 +301,41 @@ export const TOOLS: Tool[] = [
           "Saved in Populr as waiting for the owner's approval. Once approved, get_seo_fixes returns it.",
         ].join("\n"),
         data: { status: "saved", ...drafted },
+      };
+    },
+  },
+  {
+    name: "approve_page_fix",
+    effect: "Approves a fix — live via the snippet, if installed",
+    title: "Approve a page's title and description",
+    description: "Approves the drafted title and description for a page — as drafted, or with your edits — so get_seo_fixes returns it to apply in code. Ask the user first, and show them the exact text: if Populr's snippet is installed on the site, an approved fix goes live through it straight away.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        path: { type: "string", description: "Page path, e.g. / or /pricing" },
+        title: { type: "string", description: "The title to approve, if not the drafted one (15–65 characters works best)" },
+        description: { type: "string", description: "The description to approve, if not the drafted one (70–170 characters)" },
+      },
+      required: ["path"],
+      additionalProperties: false,
+    },
+    outputSchema: out(["approved", "nothing_to_approve", "not_set_up"], { path: str_, title: str_, description: str_ }),
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
+    async run(ws, a, deps) {
+      const c = await config(ws, deps);
+      if (!c) return notSetUp();
+      const path = pagePath(str(a.path) || "/");
+      const prev = c.pages[path];
+      const title = fixText(a.title, 70) ?? prev?.title;
+      const description = fixText(a.description, 170) ?? prev?.description;
+      if (!title && !description) {
+        const message = `There's no draft for ${path} to approve. Call draft_page_fix for it first, or pass a title and description.`;
+        return { text: message, data: { status: "nothing_to_approve", message, path } };
+      }
+      await deps.autopilot.save({ ...c, pages: { ...c.pages, [path]: { title, description, status: "approved", before: prev?.before, at: Date.now() } } });
+      return {
+        text: [`Approved for ${path}:`, title ? `Title: ${title}` : "Title: unchanged", description ? `Description: ${description}` : "Description: unchanged", "", c.enabled ? "Populr's snippet is switched on, so this is now live wherever it's installed. Apply it in code too (get_seo_fixes) so every crawler sees it." : "Next: get_seo_fixes, then apply it in the page's code."].join("\n"),
+        data: { status: "approved", path, ...(title ? { title } : {}), ...(description ? { description } : {}) },
       };
     },
   },

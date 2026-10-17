@@ -27,7 +27,7 @@ There's no `mcp.json` to write:
 
 ## Tools for the agent
 
-`seo_status`, `get_seo_fixes`, `get_structured_data`, `audit_page`, `draft_page_fix`, `generate_llms_txt`, `verify_page`. Every tool is read-only except `draft_page_fix`, which saves a draft in Populr for the site owner to approve. Nothing changes your live site — your assistant edits your code, and you deploy.
+`seo_status`, `setup_site`, `set_business_details`, `get_seo_fixes`, `get_structured_data`, `audit_page`, `draft_page_fix`, `approve_page_fix`, `generate_llms_txt`, `verify_page`. Ask the agent *"Set up Populr SEO for this project"* and it does the lot — site, business details, drafted and approved fixes — asking you before anything is saved. Four tools change your Populr settings; none edits your code or deploys. An approved fix goes live through Populr's snippet only if you've installed it.
 
 Full reference: [trypopulr.in/developers/docs](https://www.trypopulr.in/developers/docs).
 

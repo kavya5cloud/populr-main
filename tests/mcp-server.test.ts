@@ -38,12 +38,12 @@ describe("the protocol", () => {
     expect(r2.result.protocolVersion).toBe(SUPPORTED_VERSIONS[0]);
   });
 
-  it("lists tools with schemas, and marks the one that writes", async () => {
+  it("lists tools with schemas, and marks the ones that write", async () => {
     const { autopilot } = await setup();
     const r = await handle({ jsonrpc: "2.0", id: 1, method: "tools/list" }, "ws-a", { autopilot }) as { result: { tools: { name: string; inputSchema: object; annotations: { readOnlyHint: boolean } }[] } };
     const names = r.result.tools.map((t) => t.name);
-    expect(names).toEqual(["seo_status", "get_seo_fixes", "get_structured_data", "audit_page", "draft_page_fix", "generate_llms_txt", "verify_page"]);
-    expect(r.result.tools.filter((t) => !t.annotations.readOnlyHint).map((t) => t.name)).toEqual(["draft_page_fix"]);
+    expect(names).toEqual(["seo_status", "setup_site", "set_business_details", "get_seo_fixes", "get_structured_data", "audit_page", "draft_page_fix", "approve_page_fix", "generate_llms_txt", "verify_page"]);
+    expect(r.result.tools.filter((t) => !t.annotations.readOnlyHint).map((t) => t.name)).toEqual(["setup_site", "set_business_details", "draft_page_fix", "approve_page_fix"]);
   });
 
   it("rejects unknown methods, unknown tools and missing arguments as protocol errors", async () => {
@@ -140,7 +140,7 @@ describe("POST /api/mcp", () => {
     // Without a key, Populr can be described but not used.
     const listed = await POST(req(null, { jsonrpc: "2.0", id: 1, method: "tools/list" }));
     expect(listed.status).toBe(200);
-    expect((await listed.json()).result.tools.length).toBe(7);
+    expect((await listed.json()).result.tools.length).toBe(TOOLS.length);
     expect((await POST(req(null, { jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18" } }))).status).toBe(200);
     const call = await POST(req(null, { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "seo_status", arguments: {} } }));
     expect(call.status).toBe(401);
@@ -151,7 +151,7 @@ describe("POST /api/mcp", () => {
     expect(resources.status).toBe(200);
     expect((await resources.json()).result).toEqual({ resources: [] });
     const prompts = await POST(req(null, { jsonrpc: "2.0", id: 4, method: "prompts/list" }));
-    expect((await prompts.json()).result.prompts.map((p: { name: string }) => p.name)).toEqual(["apply_seo_fixes", "seo_audit"]);
+    expect((await prompts.json()).result.prompts.map((p: { name: string }) => p.name)).toEqual(["set_up_seo", "apply_seo_fixes", "seo_audit"]);
     const unknown = await POST(req(null, { jsonrpc: "2.0", id: 5, method: "triggers/list" }));
     expect(unknown.status).toBe(200);
     expect((await unknown.json()).error.code).toBe(-32601);
@@ -289,9 +289,10 @@ describe("structured output", () => {
   it("matches the schema when nothing is set up, or the business details are missing", async () => {
     const autopilot = new InMemoryAutopilotStore();
     await autopilot.save({ workspace: "ws-c", site: "https://c.example", enabled: false, business: null, faq: [], pages: {} });
-    for (const t of TOOLS.filter((t) => t.name !== "audit_page")) {
-      const args = t.name === "verify_page" ? { url: "https://x.example/" } : t.name === "draft_page_fix" ? { path: "/" } : {};
-      expect((await check(t.name, args, "ws-none", { autopilot }))?.status, t.name).toBe("not_set_up");
+    // audit_page needs no setup; setup_site is what does the setting up.
+    const args: Record<string, Record<string, unknown>> = { verify_page: { url: "https://x.example/" }, draft_page_fix: { path: "/" }, approve_page_fix: { path: "/" }, set_business_details: { name: "X" } };
+    for (const t of TOOLS.filter((t) => t.name !== "audit_page" && t.name !== "setup_site")) {
+      expect((await check(t.name, args[t.name] ?? {}, "ws-none", { autopilot }))?.status, t.name).toBe("not_set_up");
     }
     expect((await check("get_structured_data", {}, "ws-c", { autopilot }))?.status).toBe("needs_business_details");
     expect((await check("generate_llms_txt", {}, "ws-c", { autopilot }))?.status).toBe("needs_business_details");
@@ -359,5 +360,71 @@ describe("keys made signed out", () => {
     vi.doMock("@/lib/seo/autopilot-store", async (orig) => ({ ...(await orig<object>()), autopilotStore: () => new InMemoryAutopilotStore() }));
     const { POST } = await import("@/app/api/mcp/route");
     expect((await POST(call(anon.key))).status).toBe(200);
+  });
+});
+
+describe("setting up from the editor", () => {
+  // The whole setup, through the tools alone: nothing in Populr's web app is needed.
+  const ajv = new Ajv({ strict: false });
+  const schema = new Map(TOOLS.map((t) => [t.name, ajv.compile(t.outputSchema)]));
+  async function run(name: string, args: Record<string, unknown>, deps: Parameters<typeof handle>[2]) {
+    const r = (await handle({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: args } }, "ws-new", deps)) as { result: { isError: boolean; structuredContent?: Record<string, unknown>; content: { text: string }[] } };
+    if (!r.result.isError) expect(schema.get(name)!(r.result.structuredContent), `${name} output schema`).toBe(true);
+    return r.result;
+  }
+
+  it("goes from nothing to an approved fix, without the web app", async () => {
+    const autopilot = new InMemoryAutopilotStore();
+    const deps = {
+      autopilot,
+      suggest: async () => ({ ok: true as const, fix: { title: "Rao's Bakery — fresh bread in Jayanagar", description: "Sourdough, cakes and pav baked every morning in Jayanagar, Bengaluru. Order ahead or drop in.", status: "suggested" as const, before: { title: "Home", description: null }, at: 0 } }),
+    };
+    expect((await run("seo_status", {}, deps)).structuredContent?.status).toBe("not_set_up");
+    expect((await run("seo_status", {}, deps)).content[0].text).toContain("setup_site");
+
+    expect((await run("setup_site", { site: "raosbakery.in/menu" }, deps)).structuredContent).toEqual({ status: "created", site: "https://raosbakery.in" });
+    expect((await run("setup_site", { site: "https://raosbakery.in" }, deps)).structuredContent?.status).toBe("already_set_up");
+    const other = await run("setup_site", { site: "https://elsewhere.example" }, deps);
+    expect(other.structuredContent?.status).toBe("different_site_set_up");
+    expect((await autopilot.get("ws-new"))!.site).toBe("https://raosbakery.in");
+
+    expect((await run("set_business_details", { name: "Rao's Bakery", type: "Store", description: "Fresh bread in Jayanagar.", address: { locality: "Bengaluru", country: "IN" } }, deps)).structuredContent).toEqual({ status: "saved", name: "Rao's Bakery", type: "Store" });
+    expect((await run("get_structured_data", {}, deps)).structuredContent?.status).toBe("ok");
+
+    expect((await run("approve_page_fix", { path: "/" }, deps)).structuredContent?.status).toBe("nothing_to_approve");
+    expect((await run("draft_page_fix", { path: "/" }, deps)).structuredContent?.status).toBe("saved");
+    const approved = await run("approve_page_fix", { path: "/", description: "Sourdough, celebration cakes and pav baked every morning in Jayanagar, Bengaluru. Order ahead or drop in." }, deps);
+    expect(approved.structuredContent).toMatchObject({ status: "approved", path: "/", title: "Rao's Bakery — fresh bread in Jayanagar" });
+
+    const fixes = await run("get_seo_fixes", {}, deps);
+    expect(fixes.structuredContent?.pages).toEqual([expect.objectContaining({ path: "/", title: "Rao's Bakery — fresh bread in Jayanagar", description: expect.stringContaining("celebration cakes") })]);
+  });
+
+  it("refuses an address that isn't a public website, and business details without a name", async () => {
+    const autopilot = new InMemoryAutopilotStore();
+    // Local addresses are allowed in development on purpose (working on Populr locally);
+    // production refuses them.
+    vi.stubEnv("NODE_ENV", "production");
+    try {
+      expect((await run("setup_site", { site: "http://localhost:3000" }, { autopilot })).isError).toBe(true);
+      expect((await run("setup_site", { site: "http://10.0.0.5" }, { autopilot })).isError).toBe(true);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+    await run("setup_site", { site: "https://raosbakery.in" }, { autopilot });
+    const noName = await handle({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "set_business_details", arguments: { type: "Store" } } }, "ws-new", { autopilot });
+    expect((noName as { error: { code: number } }).error.code).toBe(-32602);
+  });
+
+  it("marks the tools that change settings as needing the user's say-so", () => {
+    const writes = TOOLS.filter((t) => !t.annotations.readOnlyHint).map((t) => t.name).sort();
+    expect(writes).toEqual(["approve_page_fix", "draft_page_fix", "set_business_details", "setup_site"]);
+    for (const n of ["approve_page_fix", "set_business_details"]) expect(TOOLS.find((t) => t.name === n)!.annotations.destructiveHint).toBe(true);
+  });
+
+  it("offers a prompt that walks an agent through the whole setup", async () => {
+    const r = (await handle({ jsonrpc: "2.0", id: 1, method: "prompts/get", params: { name: "set_up_seo" } }, "", { autopilot: new InMemoryAutopilotStore() })) as { result: { messages: { content: { text: string } }[] } };
+    const text = r.result.messages[0].content.text;
+    for (const tool of ["seo_status", "setup_site", "set_business_details", "draft_page_fix", "approve_page_fix", "get_seo_fixes", "generate_llms_txt", "verify_page"]) expect(text).toContain(tool);
   });
 });

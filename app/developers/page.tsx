@@ -126,13 +126,13 @@ export default function Developers() {
 
         <section className="dv-sec">
           <p className="dv-kicker">Tools</p>
-          <h2>Seven tools. One of them writes.</h2>
+          <h2>{TOOLS.length} tools. Set up, fix and verify — without leaving your editor.</h2>
           <div className="dv-tools">
             {TOOLS.map((t) => (
               <article key={t.name} className={t.annotations.readOnlyHint ? "" : "writes"}>
                 <code>{t.name}</code>
                 <p>{t.description}</p>
-                <span className="dv-tag">{t.annotations.readOnlyHint ? "Read-only" : "Saves a draft for approval"}</span>
+                <span className="dv-tag">{t.effect ?? "Read-only"}</span>
               </article>
             ))}
           </div>
@@ -155,7 +155,8 @@ export default function Developers() {
             <ul className="dv-list">
               <li>A key opens one workspace&apos;s SEO settings — nothing else.</li>
               <li>Shown once, stored as a SHA-256 fingerprint, revocable any time.</li>
-              <li>Six of seven tools only read. Nothing publishes or changes a live site.</li>
+              <li>{TOOLS.filter((t) => t.annotations.readOnlyHint).length} of {TOOLS.length} tools only read. The rest change only your Populr settings, and your editor asks you first.</li>
+              <li>No tool edits your code or deploys. Approving a fix makes it live through Populr&apos;s snippet, if you&apos;ve installed it.</li>
               <li>Page fetches refuse private addresses and re-check every redirect.</li>
               <li>Rate limited per key.</li>
             </ul>
