@@ -8,12 +8,15 @@ import {
 // Populr SEO for VS Code (and Cursor).
 //
 // Registers Populr's MCP server with the editor, so its tools show up in the agent with no
-// mcp.json to write, and adds a few commands that use the same tools directly. The access key
-// lives in the editor's secret storage and is only ever sent to the Populr server URL.
+// mcp.json to write, and adds a few commands that use the same tools directly.
+//
+// No key is needed: without one, Populr is registered by its address and the editor signs in
+// itself ("Sign in with Populr" — OAuth), the first time it's used. A key, if the developer
+// prefers one, lives in the editor's secret storage and is only ever sent to the Populr URL.
 //
 // VS Code takes the HTTP server directly. Cursor's extension API can't send headers to a
-// remote server, so there the extension registers a small local stdio relay (proxy.ts) that
-// adds the key — run by Cursor's own runtime, so nothing else needs installing.
+// remote server, so with a key the extension registers a small local stdio relay (proxy.ts)
+// that adds it — run by Cursor's own runtime, so nothing else needs installing.
 
 const SECRET = "populr.key";
 const PROVIDER_ID = "populr";
@@ -38,10 +41,14 @@ export function activate(context: vscode.ExtensionContext) {
   };
 
   const refreshStatus = async () => {
-    const connected = !!(await getKey());
-    status.text = connected ? "$(check) Populr" : "$(plug) Populr";
-    status.tooltip = connected ? "Populr SEO is connected. Click for your SEO status." : "Connect Populr SEO";
-    status.command = connected ? "populr.status" : "populr.connect";
+    const hasKey = !!(await getKey());
+    const signIn = !hasKey && (mode === "provider" || mode === "cursor");
+    status.text = hasKey ? "$(check) Populr" : signIn ? "$(globe) Populr" : "$(plug) Populr";
+    status.tooltip = hasKey ? "Populr SEO is connected with a key. Click for your SEO status."
+      : mode === "provider" ? "Populr SEO signs in through VS Code the first time it's used. Click for your SEO status."
+      : mode === "cursor" ? "Populr SEO is in Cursor's MCP servers — sign in there. Click to connect."
+      : "Connect Populr SEO";
+    status.command = hasKey || mode === "provider" ? "populr.status" : "populr.connect";
     status.show();
   };
 
@@ -89,22 +96,27 @@ export function activate(context: vscode.ExtensionContext) {
     : HttpDefinition && api.lm?.registerMcpServerDefinitionProvider ? "provider"
     : settingsMode;
 
-  // VS Code 1.101+: the MCP server, offered only while a key is stored.
+  // VS Code 1.101+: the MCP server, always offered. With a key, it goes in a header; without
+  // one, there's no header, Populr answers 401 with its sign-in metadata, and VS Code runs
+  // "Sign in with Populr" itself. The version changes with the mode, so switching between a
+  // key and sign-in makes VS Code pick up the new definition.
   const provider: Provider = {
     onDidChangeMcpServerDefinitions: changed.event,
     provideMcpServerDefinitions: async () => {
       const [url, key] = [serverUrl(), await getKey()];
-      return url && key && HttpDefinition ? [new HttpDefinition(LABEL, vscode.Uri.parse(url), { Authorization: `Bearer ${key}` }, "1.0.0")] : [];
+      if (!url || !HttpDefinition) return [];
+      return [new HttpDefinition(LABEL, vscode.Uri.parse(url), key ? { Authorization: `Bearer ${key}` } : {}, key ? "1.1.0-key" : "1.1.0-signin")];
     },
-    // Read the key again when VS Code starts the server, so a replaced key is the one used.
+    // Read the key again when VS Code starts the server, so a replaced (or removed) key counts.
     resolveMcpServerDefinition: async (server) => {
       const [url, key] = [serverUrl(), await getKey()];
-      if (!url || !key) {
-        void vscode.window.showWarningMessage("Populr isn't connected.", "Connect").then((a) => a && vscode.commands.executeCommand("populr.connect"));
+      if (!url) {
+        void vscode.window.showErrorMessage("The Populr server URL in your settings isn't a valid HTTPS address.");
         return undefined;
       }
       server.uri = vscode.Uri.parse(url);
-      server.headers = { ...server.headers, Authorization: `Bearer ${key}` };
+      const { Authorization: _drop, ...rest } = server.headers ?? {};
+      server.headers = key ? { ...rest, Authorization: `Bearer ${key}` } : rest;
       return server;
     },
   };
@@ -140,25 +152,34 @@ export function activate(context: vscode.ExtensionContext) {
   // disconnecting (or replacing the key) stops it even if Cursor leaves the process running.
   const sessionFile = vscode.Uri.joinPath(context.globalStorageUri, "relay-session");
   let registered: string | null = null;
+  // Cursor's register/unregister calls resolve only once its connection attempt settles — and
+  // a server waiting for sign-in may not settle for a long time. Give each a few seconds, then
+  // move on, so one waiting server can't hold up the next change (e.g. adding a key).
+  const settle = (p: unknown) => Promise.race([Promise.resolve(p).catch(() => undefined), new Promise((r) => setTimeout(r, 3000))]);
   let queue: Promise<void> = Promise.resolve();
   const syncCursor = () => {
     queue = queue.then(async () => {
       if (!cursorMcp) return;
       const [url, key] = [serverUrl(), await getKey()];
-      const want = url && key ? createHash("sha256").update(`${url}\n${key}`).digest("hex") : null;
+      const want = !url ? null : key ? createHash("sha256").update(`${url}\n${key}`).digest("hex") : `signin:${url}`;
       if (want === registered) return;
       if (registered) {
-        await Promise.resolve(cursorMcp.unregisterServer(PROVIDER_ID)).catch(() => undefined);
+        await settle(cursorMcp.unregisterServer(PROVIDER_ID));
         registered = null;
       }
       if (!url || !key || !want) {
         await vscode.workspace.fs.delete(sessionFile).then(undefined, () => undefined);
+        if (!url || !want) return;
+        // No key: register Populr by its address. Cursor sees the 401 and offers its own
+        // login for it — "Sign in with Populr" — under Cursor Settings → MCP.
+        await settle(cursorMcp.registerServer({ name: PROVIDER_ID, server: { url } }));
+        registered = want;
         return;
       }
       const session = randomBytes(16).toString("hex");
       await vscode.workspace.fs.createDirectory(context.globalStorageUri);
       await vscode.workspace.fs.writeFile(sessionFile, new TextEncoder().encode(session));
-      await Promise.resolve(cursorMcp.registerServer({
+      await settle(cursorMcp.registerServer({
         name: PROVIDER_ID,
         server: {
           command: process.execPath,
@@ -174,7 +195,12 @@ export function activate(context: vscode.ExtensionContext) {
   if (mode === "cursor" && cursorMcp) {
     context.subscriptions.push(changed.event(() => void syncCursor()), {
       dispose: () => {
-        try { void Promise.resolve(cursorMcp.unregisterServer(PROVIDER_ID)).catch(() => undefined); } catch { /* gone */ }
+        // Stop the relay on the way out. A sign-in registration is left alone: Cursor forgets a
+        // server's sign-in when it's unregistered, and nobody should have to sign in again
+        // every time Cursor restarts.
+        if (registered && !registered.startsWith("signin:")) {
+          try { void Promise.resolve(cursorMcp.unregisterServer(PROVIDER_ID)).catch(() => undefined); } catch { /* gone */ }
+        }
         void vscode.workspace.fs.delete(sessionFile).then(undefined, () => undefined);
       },
     });
@@ -200,8 +226,30 @@ export function activate(context: vscode.ExtensionContext) {
     none: `the commands work. To use Populr from the agent, update ${vscode.env.appName} — this version doesn't support MCP.`,
   })[mode];
 
-  // Everything a command needs before it can call a tool. Offers to connect when there's no key.
-  const session = async (): Promise<{ url: string; key: string } | null> => {
+  // Without a key, VS Code's own MCP client — which carries the editor's sign-in — runs the
+  // tool. Its tools are named like mcp_populr_seo_<tool>.
+  type LmTool = { name: string };
+  type LmApi = { tools?: readonly LmTool[]; invokeTool?(name: string, options: { input: object; toolInvocationToken: undefined }): Thenable<{ content: unknown[] }> };
+  const lm = (vscode as unknown as { lm?: LmApi }).lm;
+  const serverId = `${context.extension.id.toLowerCase()}/${LABEL}`;
+  const editorTool = (name: string) => lm?.tools?.find((t) => /populr/i.test(t.name) && t.name.endsWith(`_${name}`));
+  const startServer = () =>
+    Promise.resolve(vscode.commands.executeCommand("workbench.mcp.startServer", serverId, { waitForLiveTools: true })).then(() => true, () => false);
+  const viaEditor = async (name: string, args: Record<string, unknown>): Promise<{ text: string; isError: boolean } | null> => {
+    let tool = editorTool(name);
+    if (!tool) { await startServer(); tool = editorTool(name); }
+    if (!tool || !lm?.invokeTool) return null;
+    // A tool that fails in Populr comes back as a result; a throw means VS Code couldn't run
+    // the server at all — almost always because the sign-in hasn't happened (or was cancelled).
+    const r = await Promise.resolve(lm.invokeTool(tool.name, { input: args, toolInvocationToken: undefined })).catch(() => null);
+    if (!r) throw new PopulrError("auth", "Populr didn't answer through VS Code. If VS Code asked you to sign in, finish that first — or connect with an access key.");
+    const text = r.content.map((p) => (p as { value?: unknown }).value).filter((v): v is string => typeof v === "string").join("\n");
+    return { text, isError: false };
+  };
+
+  // Everything a command needs before it can call a tool: a key, or (VS Code) the editor's
+  // own sign-in. Offers to connect when there's neither.
+  const session = async (): Promise<{ url: string; key: string } | { url: string; viaEditor: true } | null> => {
     const url = serverUrl();
     if (!url) {
       void vscode.window.showErrorMessage("The Populr server URL in your settings isn't a valid HTTPS address.", "Open settings")
@@ -210,7 +258,10 @@ export function activate(context: vscode.ExtensionContext) {
     }
     const key = await getKey();
     if (key) return { url, key };
-    const a = await vscode.window.showInformationMessage("Connect Populr first — you'll need an access key.", "Connect", "Get a key");
+    if (mode === "provider") return { url, viaEditor: true };
+    const a = await vscode.window.showInformationMessage(
+      mode === "cursor" ? "In Cursor, the Populr commands need an access key (Cursor's agent signs in on its own)." : "Connect Populr first — you'll need an access key.",
+      "Connect", "Get a key");
     if (a === "Get a key") void vscode.env.openExternal(vscode.Uri.parse(KEYS_URL));
     if (a === "Connect") await vscode.commands.executeCommand("populr.connect");
     const after = await getKey();
@@ -221,7 +272,12 @@ export function activate(context: vscode.ExtensionContext) {
     const s = await session();
     if (!s) return null;
     try {
-      return await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title }, () => callTool(s.url, s.key, name, args));
+      return await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title }, async () => {
+        if ("key" in s) return callTool(s.url, s.key, name, args);
+        const r = await viaEditor(name, args);
+        if (!r) throw new PopulrError("auth", "Populr isn't signed in yet. Sign in when VS Code asks, or connect with an access key.");
+        return r;
+      });
     } catch (e) {
       const auth = e instanceof PopulrError && e.kind === "auth";
       void vscode.window.showErrorMessage(describeError(e), ...(auth ? ["Connect again"] : []))
@@ -246,6 +302,36 @@ export function activate(context: vscode.ExtensionContext) {
       void vscode.window.showErrorMessage("The Populr server URL in your settings isn't a valid HTTPS address.");
       return;
     }
+    // Sign-in first where the editor can do it; a key for everything else.
+    if (mode === "provider" || mode === "cursor") {
+      const pick = await vscode.window.showQuickPick([
+        { label: "$(globe) Sign in with Populr", description: "Recommended — no key to copy", id: "signin" },
+        { label: "$(key) Use an access key", description: "From trypopulr.in/app/keys", id: "key" },
+      ], { title: "Connect Populr SEO", placeHolder: "How do you want to connect?" });
+      if (!pick) return;
+      if (pick.id === "signin") {
+        if (await getKey()) {
+          // Sign-in replaces a stored key. VS Code takes a moment to pick up the definition
+          // without it; starting before then would start the old one.
+          await context.secrets.delete(SECRET);
+          if (mode === "provider") await new Promise((r) => setTimeout(r, 1500));
+        }
+        if (mode === "cursor") {
+          void vscode.commands.executeCommand("aiSettings.action.open", "mcp").then(undefined, () => undefined);
+          void vscode.window.showInformationMessage("Populr is in Cursor's MCP servers — click Login next to it and sign in. Cursor's agent can then use it.");
+          return;
+        }
+        await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: "Starting Populr — sign in if VS Code asks…" }, () => startServer());
+        // VS Code keeps a server's last tool list even when it's waiting for sign-in, so the
+        // tools being listed doesn't prove anything. The status check does: it goes through
+        // VS Code's sign-in and shows what Populr says.
+        const a = await vscode.window.showInformationMessage(
+          "If VS Code asked you to sign in to Populr, finish in your browser. Populr's tools are then in chat (agent mode).",
+          "Show SEO status");
+        if (a) await vscode.commands.executeCommand("populr.status");
+        return;
+      }
+    }
     const key = await vscode.window.showInputBox({
       title: "Connect Populr SEO",
       prompt: `Paste a Populr access key. Create one at ${KEYS_URL.replace("https://", "")}.`,
@@ -266,8 +352,20 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   command("populr.disconnect", async () => {
-    await context.secrets.delete(SECRET);
-    void vscode.window.showInformationMessage(`Populr disconnected. The key is no longer stored in ${vscode.env.appName} — revoke it in Populr if you won't use it again.`);
+    if (await getKey()) {
+      await context.secrets.delete(SECRET);
+      void vscode.window.showInformationMessage(`Populr disconnected. The key is no longer stored in ${vscode.env.appName} — revoke it in Populr if you won't use it again.`);
+      return;
+    }
+    if (mode !== "provider" && mode !== "cursor") {
+      void vscode.window.showInformationMessage("Populr isn't connected.");
+      return;
+    }
+    // Signed in through the editor: the sign-in is the editor's, and Populr can end it too.
+    const a = await vscode.window.showInformationMessage(
+      `${vscode.env.appName} signed in to Populr itself. To sign out, disconnect it on Populr's keys page — it stops working at once.`,
+      "Open the keys page");
+    if (a) void vscode.env.openExternal(vscode.Uri.parse(KEYS_URL));
   });
 
   command("populr.status", async () => {

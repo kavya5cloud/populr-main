@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0
+
+- No key needed: sign in with Populr instead. In VS Code 1.101+, the agent asks you to sign in the first time it uses Populr; in Cursor, Populr is listed under Cursor Settings → MCP with a Login button. Access keys keep working everywhere.
+- **Populr: Connect** offers "Sign in with Populr" or "Use an access key". In VS Code, the commands work through the sign-in too.
+- The extension starts with the editor, so Populr is in Cursor's MCP servers in every window, not just after you run a command.
+- A Cursor sign-in survives restarts: the extension no longer unregisters Populr when it shuts down.
+- Fixed: a waiting Cursor sign-in could hold up connecting with a key.
+
 ## 1.0.2
 
 - Installs on VS Code 1.82 and later (was 1.101). The commands work everywhere.

@@ -1,8 +1,8 @@
 {
   "name": "populr-seo",
   "displayName": "Populr SEO",
-  "description": "Apply the SEO fixes you approve in Populr from your editor's AI agent — titles, descriptions, structured data and llms.txt, in your site's code. Works in VS Code and Cursor.",
-  "version": "1.0.2",
+  "description": "Apply the SEO fixes you approve in Populr from your editor's AI agent — titles, descriptions, structured data and llms.txt, in your site's code. Sign in with Populr, no key to copy. Works in VS Code and Cursor.",
+  "version": "1.1.0",
   "license": "MIT",
   "publisher": "populr",
   "pricing": "Free",
@@ -38,7 +38,9 @@
     "theme": "dark"
   },
   "main": "./out/extension.js",
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": true

@@ -76,17 +76,17 @@ export default function Docs() {
                   <li><b>VS Code</b> — search <b>Populr SEO</b> in the Extensions view (it&apos;s on the <a href="https://marketplace.visualstudio.com/items?itemName=Populr.populr-seo" target="_blank" rel="noopener">Visual Studio Marketplace</a>). Works in VS Code 1.82+; the agent tools need 1.100 or later. Offline or locked down? <a href="/downloads/populr-seo.vsix" download>Download the .vsix</a> and run <b>Extensions: Install from VSIX…</b></li>
                 </ul>
               </li>
-              <li>Run <b>Populr: Connect</b> from the Command Palette and paste your key. It&apos;s kept in the editor&apos;s secret storage.</li>
+              <li>Sign in. There&apos;s no key to copy: the first time the agent uses Populr, <b>VS Code</b> asks you to sign in to Populr in your browser; in <b>Cursor</b>, click <b>Login</b> next to Populr under <b>Cursor Settings → MCP</b>. <b>Populr: Connect</b> takes you there too.</li>
               <li>Ask the agent. In VS Code, open chat in <b>Agent</b> mode — Populr&apos;s tools are in the tools picker. In Cursor, Populr is listed under MCP servers and its tools are available to the agent.</li>
             </ol>
-            <p>In Cursor, the extension runs a small local relay that adds your key to each request — Cursor&apos;s extension API can&apos;t send it to a remote server directly. The relay gets the key through its environment, never its command line, and stops when you disconnect.</p>
+            <p><b>Prefer an access key?</b> Run <b>Populr: Connect</b>, choose <b>Use an access key</b> and paste it; it&apos;s kept in the editor&apos;s secret storage. Keys are also what VS Code 1.100 uses, and what the commands below use in Cursor (Cursor&apos;s sign-in belongs to its agent). In Cursor, a key goes through a small local relay that adds it to each request — Cursor&apos;s extension API can&apos;t send it to a remote server directly. The relay gets the key through its environment, never its command line, and stops when you disconnect.</p>
             <p>Commands it adds:</p>
             <ul>
               <li><b>Populr: Show SEO status</b> — what&apos;s approved and waiting.</li>
               <li><b>Populr: Audit a page</b> — on-page problems of any public URL, in the Populr output panel.</li>
               <li><b>Populr: Insert structured data</b> — the approved JSON-LD for a page, at the cursor. In <code>.tsx</code>/<code>.jsx</code> files it&apos;s written the way React needs it.</li>
               <li><b>Populr: Create llms.txt</b> — writes it to your site&apos;s <code>public/</code> folder (or <code>static/</code>, for SvelteKit and Hugo).</li>
-              <li><b>Populr: Disconnect</b> — forgets the key.</li>
+              <li><b>Populr: Disconnect</b> — forgets the key. A sign-in belongs to the editor: end it by disconnecting the app on <a href="/app/keys">the keys page</a>.</li>
             </ul>
           </section>
 

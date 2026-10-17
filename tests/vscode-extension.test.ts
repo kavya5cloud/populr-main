@@ -126,12 +126,42 @@ describe("Cursor relay", () => {
     expect(JSON.parse((await forwardLine(MCP_URL, "pop_k", "not json", { fetch: html.fn }))!)).toMatchObject({ id: null, error: { code: -32700 } });
   });
 
+  const registrations = () =>
+    extensionSrc.split("cursorMcp.registerServer(").slice(1).map((rest) => rest.slice(0, rest.indexOf("}))") + 2));
+
   it("is launched with the key in its environment, never its arguments", () => {
-    const at = extensionSrc.indexOf("cursorMcp.registerServer(");
-    const call = extensionSrc.slice(at, extensionSrc.indexOf("}));", at));
+    const call = registrations().find((c) => c.includes("command:"))!;
     expect(call).toMatch(/args: \[context\.asAbsolutePath\("out\/proxy\.js"\)\]/);
     expect(call).toMatch(/env: \{[^}]*POPULR_KEY: key/);
     expect(call).toMatch(/POPULR_SESSION_FILE/);
+  });
+
+  it("without a key, registers Populr by its address alone, so Cursor signs in itself", () => {
+    const [signIn, ...others] = registrations().filter((c) => !c.includes("command:"));
+    expect(others).toEqual([]);
+    expect(signIn).toMatch(/server: \{ url \}/);
+    expect(signIn).not.toMatch(/key|headers|Authorization/i);
+  });
+
+  it("leaves a sign-in registered when it shuts down, so Cursor keeps the sign-in", () => {
+    const dispose = extensionSrc.slice(extensionSrc.indexOf("dispose: () => {"), extensionSrc.indexOf("void syncCursor();"));
+    expect(dispose).toMatch(/if \(registered && !registered\.startsWith\("signin:"\)\)/);
+  });
+});
+
+describe("signing in through the editor", () => {
+  it("VS Code is always offered Populr; a key, when there is one, goes in a header", () => {
+    const provide = extensionSrc.slice(extensionSrc.indexOf("provideMcpServerDefinitions: async"), extensionSrc.indexOf("resolveMcpServerDefinition: async"));
+    expect(provide).not.toMatch(/if \(!url \|\| !key/);
+    expect(provide).toMatch(/key \? \{ Authorization: `Bearer \$\{key\}` \} : \{\}/);
+  });
+
+  it("starts with the editor, so Cursor lists Populr without running a command first", () => {
+    expect(manifest.activationEvents).toContain("onStartupFinished");
+  });
+
+  it("never claims a sign-in finished — the editor's tool list can be stale", () => {
+    expect(extensionSrc).not.toMatch(/`Signed in to Populr/);
   });
 });
 

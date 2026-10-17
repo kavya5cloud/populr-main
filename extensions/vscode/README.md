@@ -4,26 +4,24 @@ Apply the SEO fixes you approve in [Populr](https://www.trypopulr.in) from your 
 
 ## Get started
 
-1. Create an access key at [trypopulr.in/app/keys](https://www.trypopulr.in/app/keys).
-2. Run **Populr: Connect** from the Command Palette and paste the key.
-3. Ask your agent: *"Apply my Populr SEO fixes."*
+No key to copy, and no `mcp.json` to write:
 
-There's no `mcp.json` to write:
-
-- **VS Code** — open chat in **Agent** mode; Populr's tools are in the tools picker.
-- **Cursor** — Populr appears in Cursor's MCP servers and its tools are available to the agent. The extension runs a small local relay that adds your key to each request, because Cursor's extension API can't send it to a remote server directly.
+- **VS Code** — open chat in **Agent** mode and ask *"Set up Populr SEO for this project."* The first time the agent uses Populr, VS Code asks you to sign in to Populr in your browser. That's it.
+- **Cursor** — Populr appears under **Cursor Settings → MCP**. Click **Login** next to it, sign in, and ask the agent.
 - **Windsurf and others** — the commands below work; for the agent, add Populr to your MCP config as shown in the [setup guide](https://www.trypopulr.in/developers/docs#connect).
+
+**Populr: Connect** takes you to the sign-in, or lets you paste an access key instead (from [trypopulr.in/app/keys](https://www.trypopulr.in/app/keys)). A key is what VS Code 1.100 uses, and what the commands use in Cursor — Cursor's sign-in belongs to its agent. In Cursor, a key goes through a small local relay that adds it to each request, because Cursor's extension API can't send it to a remote server directly.
 
 ## Commands
 
 | Command | What it does |
 | --- | --- |
-| **Populr: Connect** | Checks your key with Populr and stores it in the editor's secret storage. |
+| **Populr: Connect** | Sign in with Populr, or paste an access key — it's checked with Populr and kept in the editor's secret storage. |
 | **Populr: Show SEO status** | What's approved and ready to apply, and what's waiting for approval. |
 | **Populr: Audit a page** | On-page SEO problems of any public URL, in the Populr output panel. |
 | **Populr: Insert structured data** | The JSON-LD for a page, at the cursor. In `.tsx`/`.jsx` files it's written as a React-safe `<script dangerouslySetInnerHTML>`. |
 | **Populr: Create llms.txt** | Writes `llms.txt` to your site's `public/` folder (or `static/`, for SvelteKit and Hugo). |
-| **Populr: Disconnect** | Forgets the key. |
+| **Populr: Disconnect** | Forgets the key. A sign-in belongs to the editor: end it on [the keys page](https://www.trypopulr.in/app/keys). |
 
 ## Tools for the agent
 
@@ -33,12 +31,13 @@ Full reference: [trypopulr.in/developers/docs](https://www.trypopulr.in/develope
 
 ## Security
 
-- The key is kept in the editor's secret storage, never in settings or files.
+- Signing in is standard MCP authorization (OAuth 2.1 with PKCE). The editor holds the sign-in, it renews itself, and you can end it any time on [the keys page](https://www.trypopulr.in/app/keys).
+- A key is kept in the editor's secret storage, never in settings or files.
 - It's sent only to the Populr server URL, over HTTPS. `populr.serverUrl` can be set in user settings only, so a workspace's `.vscode/settings.json` can't redirect your key.
 - In Cursor, the relay gets the key through its environment, not its command line, and stops as soon as you disconnect.
 - A key works only for the workspace that created it. Revoke it any time at [trypopulr.in/app/keys](https://www.trypopulr.in/app/keys).
 
-Works in VS Code 1.82 or later and Cursor. Using Populr from the agent needs VS Code 1.100 or later (on 1.100, VS Code asks for your key once more the first time the agent uses Populr).
+Works in VS Code 1.82 or later and Cursor. Using Populr from the agent needs VS Code 1.100 or later; signing in without a key needs 1.101 or later (on 1.100, connect with a key — VS Code asks for it once more the first time the agent uses Populr).
 
 ## License
 
