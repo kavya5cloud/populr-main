@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL, PUBLIC_ROUTES, url } from "@/lib/seo";
 import { allGuides } from "@/lib/guides";
+import { FREE_TOOLS, toolPath } from "@/lib/tools/catalog";
 
 // Serves /llms.txt — the llms.txt convention for telling AI systems what this site is.
 // Built the same way sitemap.ts and robots.ts are: derived from lib/seo.ts and
@@ -22,6 +23,8 @@ const ROUTE_LABEL: Record<string, string> = {
   "/developers": "Populr MCP server for developers",
   "/developers/docs": "MCP server documentation",
   "/guides": "Guides",
+  "/check": "Free SEO & AI visibility check",
+  "/tools": "Free SEO & AI search tools",
   "/privacy": "Privacy",
   "/terms": "Terms",
 };
@@ -38,7 +41,13 @@ function buildLlmsTxt(): string {
     lines.push("");
   }
 
-  const siteRoutes = PUBLIC_ROUTES.filter((r) => r.path !== "/guides" && ROUTE_LABEL[r.path]);
+  // The tools, each with the description its page carries.
+  lines.push("## Free tools");
+  lines.push(`- [${ROUTE_LABEL["/check"]}](${url("/check")}): Fourteen checks on what search engines and AI assistants read on a home page, with a shareable score`);
+  for (const t of FREE_TOOLS) lines.push(`- [${t.title}](${url(toolPath(t.slug))}): ${t.description}`);
+  lines.push("");
+
+  const siteRoutes = PUBLIC_ROUTES.filter((r) => r.path !== "/guides" && r.path !== "/check" && ROUTE_LABEL[r.path]);
   if (siteRoutes.length) {
     lines.push("## Site");
     for (const r of siteRoutes) {

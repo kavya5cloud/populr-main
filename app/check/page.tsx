@@ -29,6 +29,7 @@ export default function CheckPage() {
         <header className="ck-top">
           <a href="/" className="ck-logo">Populr<span>.</span></a>
           <nav aria-label="Main" className="ck-links">
+            <a href="/tools">Free tools</a>
             <a href="/guides">Guides</a>
             <a href="/developers">Developers</a>
             <a href="/app" className="ck-pill">Get started</a>
@@ -64,7 +65,7 @@ export default function CheckPage() {
         </section>
 
         <footer className="ck-foot">
-          <a href="/">Populr</a> — the AI CMO for small businesses. <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a>
+          <a href="/">Populr</a> — the AI CMO for small businesses. <a href="/tools">Free tools</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a>
         </footer>
       </main>
     </div>
