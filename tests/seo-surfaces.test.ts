@@ -109,4 +109,13 @@ describe("structured data a validator will accept", () => {
     const src = readFileSync(join(process.cwd(), "app/components/JsonLd.tsx"), "utf8");
     expect(src).toMatch(/logo:\s*\{[^}]*apple-icon\.png[^}]*width:\s*180/);
   });
+
+  it("ties the organization to its own profiles, so Google can tell it from populr.me", () => {
+    const src = readFileSync(join(process.cwd(), "app/components/JsonLd.tsx"), "utf8");
+    const sameAs = src.match(/sameAs:\s*\[([^\]]*)\]/)?.[1] ?? "";
+    const urls = [...sameAs.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+    expect(urls).toContain("https://www.linkedin.com/company/trypopulr");
+    expect(urls).toContain("https://x.com/trypopulr");
+    for (const u of urls) expect(u).toMatch(/^https:\/\/[^/]+\/(.+\/)?trypopulr$/);
+  });
 });

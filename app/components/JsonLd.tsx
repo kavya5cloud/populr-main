@@ -18,6 +18,15 @@ const organization = {
   logo: { "@type": "ImageObject", url: url("/apple-icon.png"), width: 180, height: 180 },
   description: SITE_DESCRIPTION,
   email: "team@trypopulr.in",
+  // "Populr" is also another company's name (populr.me), and Search Console shows Google
+  // ranking us third for our own name. Linking our own profiles here is how Google tells
+  // the two apart: these accounts, this site and this name are one company. The handle
+  // they all use is "trypopulr".
+  alternateName: "trypopulr",
+  sameAs: [
+    "https://www.linkedin.com/company/trypopulr",
+    "https://x.com/trypopulr",
+  ],
 };
 
 const website = {
