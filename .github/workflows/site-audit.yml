@@ -1,0 +1,39 @@
+name: SEO audit of trypopulr.in
+
+# Populr sells SEO, so its own site has to be the example — and stay one. This crawls every
+# page in the live sitemap the way a search engine does (scripts/site-audit.ts) and fails if
+# anything is broken: a page that doesn't answer, a canonical pointing elsewhere, a noindex in
+# the sitemap, a duplicate title, a broken link or share image, structured data that doesn't
+# parse. Warnings (lengths, speed) are printed without failing.
+#
+# It runs every morning, after each production deploy, and by hand. A red run is the signal:
+# open it, and the log names each page and what's wrong.
+#
+# Optional: a PAGESPEED_API_KEY secret makes the speed check dependable (Google's free
+# PageSpeed quota is shared, and is often spent).
+
+on:
+  schedule:
+    - cron: "37 3 * * *"
+  deployment_status:
+  workflow_dispatch:
+
+concurrency:
+  group: site-audit
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    # After a deploy, only a successful production one — previews have their own URLs.
+    if: github.event_name != 'deployment_status' || (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Production')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit the live site
+        env:
+          PAGESPEED_API_KEY: ${{ secrets.PAGESPEED_API_KEY }}
+        run: node --no-warnings scripts/site-audit.ts https://www.trypopulr.in

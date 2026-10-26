@@ -20,7 +20,7 @@ const LISTINGS = [
 
 export const metadata: Metadata = {
   title: "SEO fixes in your code editor — MCP server",
-  description: "Connect Claude Code, Cursor, VS Code or Windsurf to Populr. Your assistant applies the SEO fixes your team approved — titles, descriptions, structured data — in the HTML itself.",
+  description: "Connect Claude Code, Cursor, VS Code or Windsurf to Populr. Your coding assistant applies your SEO fixes — titles, descriptions, structured data — in code.",
   alternates: { canonical: "/developers" },
   openGraph: {
     type: "website", url: "/developers",

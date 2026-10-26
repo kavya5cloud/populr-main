@@ -9,7 +9,7 @@ import { CopyBlock, InstallTabs } from "../DevClient";
 
 export const metadata: Metadata = {
   title: "MCP server docs",
-  description: "Set up Populr's MCP server in Claude Code, Cursor, VS Code or Windsurf: access keys, every tool and its inputs, the apply-and-verify workflow, security, limits and troubleshooting.",
+  description: "Set up Populr's MCP server in Claude Code, Cursor, VS Code or Windsurf: sign-in or access keys, every tool, the apply-and-verify workflow, and limits.",
   alternates: { canonical: "/developers/docs" },
   openGraph: { type: "article", url: "/developers/docs", title: "Populr MCP server — documentation", description: "Setup, tools reference, workflow, security and troubleshooting." },
   twitter: { card: "summary_large_image", title: "Populr MCP docs", description: "Setup, tools reference, workflow and troubleshooting." },

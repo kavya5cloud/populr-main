@@ -67,6 +67,8 @@ export const PUBLIC_ROUTES: { path: string; priority: number; changeFrequency: "
   { path: "/tools/llms-txt-generator", priority: 0.8, changeFrequency: "monthly" },
   { path: "/tools/schema-markup-generator", priority: 0.8, changeFrequency: "monthly" },
   { path: "/tools/serp-preview", priority: 0.8, changeFrequency: "monthly" },
+  // Original research: what other sites cite and link to.
+  { path: "/research/ai-crawlers-india", priority: 0.9, changeFrequency: "monthly" },
   { path: "/developers", priority: 0.8, changeFrequency: "monthly" },
   { path: "/developers/docs", priority: 0.7, changeFrequency: "monthly" },
   { path: "/privacy", priority: 0.3, changeFrequency: "yearly" },

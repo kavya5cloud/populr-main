@@ -47,6 +47,7 @@ export default function ToolsHub() {
         <section className="tl-article">
           <h2>Where to start</h2>
           <p>Run the <a href="/check">SEO &amp; AI visibility check</a> on your home page first — it covers the basics in ten seconds and tells you which of the other tools you need. If it says AI crawlers are blocked, the <a href="/tools/ai-crawler-checker">AI crawler checker</a> shows which ones and the rule doing it. If you have no structured data or llms.txt, the generators build both from facts you already have.</p>
+          <p>We used the AI crawler checker on India&apos;s 500 biggest <code>.in</code> websites — <a href="/research/ai-crawlers-india">read what we found</a>.</p>
           <p>Want the background first? The <a href="/guides">guides</a> explain <a href="/guides/what-is-geo-generative-engine-optimization">how AI search picks businesses</a> and <a href="/guides/what-is-llms-txt">what llms.txt is for</a>.</p>
         </section>
         <section className="ck-cta">

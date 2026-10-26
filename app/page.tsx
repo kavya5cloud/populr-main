@@ -524,6 +524,7 @@ export default function Landing() {
             <a href="/guides" style={{ color: "var(--faint)", textDecoration: "none" }}>guides</a>
             <a href="/check" style={{ color: "var(--faint)", textDecoration: "none" }}>free SEO check</a>
             <a href="/tools" style={{ color: "var(--faint)", textDecoration: "none" }}>free tools</a>
+            <a href="/research/ai-crawlers-india" style={{ color: "var(--faint)", textDecoration: "none" }}>research</a>
             <a href="/worked" style={{ color: "var(--faint)", textDecoration: "none" }}>what worked</a>
             <a href="/early-access" style={{ color: "var(--faint)", textDecoration: "none" }}>early access</a>
             <a href="mailto:team@trypopulr.in" style={{ color: "var(--faint)", textDecoration: "none" }}>contact</a>

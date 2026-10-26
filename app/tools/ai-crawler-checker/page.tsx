@@ -30,6 +30,8 @@ export default function Page() {
       tool={<CrawlerChecker />}
       faq={FAQ}
     >
+      <p className="tl-callout">We ran this check on India&apos;s 500 biggest <code>.in</code> websites. <a href="/research/ai-crawlers-india">See who blocks ChatGPT, Claude and Perplexity — and who blocks Google</a>.</p>
+
       <h2>Two kinds of AI crawler, and why the difference matters</h2>
       <p>Every big AI company runs more than one crawler. One collects pages to <em>train</em> its models. Another finds pages to show and link when someone asks the assistant a question. They have different names, and robots.txt treats each name separately.</p>
       <p>That split is the whole point of this check. Blocking a training crawler is a reasonable choice — your text stays out of the next model. Blocking a search crawler is usually an accident, and it has a cost: the assistant can no longer find your pages, so it can't recommend or cite you.</p>

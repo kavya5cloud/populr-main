@@ -4,7 +4,7 @@ export const metadata: Metadata = {
   // Brand is appended by the root layout's title template — repeating it here
   // produced "Terms of Service — Populr — Populr".
   title: "Terms of Service",
-  description: "The terms that govern your use of Populr.",
+  description: "The terms for using Populr: your account, the free trial and billing, acceptable use, your content, AI output, liability, and ending the service.",
   // Without this the root layout's canonical is inherited, pointing this page at
   // the home page and telling Google it is a duplicate not worth indexing.
   alternates: { canonical: "/terms" },

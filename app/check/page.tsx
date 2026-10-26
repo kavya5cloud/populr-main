@@ -7,7 +7,7 @@ import { CheckForm } from "./CheckClient";
 
 export const metadata: Metadata = {
   title: "Free SEO & AI visibility check",
-  description: "Check your website in ten seconds: 14 things Google, ChatGPT, Claude and Perplexity look for — titles, structured data, llms.txt, AI crawler access, link previews. Free, no sign-up.",
+  description: "Check your site in ten seconds: 14 things Google, ChatGPT, Claude and Perplexity look for — titles, structured data, llms.txt, AI crawler access. Free.",
   alternates: { canonical: "/check" },
 };
 

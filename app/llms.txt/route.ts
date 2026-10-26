@@ -25,6 +25,7 @@ const ROUTE_LABEL: Record<string, string> = {
   "/guides": "Guides",
   "/check": "Free SEO & AI visibility check",
   "/tools": "Free SEO & AI search tools",
+  "/research/ai-crawlers-india": "Research: do India's top websites let AI assistants in?",
   "/privacy": "Privacy",
   "/terms": "Terms",
 };

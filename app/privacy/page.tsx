@@ -4,7 +4,7 @@ export const metadata: Metadata = {
   // Brand is appended by the root layout's title template — repeating it here
   // produced "Privacy Policy — Populr — Populr".
   title: "Privacy Policy",
-  description: "How Populr collects, uses, and protects your data.",
+  description: "How Populr collects, uses and protects your data: what we store, how we use Google data, the services we rely on, how long we keep it, and your rights.",
   // Without this the root layout's canonical is inherited, pointing this page at
   // the home page and telling Google it is a duplicate not worth indexing.
   alternates: { canonical: "/privacy" },

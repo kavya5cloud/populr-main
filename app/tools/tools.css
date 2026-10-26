@@ -76,6 +76,8 @@
 .tl-article{background:#fff;border:1px solid var(--dv-line);border-radius:20px;padding:clamp(22px,4vw,44px);font-size:16px;line-height:1.7}
 .tl-article h2{margin:28px 0 10px;font-size:22px;letter-spacing:-.02em;font-weight:600;line-height:1.25}
 .tl-article h2:first-child{margin-top:0}
+.tl-callout{padding:12px 16px;border-radius:12px;background:#eef7dc;color:#2f4716;font-size:15px}
+.tl-callout a{color:#2f4716}
 .tl-article p{margin:0 0 12px;max-width:72ch;color:#33373b}
 .tl-article ul{margin:0 0 14px;padding-left:20px;max-width:72ch;color:#33373b}
 .tl-article li{margin:4px 0}
