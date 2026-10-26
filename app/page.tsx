@@ -1,6 +1,6 @@
 "use client";
 import HeroDemo from "./components/HeroDemo";
-import Image from "next/image";
+import { HeroCheckCard, useHeroCheck } from "./components/HeroCheck";
 import { useEffect, useRef } from "react";
 import { captureReferral } from "@/lib/referral-client";
 // Counted from the real tables rather than typed in. The first version of this section
@@ -52,6 +52,8 @@ export default function Landing() {
   useEffect(() => { captureReferral(window.location.search); }, []);
 
   const dotsRef = useRef<HTMLCanvasElement>(null);
+  const heroInput = useRef<HTMLInputElement>(null);
+  const heroCheck = useHeroCheck();
   useEffect(() => {
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -204,46 +206,50 @@ export default function Landing() {
 
             <div className="hc-copy">
               <p className="hc-eyebrow"><i aria-hidden="true" />Now in early access</p>
-              <h1>Your AI CMO. <span>It decides what is worth doing, then does it.</span></h1>
+              <h1>Your AI CMO. <span>It fixes your SEO, writes your posts, and tells you what it refused to do.</span></h1>
               <hr />
               <p className="hc-sub">
-                Paste your website. Populr reads it, works out your positioning, and builds today&apos;s
-                plan — and tells you what it refused.
+                Paste your website. In ten seconds you&apos;ll see what Google and ChatGPT can&apos;t read on
+                it — then Populr fixes it and builds today&apos;s plan.
               </p>
-              {/* Still a plain GET form that works with JavaScript off; /app reads ?url= and
-                  starts on arrival. type="text" because type="url" rejects "linear.app" for
-                  lacking a scheme, and nobody types https://. */}
+              {/* With JavaScript, the address runs the free check right here and the result
+                  appears in the panel beside it, with the way into Populr. Without it, this is
+                  still a plain GET form: /app reads ?url= and starts on arrival. type="text"
+                  because type="url" rejects "linear.app" for lacking a scheme, and nobody types
+                  https://. */}
               <form
                 className="hc-form"
                 action="/app"
                 method="get"
                 onSubmit={(e) => {
                   const field = e.currentTarget.elements.namedItem("url") as HTMLInputElement | null;
-                  if (field) field.value = field.value.trim();
+                  if (!field) return;
+                  field.value = field.value.trim();
+                  if (!field.value) return;
+                  e.preventDefault();
+                  if (heroCheck.state.kind !== "checking") void heroCheck.run(field.value);
+                  // On a phone the panel sits below the form: bring the result into view.
+                  if (window.innerWidth < 960) {
+                    requestAnimationFrame(() => document.querySelector(".hc-checkpanel")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+                  }
                 }}
               >
-                <input type="text" name="url" placeholder="yourcompany.com" aria-label="Your website"
+                <input ref={heroInput} type="text" name="url" placeholder="yourcompany.com" aria-label="Your website"
                   inputMode="url" autoComplete="url" autoCapitalize="off" autoCorrect="off" spellCheck={false}
                   enterKeyHint="go" required />
                 {/* " my site" drops on narrow phones, where the full label squeezed the field
                     until its placeholder read "yourcompany.con". */}
                 <button type="submit">Analyze<span className="hc-btn-more"> my site</span></button>
               </form>
-              <p className="hc-under">Free for a month · no card · you approve anything that matters</p>
+              <p className="hc-under">The check is free, no sign-up · Populr is free for a month, no card</p>
             </div>
           </div>
 
-          <div className="hc-media" aria-hidden="true">
-            {/* The founder's chosen photograph: people, from above — who the marketing is for.
-                next/image serves it resized and in a modern format, and `priority` because it is
-                the largest thing on the first screen. Decorative, so no alt text to announce. */}
-            <Image src="/hero/park-trees.jpg" alt="" fill priority sizes="(min-width: 960px) 50vw, 100vw" className="hc-photo" />
-            <span className="hc-corner">{LANGUAGE_CODES.length} languages</span>
-            <div className="hc-tags">
-              <span>Reads your site</span>
-              <span>Decides</span>
-              <span className="wide">Then does it, every day</span>
-            </div>
+          {/* What Populr finds, shown before anyone signs up: an example until the visitor
+              types their address, then their real result. The founder's photograph stays as
+              the light behind the whole frame. */}
+          <div className="hc-media hc-checkpanel">
+            <HeroCheckCard state={heroCheck.state} onFocusInput={() => heroInput.current?.focus()} />
           </div>
         </div>
       </header>
