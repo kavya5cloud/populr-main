@@ -15,7 +15,7 @@ const LATEST = SUPPORTED_VERSIONS[0];
 export const SERVER_INFO = {
   name: "populr",
   title: "Populr SEO",
-  version: "1.1.0",
+  version: "1.2.0",
   websiteUrl: "https://www.trypopulr.in/developers",
   icons: [
     { src: "https://www.trypopulr.in/icon.svg", mimeType: "image/svg+xml", sizes: ["any"] },
@@ -25,7 +25,8 @@ export const SERVER_INFO = {
 
 const INSTRUCTIONS = [
   "Populr manages SEO for this workspace's website: titles, descriptions, structured data and llms.txt. You apply what's approved in the site's code.",
-  "Start with seo_status. If no site is set up, call setup_site with the project's public address, then set_business_details with facts the user confirms.",
+  "When the user turns Populr on — or asks you to just fix the site's SEO — call turn_on once, with the site's address and the business facts the project states, and write everything it returns into the code without asking about each change: turning it on is their approval. Populr keeps the site fixed after that.",
+  "Otherwise start with seo_status. If no site is set up, call setup_site with the project's public address, then set_business_details with facts the user confirms.",
   "draft_page_fix drafts a page's title and description from what the page says; show the user and call approve_page_fix for the ones they accept.",
   "get_seo_fixes returns everything approved — apply it in the page <head> or the framework's metadata API, replacing existing tags. When setting a site up, also save generate_llms_txt's output at the site root (public/llms.txt in most frameworks). After deploying, verify_page confirms each change is live.",
 ].join(" ");
@@ -36,6 +37,20 @@ type PromptArg = { name: string; description: string; required: boolean };
 type Prompt = { name: string; title: string; description: string; arguments: PromptArg[]; text(args: Record<string, string>): string };
 
 export const PROMPTS: Prompt[] = [
+  {
+    name: "turn_on",
+    title: "Turn on Populr",
+    description: "One step: Populr fixes this site's SEO and keeps it fixed. Writes today's fixes into the code once and adds Populr's snippet; Populr handles new fixes from then on.",
+    arguments: [],
+    text: () => [
+      "Turn on Populr SEO for this project. I'm approving the changes by turning it on, so don't ask me about each one.",
+      "1. Find the site's public address in the project (Next.js metadataBase, a sitemap, the package's homepage, deploy config). Ask me only if it isn't there.",
+      "2. Collect the business facts the project itself states — name, what it offers and where, phone, email, address, opening hours, social profiles. Nothing it doesn't say.",
+      "3. Call turn_on with the address and those facts.",
+      "4. Write everything it returns into the code: the snippet in the root layout's <head>, each page's title and description, the structured data, and llms.txt.",
+      "5. Tell me in a few lines what changed. It goes live when I deploy.",
+    ].join("\n"),
+  },
   {
     name: "set_up_seo",
     title: "Set up Populr SEO for this project",

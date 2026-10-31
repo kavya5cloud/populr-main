@@ -1,6 +1,8 @@
 import { safeFetchText } from "@/lib/net/safe-fetch";
 import { readSignals } from "@/lib/seo/audit";
-import { approvedFixes, buildJsonLd, pagePath, type AutopilotConfig } from "@/lib/seo/autopilot";
+import { url as siteUrl } from "@/lib/seo";
+import { approvedFixes, buildJsonLd, pagePath, snippetTag, type AutopilotConfig } from "@/lib/seo/autopilot";
+import { turnOn, type AutoDeps } from "@/lib/seo/autopilot-auto";
 import type { AutopilotStore } from "@/lib/seo/autopilot-store";
 import { readPage, suggestFix } from "@/lib/seo/autopilot-suggest";
 import { business as businessFrom, fixText, originOf } from "@/lib/seo/autopilot-input";
@@ -13,11 +15,12 @@ import { SCHEMA_TYPES } from "@/lib/seo/autopilot";
 // editing the site's code, so they land in the HTML as served — visible to everything.
 //
 // Every tool runs as the workspace the access key belongs to, and touches only that
-// workspace's settings. Most only read. Four write to Populr — setup_site, set_business_details,
-// draft_page_fix, approve_page_fix — so a developer can set the site up without leaving the
-// editor; editors ask the user before running a tool that isn't read-only. None edits code or
-// deploys. One has an effect on a live site: approving a fix makes it live through Populr's
-// snippet, where the snippet is installed — which approve_page_fix says before it's used.
+// workspace's settings. Most only read. Five write to Populr — turn_on, setup_site,
+// set_business_details, draft_page_fix, approve_page_fix — so a developer can set the site up
+// without leaving the editor; editors ask the user before running a tool that isn't read-only.
+// None edits code or deploys. Two have an effect on a live site, through Populr's snippet
+// where it's installed: approving a fix, and turn_on, which switches on automatic mode — the
+// one-step path, where turning Populr on is the approval (see lib/seo/autopilot-auto.ts).
 //
 // Outputs are plain text written for the assistant to act on: what to change, where, and why.
 
@@ -69,6 +72,36 @@ async function config(workspace: string, deps: ToolDeps): Promise<AutopilotConfi
 
 const str = (v: unknown, max = 500) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
+const SNIPPET_ORIGIN = siteUrl("/").replace(/\/$/, "");
+
+const BUSINESS_PROPS = {
+  name: { type: "string", description: "The business's name" },
+  type: { type: "string", enum: [...SCHEMA_TYPES], description: "schema.org type; LocalBusiness if unsure" },
+  description: { type: "string", description: "One or two sentences on what it offers and where" },
+  telephone: { type: "string" },
+  email: { type: "string" },
+  logo: { type: "string", description: "Absolute URL of the logo" },
+  address: { type: "object", properties: { street: { type: "string" }, locality: { type: "string" }, region: { type: "string" }, postalCode: { type: "string" }, country: { type: "string" } }, additionalProperties: false },
+  openingHours: { type: "array", items: { type: "string" }, description: "schema.org format, e.g. \"Mo-Sa 09:00-21:00\"" },
+  sameAs: { type: "array", items: { type: "string" }, description: "Profile URLs: Instagram, LinkedIn, Google Maps…" },
+};
+
+/** llms.txt for the site, from the business details and approved pages — or null without details. */
+function llmsTxt(c: AutopilotConfig): string | null {
+  if (!c.business) return null;
+  const pages = Object.entries(c.pages).filter(([, f]) => f.status === "approved" && f.title);
+  const lines = [`# ${c.business.name}`, ""];
+  if (c.business.description) lines.push(`> ${c.business.description}`, "");
+  if (pages.length) {
+    lines.push("## Pages");
+    for (const [p, f] of pages) lines.push(`- [${f.title}](${new URL(p, c.site).toString()})${f.description ? `: ${f.description}` : ""}`);
+    lines.push("");
+  }
+  const contact = [c.business.telephone && `Phone: ${c.business.telephone}`, c.business.email && `Email: ${c.business.email}`, c.business.address?.locality && `Location: ${[c.business.address.locality, c.business.address.region, c.business.address.country].filter(Boolean).join(", ")}`].filter(Boolean);
+  if (contact.length) lines.push("## Contact", ...contact.map((x) => `- ${x}`), "");
+  return lines.join("\n");
+}
+
 export const TOOLS: Tool[] = [
   {
     name: "seo_status",
@@ -82,6 +115,7 @@ export const TOOLS: Tool[] = [
       approvedPages: { ...strArr, description: "Pages with approved fixes, ready to apply in code." },
       waitingPages: { ...strArr, description: "Pages with drafts waiting for the owner's approval in Populr." },
       snippet: { type: "object", properties: { enabled: { type: "boolean" }, seenOnPages: { type: "integer" } } },
+      automatic: { type: "boolean", description: "Whether Populr fixes pages itself, without waiting for approval." },
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     async run(ws, _a, deps) {
@@ -99,9 +133,10 @@ export const TOOLS: Tool[] = [
           `Pages with drafts waiting for the owner's approval in Populr: ${waiting.length ? waiting.join(", ") : "none"}`,
           // Agents read this line; without the note they offered to "wire up" the snippet,
           // which applying the fixes in code makes unnecessary.
-          `Script snippet: ${c.enabled ? (c.seen.count ? `installed, seen on ${c.seen.paths.length} page(s)` : "switched on, not seen on the site yet") : "off"} (optional — fixes applied in the site's code don't need it)`,
+          `Script snippet: ${c.enabled ? (c.seen.count ? `installed, seen on ${c.seen.paths.length} page(s)` : "switched on, not seen on the site yet") : "off"}${c.auto ? "" : " (optional — fixes applied in the site's code don't need it)"}`,
+          `Automatic mode: ${c.auto ? "on — Populr fixes pages itself through the snippet, new pages too" : "off — fixes wait for the owner's approval"}`,
           "",
-          "Next: call get_seo_fixes to get everything approved, with where each change goes.",
+          c.auto ? "Next: call get_seo_fixes to bring the code up to date with what Populr has applied." : "Next: call get_seo_fixes to get everything approved, with where each change goes. To have Populr fix the site by itself, call turn_on.",
         ].join("\n"),
         data: {
           status: "ready",
@@ -111,8 +146,85 @@ export const TOOLS: Tool[] = [
           approvedPages: approved,
           waitingPages: waiting,
           snippet: { enabled: c.enabled, seenOnPages: c.seen.paths.length },
+          automatic: !!c.auto,
         },
       };
+    },
+  },
+  {
+    name: "turn_on",
+    effect: "Turns on automatic SEO fixes for your site",
+    title: "Turn on Populr for this site",
+    description: "The one-step setup, for when the user turns Populr on. Sets the site up if it isn't, saves the business facts you pass, and switches on automatic mode: Populr fixes pages itself from then on — new pages too — without waiting for approval. Checks the main pages now, fixes broken titles and descriptions, and returns everything to write into the code: Populr's one-line snippet for the root layout, each page's fixes, structured data and llms.txt. Pass only facts the project itself states — never guess.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        site: { type: "string", description: "The website's public address, e.g. https://yourshop.in — from the project (metadataBase, a sitemap, the deploy URL). Optional if a site is already set up." },
+        business: { type: "object", properties: BUSINESS_PROPS, required: ["name"], additionalProperties: false, description: "Facts the project states about the business. Becomes the site's structured data and llms.txt." },
+      },
+      additionalProperties: false,
+    },
+    outputSchema: out(["on", "different_site_set_up", "not_set_up"], {
+      site: str_,
+      snippet: { type: "string", description: "Populr's script tag, for the <head> of the root layout." },
+      pages: { type: "array", items: { type: "object", properties: { path: str_, title: str_, description: str_ }, required: ["path"] }, description: "Title and description changes to write into each page." },
+      structuredData: { type: "object", properties: { siteWide: objArr, home: objArr }, description: "JSON-LD: siteWide in the root layout, home on the home page only." },
+      llmsTxt: { type: "string", description: "Save at the site root (public/llms.txt in most frameworks)." },
+      checked: { type: "array", items: { type: "object", properties: { path: str_, outcome: { type: "string", enum: ["fixed", "fine", "skipped", "failed"] }, reason: str_ }, required: ["path", "outcome"] } },
+    }),
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
+    async run(ws, a, deps) {
+      const prev = await config(ws, deps);
+      const asked = str(a.site, 300);
+      const site = asked ? originOf(asked) : prev?.site ?? null;
+      if (asked && !site) return { text: "That isn't a public website address. Use something like https://yourshop.in.", isError: true };
+      if (!site) return { ...notSetUp(), text: "Pass the site's public address as `site` — find it in the project (Next.js metadataBase, a sitemap, the package's homepage, deploy config) or ask the user." };
+      const autoDeps: AutoDeps = {
+        ...(deps.fetchPage ? { fetch: async (u: string) => ({ status: 200, text: await deps.fetchPage!(u) }) } : {}),
+        ...(deps.suggest ? { suggest: deps.suggest } : {}),
+      };
+      const r = await turnOn(deps.autopilot, ws, { site, business: a.business ? businessFrom(a.business) : null }, autoDeps);
+      if (r.status === "different_site_set_up") {
+        const message = `This workspace already manages ${r.site}. Switching to ${site} would discard its page fixes, so it's done by the owner in Populr: https://www.trypopulr.in/app/keys`;
+        return { text: message, data: { status: "different_site_set_up", message, site: r.site } };
+      }
+
+      const c = r.config;
+      const snippet = snippetTag(c.siteKey, SNIPPET_ORIGIN);
+      const pages = Object.entries(c.pages)
+        .filter(([, f]) => f.status === "approved" && (f.title || f.description))
+        .map(([path, f]) => ({ path, ...(f.title ? { title: f.title } : {}), ...(f.description ? { description: f.description } : {}) }));
+      const ld = buildJsonLd(c, "/");
+      const structuredData = { siteWide: ld.filter((j) => j["@type"] !== "FAQPage"), home: ld.filter((j) => j["@type"] === "FAQPage") };
+      const llms = llmsTxt(c);
+      const checked = r.results.map((x) => ({ path: x.path, outcome: x.outcome, ...(x.outcome === "fixed" ? { reason: x.reasons.join(", ") } : "reason" in x ? { reason: x.reason } : {}) }));
+
+      const text = [
+        `Populr is on for ${c.site}, in automatic mode. The user turned it on, and that approves these changes: write them into the code now, without asking about each one.`,
+        "",
+        "1. Add Populr's snippet once, in the <head> of the root layout, so it loads on every page:",
+        snippet,
+        "   Where: Next.js App Router — app/layout.tsx, inside <head> (add one if there isn't); Pages Router — pages/_document; Vite, CRA or plain HTML — index.html; Astro — the base layout; SvelteKit — src/app.html; Nuxt — app.head in nuxt.config; Remix — app/root.tsx.",
+        "   From now on Populr applies new fixes through it, for pages added later too, so SEO won't need code changes again.",
+        "",
+        pages.length
+          ? "2. Write these titles and descriptions into each page — the framework's metadata API (e.g. Next.js `export const metadata`) or the page <head> — replacing the existing tags:"
+          : "2. Every page Populr checked already has a good title and description; nothing to change there.",
+        ...pages.flatMap((p) => [`## ${p.path}`, ...(p.title ? [`<title>${p.title}</title>`] : []), ...(p.description ? [`<meta name="description" content="${p.description.replace(/"/g, "&quot;")}">`] : [])]),
+        "",
+        structuredData.siteWide.length
+          ? "3. Add this structured data to the root layout (every page), replacing any existing JSON-LD of the same @type:"
+          : "3. No structured data yet: call turn_on again with `business` — the facts the project states — to get it.",
+        ...structuredData.siteWide.map(ldTag),
+        ...(structuredData.home.length ? ["   And this on the home page only:", ...structuredData.home.map(ldTag)] : []),
+        "",
+        ...(llms ? ["4. Save this as llms.txt at the site root (public/llms.txt in most frameworks):", llms, ""] : []),
+        `Checked: ${checked.map((x) => `${x.path} ${x.outcome}${x.reason ? ` (${x.reason})` : ""}`).join("; ") || "nothing"}.`,
+        ...(r.approvedDrafts.length ? [`Approved the drafts that were waiting: ${r.approvedDrafts.join(", ")}.`] : []),
+        "",
+        "Finish by telling the user in a few lines what changed, that it goes live when they deploy, and that Populr keeps the site fixed from here — every automatic fix is listed at https://www.trypopulr.in/app/keys with an undo. After deploying, verify_page confirms each change is live.",
+      ].join("\n");
+      return { text, data: { status: "on", site: c.site, snippet, pages, structuredData, ...(llms ? { llmsTxt: llms } : {}), checked } };
     },
   },
   {
@@ -146,17 +258,7 @@ export const TOOLS: Tool[] = [
     description: "Saves the facts Populr builds structured data (schema.org JSON-LD) and llms.txt from: name, type, description, phone, email, address, opening hours and profiles elsewhere. Use only facts the user confirms or that the site itself states — never guess. Replaces any details saved before; show the user what you'll save first.",
     inputSchema: {
       type: "object",
-      properties: {
-        name: { type: "string", description: "The business's name" },
-        type: { type: "string", enum: [...SCHEMA_TYPES], description: "schema.org type; LocalBusiness if unsure" },
-        description: { type: "string", description: "One or two sentences on what it offers and where" },
-        telephone: { type: "string" },
-        email: { type: "string" },
-        logo: { type: "string", description: "Absolute URL of the logo" },
-        address: { type: "object", properties: { street: { type: "string" }, locality: { type: "string" }, region: { type: "string" }, postalCode: { type: "string" }, country: { type: "string" } }, additionalProperties: false },
-        openingHours: { type: "array", items: { type: "string" }, description: "schema.org format, e.g. \"Mo-Sa 09:00-21:00\"" },
-        sameAs: { type: "array", items: { type: "string" }, description: "Profile URLs: Instagram, LinkedIn, Google Maps…" },
-      },
+      properties: BUSINESS_PROPS,
       required: ["name"],
       additionalProperties: false,
     },
@@ -349,21 +451,12 @@ export const TOOLS: Tool[] = [
     async run(ws, _a, deps) {
       const c = await config(ws, deps);
       if (!c) return notSetUp();
-      if (!c.business) {
+      const content = llmsTxt(c);
+      if (!content) {
         const message = "Fill in the business details in Populr first — llms.txt starts with what the business is.";
         return { text: message, data: { status: "needs_business_details", message } };
       }
-      const pages = Object.entries(c.pages).filter(([, f]) => f.status === "approved" && f.title);
-      const lines = [`# ${c.business.name}`, ""];
-      if (c.business.description) lines.push(`> ${c.business.description}`, "");
-      if (pages.length) {
-        lines.push("## Pages");
-        for (const [p, f] of pages) lines.push(`- [${f.title}](${new URL(p, c.site).toString()})${f.description ? `: ${f.description}` : ""}`);
-        lines.push("");
-      }
-      const contact = [c.business.telephone && `Phone: ${c.business.telephone}`, c.business.email && `Email: ${c.business.email}`, c.business.address?.locality && `Location: ${[c.business.address.locality, c.business.address.region, c.business.address.country].filter(Boolean).join(", ")}`].filter(Boolean);
-      if (contact.length) lines.push("## Contact", ...contact.map((x) => `- ${x}`), "");
-      return { text: `Save this as llms.txt at the root of ${c.site} (in most frameworks: public/llms.txt):\n\n${lines.join("\n")}`, data: { status: "ok", site: c.site, content: lines.join("\n") } };
+      return { text: `Save this as llms.txt at the root of ${c.site} (in most frameworks: public/llms.txt):\n\n${content}`, data: { status: "ok", site: c.site, content } };
     },
   },
   {

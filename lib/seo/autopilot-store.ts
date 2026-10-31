@@ -11,7 +11,8 @@ export interface AutopilotStore {
   byKey(siteKey: string): Promise<AutopilotConfig | null>;
   /** Creates on first save. Changing the site keeps the key, so the pasted tag still works. */
   save(cfg: Omit<AutopilotConfig, "siteKey" | "seen"> & { siteKey?: string }): Promise<AutopilotConfig>;
-  seen(siteKey: string, path: string, at: number): Promise<void>;
+  /** Records the snippet running on a page. True when the page is one it hadn't reported before. */
+  seen(siteKey: string, path: string, at: number): Promise<boolean>;
 }
 
 const newKey = () => randomBytes(9).toString("base64url");
@@ -30,9 +31,11 @@ export class InMemoryAutopilotStore implements AutopilotStore {
   }
   async seen(k: string, path: string, at: number) {
     const c = await this.byKey(k);
-    if (!c) return;
+    if (!c) return false;
     const p = pagePath(path);
-    c.seen = { count: c.seen.count + 1, lastAt: at, lastPath: p, paths: c.seen.paths.includes(p) ? c.seen.paths : [...c.seen.paths, p].slice(-MAX_SEEN_PATHS) };
+    const added = !c.seen.paths.includes(p) && c.seen.paths.length < MAX_SEEN_PATHS;
+    c.seen = { count: c.seen.count + 1, lastAt: at, lastPath: p, paths: added ? [...c.seen.paths, p] : c.seen.paths };
+    return added;
   }
 }
 
@@ -77,9 +80,13 @@ export class NeonAutopilotStore implements AutopilotStore {
     const p = pagePath(path).slice(0, 200);
     // Paths are capped: the beacon is public, and a crawler hitting endless URLs must not
     // grow the row without bound.
-    await this.sql`UPDATE seo_autopilot SET seen_count = seen_count + 1, last_seen_at = ${at}, last_seen_path = ${p},
-      seen_paths = CASE WHEN seen_paths ? ${p} OR jsonb_array_length(seen_paths) >= ${MAX_SEEN_PATHS} THEN seen_paths ELSE seen_paths || to_jsonb(${p}::text) END
-      WHERE site_key = ${k}`;
+    // The subquery reads the row as it was before this update, which says whether the path is new.
+    const r = await this.sql`UPDATE seo_autopilot s SET seen_count = s.seen_count + 1, last_seen_at = ${at}, last_seen_path = ${p},
+      seen_paths = CASE WHEN s.seen_paths ? ${p} OR jsonb_array_length(s.seen_paths) >= ${MAX_SEEN_PATHS} THEN s.seen_paths ELSE s.seen_paths || to_jsonb(${p}::text) END
+      FROM (SELECT site_key, seen_paths FROM seo_autopilot WHERE site_key = ${k}) prev
+      WHERE s.site_key = prev.site_key
+      RETURNING (NOT (prev.seen_paths ? ${p}) AND jsonb_array_length(prev.seen_paths) < ${MAX_SEEN_PATHS}) AS added` as { added: boolean }[];
+    return r[0]?.added === true;
   }
 }
 

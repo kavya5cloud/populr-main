@@ -35,7 +35,10 @@ export type BusinessDetails = {
 export type PageFix = {
   title?: string;
   description?: string;
-  status: "suggested" | "approved";
+  /** "declined": the owner undid an automatic fix — Populr leaves that page as it is. */
+  status: "suggested" | "approved" | "declined";
+  /** Set when Populr applied the fix itself, in automatic mode. */
+  by?: "auto";
   /** What the page had when the suggestion was made, so the founder sees before and after. */
   before?: { title: string | null; description: string | null };
   at: number;
@@ -48,6 +51,14 @@ export type AutopilotConfig = {
   /** Origin the snippet is allowed to run on, e.g. https://kiranaexpress.in */
   site: string;
   enabled: boolean;
+  /**
+   * Automatic mode, switched on by turning Populr on from a code editor: turning it on is the
+   * sign-off. Fixes are applied without waiting for approval — each is listed in the
+   * dashboard with an undo — and pages the snippet finds later are checked and fixed too.
+   */
+  auto?: boolean;
+  /** Automatic fixes made today, so a public beacon can't spend unbounded work on one site. */
+  autoDay?: { day: string; count: number };
   business: BusinessDetails | null;
   faq: { q: string; a: string }[];
   pages: Record<string, PageFix>;

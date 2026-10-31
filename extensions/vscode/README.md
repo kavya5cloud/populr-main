@@ -4,7 +4,9 @@ Apply the SEO fixes you approve in [Populr](https://www.trypopulr.in) from your 
 
 ## Get started
 
-No key to copy, and no `mcp.json` to write:
+**Run Populr: Turn on** — or click **Turn on** when the extension offers it in a website project. That's the whole setup: your editor's agent writes today's SEO fixes into your code once — titles, descriptions, structured data, llms.txt — and adds Populr's one-line snippet. Deploy, and from then on Populr fixes broken titles and descriptions itself, new pages too, with no more code changes. Turning it on is the approval; every automatic fix is listed in Populr with an undo.
+
+There's no key to copy, and no `mcp.json` to write:
 
 - **VS Code** — open chat in **Agent** mode and ask *"Set up Populr SEO for this project."* The first time the agent uses Populr, VS Code asks you to sign in to Populr in your browser. That's it.
 - **Cursor** — Populr appears under **Cursor Settings → MCP**. Click **Login** next to it, sign in, and ask the agent.
@@ -16,6 +18,7 @@ No key to copy, and no `mcp.json` to write:
 
 | Command | What it does |
 | --- | --- |
+| **Populr: Turn on** | Hands the setup to your editor's agent with Populr's instructions. In VS Code, agent chat starts by itself; in Cursor, the prompt opens in chat and you press Enter. |
 | **Populr: Connect** | Sign in with Populr, or paste an access key — it's checked with Populr and kept in the editor's secret storage. |
 | **Populr: Show SEO status** | What's approved and ready to apply, and what's waiting for approval. |
 | **Populr: Audit a page** | On-page SEO problems of any public URL, in the Populr output panel. |

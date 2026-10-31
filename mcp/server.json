@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "in.trypopulr/seo",
   "title": "Populr SEO",
-  "description": "Apply the SEO fixes you approve in Populr — titles, descriptions, JSON-LD, llms.txt — in your code.",
-  "version": "1.1.0",
+  "description": "Turn it on: Populr fixes your site's SEO in code — titles, JSON-LD, llms.txt — and keeps it fixed.",
+  "version": "1.2.0",
   "websiteUrl": "https://www.trypopulr.in/developers",
   "repository": {
     "url": "https://github.com/kavya5cloud/populr-main",

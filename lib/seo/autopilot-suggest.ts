@@ -33,8 +33,50 @@ export function readPage(html: string): PageRead {
 
 export type Suggestion = { ok: true; fix: PageFix } | { ok: false; error: string };
 
+/**
+ * A path on the site, as a full URL — or null when it would leave the site. "//other.host/x"
+ * is a path to the browser but a different host to `new URL`, and paths can arrive from a
+ * public beacon.
+ */
+export function pageUrl(site: string, path: string): string | null {
+  try {
+    const u = new URL(path, site);
+    return u.origin === new URL(site).origin ? u.toString() : null;
+  } catch { return null; }
+}
+
+/**
+ * What's wrong with a page's title and description, each on its own — or null when both are
+ * fine. The audit's thresholds. Automatic mode fixes what's broken; it doesn't rewrite a
+ * title someone already got right.
+ */
+export function needsFix(page: PageRead, homeTitle?: string | null): { title?: string; description?: string } | null {
+  const t = page.title ?? "", d = page.description ?? "";
+  const title = !t ? "no title" : t.length < 30 ? "title too short" : t.length > 60 ? "title too long"
+    : homeTitle && t === homeTitle ? "same title as the home page" : undefined;
+  const description = !d ? "no description" : d.length < 70 ? "description too short" : d.length > 160 ? "description too long" : undefined;
+  return title || description ? { ...(title ? { title } : {}), ...(description ? { description } : {}) } : null;
+}
+
+/**
+ * A drafted title or description cut to fit — never mid-word. A trailing " | Brand" goes first,
+ * since the brand is the part a search result can most afford to lose; otherwise it's cut at
+ * the last whole word. Matters most in automatic mode, where no one reads a draft before it's
+ * live: "…Government of Kar" must never reach a search result.
+ */
+export function fitText(text: string, max: number): string {
+  const t = text.replace(/\s+/g, " ").trim();
+  if (t.length <= max) return t;
+  const brandless = t.replace(/\s+[|–—·-]\s+[^|–—·]+$/, "").trim();
+  if (brandless !== t && brandless.length <= max && brandless.length >= Math.min(30, max)) return brandless;
+  const cut = t.slice(0, max + 1);
+  const space = cut.lastIndexOf(" ");
+  return (space > max * 0.6 ? cut.slice(0, space) : t.slice(0, max)).replace(/[\s,;:|–—·-]+$/, "").trim();
+}
+
 export async function suggestFix(site: string, path: string, business: string, deps: { fetchPage?: (url: string) => Promise<string> } = {}): Promise<Suggestion> {
-  const url = new URL(path, site).toString();
+  const url = pageUrl(site, path);
+  if (!url) return { ok: false, error: "That isn't a page on your site." };
   let html: string;
   try {
     html = deps.fetchPage ? await deps.fetchPage(url) : (await safeFetchText(url, { maxBytes: 1_500_000, timeoutMs: 10_000 })).text;
@@ -69,8 +111,8 @@ export async function suggestFix(site: string, path: string, business: string, d
 
   let p: { title?: string; description?: string };
   try { p = JSON.parse(res.text.slice(res.text.indexOf("{"), res.text.lastIndexOf("}") + 1)); } catch { return { ok: false, error: "The draft came back unreadable. Try again." }; }
-  const title = (p.title ?? "").replace(/\s+/g, " ").trim().slice(0, 70);
-  const description = (p.description ?? "").replace(/\s+/g, " ").trim().slice(0, 170);
+  const title = fitText(p.title ?? "", 60);
+  const description = fitText(p.description ?? "", 160);
   if (!title || !description) return { ok: false, error: "The draft came back incomplete. Try again." };
 
   const source = [page.title, page.description, page.h1, page.text, business].filter(Boolean).join(" ");

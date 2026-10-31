@@ -7,16 +7,18 @@ import { workspaceId } from "@/lib/store";
 //
 // The audit above lists what's wrong; this is where it gets fixed without touching code.
 // Set up in order — details, questions, pages, then one line to paste — and every change to
-// what a search engine sees passes through the founder's approval first.
+// what a search engine sees passes through the founder's approval first. The exception is
+// automatic mode, switched on by turning Populr on from a code editor: then Populr fixes
+// broken titles and descriptions itself, each one listed here with an undo.
 
-type Fix = { title?: string; description?: string; status: "suggested" | "approved"; before?: { title: string | null; description: string | null } };
+type Fix = { title?: string; description?: string; status: "suggested" | "approved" | "declined"; by?: "auto"; before?: { title: string | null; description: string | null } };
 type Business = {
   type: string; name: string; description?: string; telephone?: string; email?: string; logo?: string;
   address?: { street?: string; locality?: string; region?: string; postalCode?: string; country?: string };
   openingHours?: string[]; sameAs?: string[];
 };
 type Cfg = {
-  configured: true; site: string; enabled: boolean; business: Business | null; faq: { q: string; a: string }[];
+  configured: true; site: string; enabled: boolean; auto?: boolean; business: Business | null; faq: { q: string; a: string }[];
   pages: Record<string, Fix>; seen: { count: number; lastAt: number | null; paths: string[] }; tag: string;
 };
 
@@ -91,6 +93,17 @@ export default function SeoAutopilot({ url }: { url: string }) {
           <span>{cfg.enabled ? "On" : "Off"}</span>
         </label>
       </div>
+      <div className={"ap-auto" + (cfg.auto ? " on" : "")}>
+        <p>
+          {cfg.auto
+            ? <><b>Automatic fixes are on.</b> Populr fixes broken page titles and descriptions itself — new pages too, as your site grows. Every fix is listed under step 3; undo any you don&apos;t want and Populr leaves that page alone.</>
+            : <><b>Automatic fixes are off.</b> Fixes wait for your approval. Switch them on — or turn Populr on from VS Code or Cursor — and Populr fixes broken titles and descriptions itself.</>}
+        </p>
+        <label className="ap-switch">
+          <input type="checkbox" checked={!!cfg.auto} disabled={!!busy} onChange={(e) => call("auto", "PUT", { auto: e.target.checked })} />
+          <span>{cfg.auto ? "Automatic" : "Manual"}</span>
+        </label>
+      </div>
       {!cfg.business && <p className="ap-hint">Add your business details first — that&apos;s what it will tell Google.</p>}
 
       <details className="ap-step" open={!cfg.business}>
@@ -130,20 +143,27 @@ export default function SeoAutopilot({ url }: { url: string }) {
 
       <details className="ap-step">
         <summary><b>3</b> Page titles and descriptions</summary>
-        <p className="ap-hint">Populr reads the page and drafts a title and description from what&apos;s on it. Edit freely; nothing changes on your site until you approve.</p>
+        <p className="ap-hint">{cfg.auto
+          ? "Populr reads each page and fixes a broken title or description from what's on it. Edit any fix, or undo it."
+          : "Populr reads the page and drafts a title and description from what's on it. Edit freely; nothing changes on your site until you approve."}</p>
         <div className="ap-row">
           <input className="ap-path" value={path} onChange={(e) => setPath(e.target.value)} placeholder="/about" aria-label="Page path" />
           <button className="ap-secondary" disabled={!!busy} onClick={() => call("suggest", "POST", { path })}>{busy === "suggest" ? "Reading the page…" : "Draft a fix"}</button>
         </div>
-        {Object.entries(cfg.pages).map(([p, f]) => (
+        {Object.entries(cfg.pages).map(([p, f]) => f.status === "declined" ? (
+          <div key={p} className="ap-page declined">
+            <div className="ap-page-head"><code>{p}</code><span className="ap-pill">Undone</span></div>
+            <p className="ap-hint">You undid Populr&apos;s fix here, so it leaves this page exactly as your site has it.</p>
+          </div>
+        ) : (
           <div key={p} className={"ap-page " + f.status}>
-            <div className="ap-page-head"><code>{p}</code><span className={"ap-pill " + (f.status === "approved" ? "on" : "wait")}>{f.status === "approved" ? "Live" : "Waiting for you"}</span></div>
-            {f.before && <p className="ap-before">Now: <s>{f.before.title ?? "no title"}</s></p>}
-            <label>Title <small>{(edits[p]?.title ?? "").length}/60</small><input value={edits[p]?.title ?? ""} onChange={(e) => setEdits({ ...edits, [p]: { ...edits[p], title: e.target.value } })} /></label>
-            <label>Description <small>{(edits[p]?.description ?? "").length}/158</small><textarea rows={2} value={edits[p]?.description ?? ""} onChange={(e) => setEdits({ ...edits, [p]: { ...edits[p], description: e.target.value } })} /></label>
+            <div className="ap-page-head"><code>{p}</code><span className={"ap-pill " + (f.status === "approved" ? "on" : "wait")}>{f.status !== "approved" ? "Waiting for you" : f.by === "auto" ? "Fixed automatically" : "Live"}</span></div>
+            {f.before && <p className="ap-before">Was: <s>{f.before.title ?? "no title"}</s></p>}
+            <label>Title <small>{(edits[p]?.title ?? "").length}/60</small><input value={edits[p]?.title ?? ""} onChange={(e) => setEdits({ ...edits, [p]: { ...edits[p], title: e.target.value } })} placeholder={f.by === "auto" && !f.title ? "Kept as your site has it" : undefined} /></label>
+            <label>Description <small>{(edits[p]?.description ?? "").length}/158</small><textarea rows={2} value={edits[p]?.description ?? ""} onChange={(e) => setEdits({ ...edits, [p]: { ...edits[p], description: e.target.value } })} placeholder={f.by === "auto" && !f.description ? "Kept as your site has it" : undefined} /></label>
             <div className="ap-row">
               <button className="ap-primary" disabled={!!busy} onClick={() => call("approve", "PATCH", { path: p, ...edits[p] })}>{f.status === "approved" ? "Update" : "Approve"}</button>
-              <button className="ap-link" disabled={!!busy} onClick={() => call("drop", "DELETE", undefined, `?wsid=${encodeURIComponent(workspaceId())}&path=${encodeURIComponent(p)}`)}>Remove</button>
+              <button className="ap-link" disabled={!!busy} onClick={() => call("drop", "DELETE", undefined, `?wsid=${encodeURIComponent(workspaceId())}&path=${encodeURIComponent(p)}`)}>{cfg.auto ? "Undo" : "Remove"}</button>
             </div>
           </div>
         ))}

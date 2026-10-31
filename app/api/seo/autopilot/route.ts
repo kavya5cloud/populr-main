@@ -14,10 +14,10 @@ export const maxDuration = 60;
 // The SEO autopilot's settings, for the dashboard.
 //
 //   GET     the config, the tag to paste, and whether the snippet has been seen running
-//   PUT     site, on/off, business details, FAQs
+//   PUT     site, on/off, automatic mode, business details, FAQs
 //   POST    { path } — draft a title and description for a page (saved as "suggested")
 //   PATCH   { path, title, description } — approve a page's fix, edited or as drafted
-//   DELETE  ?path= — drop a page's fix
+//   DELETE  ?path= — drop a page's fix; in automatic mode, undo it and leave the page alone
 
 const ORIGIN = siteUrl("/").replace(/\/$/, "");
 
@@ -60,6 +60,9 @@ export async function PUT(req: NextRequest) {
   const next = await store.save({
     workspace: r.w, siteKey: prev?.siteKey, site,
     enabled: typeof b.enabled === "boolean" ? b.enabled : prev?.enabled ?? false,
+    // Turned on from an editor; the owner can switch it off here (and back on).
+    auto: typeof b.auto === "boolean" ? b.auto : prev?.auto ?? false,
+    autoDay: prev?.autoDay,
     business: b.business !== undefined ? business(b.business) : prev?.business ?? null,
     faq,
     // A different site invalidates every page fix: they were drafted from another domain.
@@ -106,6 +109,9 @@ export async function DELETE(req: NextRequest) {
   if (!c) return NextResponse.json(view(null));
   const path = pagePath(req.nextUrl.searchParams.get("path") ?? "/");
   const pages = { ...c.pages };
-  delete pages[path];
+  // In automatic mode a deleted fix would come back the next time Populr checks the page, so
+  // undoing one is remembered instead: the page is left as it was from then on.
+  if (c.auto && pages[path]) pages[path] = { ...pages[path], status: "declined", at: Date.now() };
+  else delete pages[path];
   return NextResponse.json(view(await store.save({ ...c, pages })));
 }

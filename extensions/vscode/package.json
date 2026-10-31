@@ -56,6 +56,11 @@
     ],
     "commands": [
       {
+        "command": "populr.turnOn",
+        "title": "Turn on",
+        "category": "Populr"
+      },
+      {
         "command": "populr.connect",
         "title": "Connect",
         "category": "Populr"
@@ -88,6 +93,10 @@
     ],
     "menus": {
       "commandPalette": [
+        {
+          "command": "populr.turnOn",
+          "when": "workspaceFolderCount > 0"
+        },
         {
           "command": "populr.insertStructuredData",
           "when": "editorIsOpen"

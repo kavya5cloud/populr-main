@@ -44,6 +44,7 @@ export default function Docs() {
           <section id="overview">
             <h2>Overview</h2>
             <p>Populr drafts better page titles, meta descriptions and structured data for a business&apos;s website, from what each page actually says, and the owner approves them. Populr can apply approved changes with a one-line script, which Google reads. The MCP server hands the same approved changes to an assistant working in the site&apos;s code — so they end up in the HTML as served, which every search engine, AI crawler and link preview reads.</p>
+            <p><b>Or turn it on and let Populr do the rest.</b> One step — <b>Populr: Turn on</b> in VS Code or Cursor, or the <code>turn_on</code> tool from any agent — writes today&apos;s fixes into your code once and adds Populr&apos;s one-line snippet. From then on Populr fixes broken titles and descriptions itself, new pages included, through the snippet: no more code changes for SEO. Turning it on is the approval; every automatic fix is listed in Populr with an undo.</p>
             <p>The server speaks the <a href="https://modelcontextprotocol.io" rel="noopener">Model Context Protocol</a> over HTTP. Anything that supports remote MCP servers can use it.</p>
           </section>
 
@@ -77,11 +78,13 @@ export default function Docs() {
                 </ul>
               </li>
               <li>Sign in. There&apos;s no key to copy: the first time the agent uses Populr, <b>VS Code</b> asks you to sign in to Populr in your browser; in <b>Cursor</b>, click <b>Login</b> next to Populr under <b>Cursor Settings → MCP</b>. <b>Populr: Connect</b> takes you there too.</li>
-              <li>Ask the agent. In VS Code, open chat in <b>Agent</b> mode — Populr&apos;s tools are in the tools picker. In Cursor, Populr is listed under MCP servers and its tools are available to the agent.</li>
+              <li>Run <b>Populr: Turn on</b> — or click <b>Turn on</b> when the extension offers it in a website project. It hands the job to your editor&apos;s agent with Populr&apos;s instructions: in VS Code, agent chat starts by itself (allow the <code>turn_on</code> tool when asked); in Cursor, the prompt opens in chat and you press Enter. The agent writes the fixes, structured data, llms.txt and the snippet into your code. Deploy, and Populr keeps the site fixed from there.</li>
             </ol>
+            <p>Rather drive it yourself? Ask the agent anything — in VS Code, open chat in <b>Agent</b> mode, where Populr&apos;s tools are in the tools picker; in Cursor, Populr is listed under MCP servers.</p>
             <p><b>Prefer an access key?</b> Run <b>Populr: Connect</b>, choose <b>Use an access key</b> and paste it; it&apos;s kept in the editor&apos;s secret storage. Keys are also what VS Code 1.100 uses, and what the commands below use in Cursor (Cursor&apos;s sign-in belongs to its agent). In Cursor, a key goes through a small local relay that adds it to each request — Cursor&apos;s extension API can&apos;t send it to a remote server directly. The relay gets the key through its environment, never its command line, and stops when you disconnect.</p>
             <p>Commands it adds:</p>
             <ul>
+              <li><b>Populr: Turn on</b> — the one step: your agent sets the site up in code, and Populr keeps it fixed.</li>
               <li><b>Populr: Show SEO status</b> — what&apos;s approved and waiting.</li>
               <li><b>Populr: Audit a page</b> — on-page problems of any public URL, in the Populr output panel.</li>
               <li><b>Populr: Insert structured data</b> — the approved JSON-LD for a page, at the cursor. In <code>.tsx</code>/<code>.jsx</code> files it&apos;s written the way React needs it.</li>
@@ -92,7 +95,8 @@ export default function Docs() {
 
           <section id="workflow">
             <h2>The workflow</h2>
-            <p><b>Fastest:</b> ask your agent to run the <code>set_up_seo</code> prompt (in Claude Code, <code>/mcp__populr__set_up_seo</code>), or just say <i>&ldquo;Set up Populr SEO for this project.&rdquo;</i> It does every step below and asks you before saving anything.</p>
+            <p><b>Fastest:</b> turn it on — the <code>turn_on</code> prompt (in Claude Code, <code>/mcp__populr__turn_on</code>), <b>Populr: Turn on</b> in the extension, or just <i>&ldquo;Turn on Populr for this project.&rdquo;</i> One tool call sets everything up, and Populr applies fixes itself from then on.</p>
+            <p><b>Step by step, approving each change:</b> the <code>set_up_seo</code> prompt (in Claude Code, <code>/mcp__populr__set_up_seo</code>), or <i>&ldquo;Set up Populr SEO for this project.&rdquo;</i> It does every step below and asks you before saving anything.</p>
             <ol>
               <li><code>seo_status</code> — what&apos;s set up, approved and waiting.</li>
               <li>First time: <code>setup_site</code> with the site&apos;s public address, then <code>set_business_details</code> with the facts the site states. No need to open Populr.</li>
@@ -128,7 +132,7 @@ export default function Docs() {
               <li>Keys start with <code>pop_</code> so secret scanners can recognise a leaked one. Populr stores only a SHA-256 fingerprint; the key is shown once.</li>
               <li>Revoke a key in Populr at any time; it stops working immediately. Each key shows when it was last used.</li>
               <li>{TOOLS.filter((t) => t.annotations.readOnlyHint).length} of the {TOOLS.length} tools only read. {TOOLS.filter((t) => !t.annotations.readOnlyHint).map((t, i, all) => <span key={t.name}><code>{t.name}</code>{i < all.length - 2 ? ", " : i === all.length - 2 ? " and " : ""}</span>)} change only your Populr settings, and are marked so your editor asks you before running them.</li>
-              <li>No tool edits your code or deploys. <code>approve_page_fix</code> is the one with a live effect: if Populr&apos;s snippet is installed on the site, an approved fix goes live through it.</li>
+              <li>No tool edits your code or deploys. Two have a live effect through Populr&apos;s snippet, where it&apos;s installed: <code>approve_page_fix</code> makes an approved fix live, and <code>turn_on</code> switches on automatic mode — Populr fixes broken titles and descriptions itself, never a page you undid, and at most ten new pages a day.</li>
               <li>Pages are fetched only from public addresses, with every redirect re-checked.</li>
             </ul>
           </section>

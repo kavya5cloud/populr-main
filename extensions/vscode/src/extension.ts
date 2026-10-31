@@ -445,6 +445,93 @@ export function activate(context: vscode.ExtensionContext) {
     void vscode.window.showInformationMessage(`Wrote ${dir}/llms.txt. Deploy, and it's served at /llms.txt.`);
   });
 
+  // ── Turn on: the one click ──────────────────────────────────────────────────────────
+  //
+  // Hands the whole job to the editor's agent, which can read the project and edit its code:
+  // find the site's address and the business facts the project states, call Populr's
+  // turn_on tool, and write what it returns into the code — the snippet once, the fixes, the
+  // structured data, llms.txt. From then on Populr applies new fixes through the snippet,
+  // so SEO needs no more code changes. Turning it on is the approval: the prompt says so,
+  // and the tool tells the agent the same.
+  const TURN_ON_PROMPT = [
+    "Turn on Populr SEO for this project. I'm approving the changes by turning it on, so don't ask me about each one.",
+    "Find the site's public address in the project (Next.js metadataBase, a sitemap, the package's homepage, deploy config) — ask me only if it isn't there — and the business facts the project itself states: name, what it offers and where, phone, email, address, opening hours, social profiles. Nothing it doesn't say.",
+    "Call Populr's turn_on tool once with the address and those facts, then write everything it returns into the code: the snippet in the root layout's <head>, each page's title and description, the structured data, and llms.txt.",
+    "Finish by telling me in a few lines what changed. It goes live when I deploy.",
+  ].join("\n\n");
+  const TURNED_ON = "populr.turnedOn", OFFERED = "populr.turnOnOffered";
+
+  command("populr.turnOn", async () => {
+    if (!vscode.workspace.workspaceFolders?.length) {
+      void vscode.window.showInformationMessage("Open your website's project folder first — Populr's fixes go into its code.");
+      return;
+    }
+    if (mode === "none") {
+      void vscode.window.showInformationMessage(`Turning Populr on needs an editor whose agent can use Populr — ${vscode.env.appName} 1.100 or later, or Cursor.`);
+      return;
+    }
+    // VS Code 1.100 reaches Populr with a key only. Elsewhere the editor signs in by itself,
+    // except Cursor, where the sign-in happens in its MCP settings.
+    if (mode === "settings" && !(await getKey())) {
+      await vscode.commands.executeCommand("populr.connect");
+      if (!(await getKey())) return;
+    }
+    if (mode === "cursor" && !(await getKey())) {
+      const a = await vscode.window.showInformationMessage(
+        "Cursor's agent needs to be signed in to Populr first: Cursor Settings → MCP → Login next to Populr. Then turn it on.",
+        "It's signed in — turn on", "Open MCP settings");
+      if (a === "Open MCP settings") { void vscode.commands.executeCommand("aiSettings.action.open", "mcp").then(undefined, () => undefined); return; }
+      if (!a) return;
+    }
+    await context.workspaceState.update(TURNED_ON, true);
+
+    if (mode === "cursor") {
+      // Cursor's documented prompt deeplink: a new agent chat with the prompt filled in. Cursor
+      // never runs a deeplinked prompt by itself — the developer presses Enter.
+      const link = vscode.Uri.parse(`cursor://anysphere.cursor-deeplink/prompt?text=${encodeURIComponent(TURN_ON_PROMPT)}`);
+      if (await Promise.resolve(vscode.env.openExternal(link)).catch(() => false)) {
+        void vscode.window.showInformationMessage("Populr's instructions are in Cursor's chat — press Enter to turn it on. Populr keeps the site fixed after that.");
+        return;
+      }
+    } else {
+      const opened = await Promise.resolve(vscode.commands.executeCommand("workbench.action.chat.open", { query: TURN_ON_PROMPT, mode: "agent" })).then(() => true, () => false);
+      if (opened) {
+        void vscode.window.showInformationMessage("Populr is setting up your site in chat. Allow Populr's turn_on tool when VS Code asks — after that, Populr keeps the site fixed.");
+        return;
+      }
+    }
+    await vscode.env.clipboard.writeText(TURN_ON_PROMPT);
+    void vscode.window.showInformationMessage(`Copied Populr's instructions. Paste them into ${vscode.env.appName}'s agent chat to turn Populr on.`);
+  });
+
+  // Offered once per project, when the project looks like a website: the moment someone
+  // would want it. "Not now" is remembered for the project.
+  const looksLikeWebsite = async (): Promise<boolean> => {
+    const root = vscode.workspace.workspaceFolders?.[0]?.uri;
+    if (!root) return false;
+    const read = (name: string) => vscode.workspace.fs.readFile(vscode.Uri.joinPath(root, name)).then((b) => new TextDecoder().decode(b), () => null);
+    const pkg = await read("package.json");
+    if (pkg) {
+      try {
+        const p = JSON.parse(pkg) as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> };
+        const deps = Object.keys({ ...p.dependencies, ...p.devDependencies });
+        if (deps.some((d) => /^(next|astro|nuxt|gatsby|vite|react-scripts|vue|svelte|@sveltejs\/kit|@remix-run\/react|@11ty\/eleventy|@docusaurus\/core)$/.test(d))) return true;
+      } catch { /* not JSON */ }
+    }
+    for (const f of ["index.html", "hugo.toml", "hugo.yaml", "_config.yml"]) if ((await read(f)) !== null) return true;
+    return false;
+  };
+  const offerTurnOn = async () => {
+    if (mode === "none" || context.workspaceState.get(OFFERED) || context.workspaceState.get(TURNED_ON) || !(await looksLikeWebsite())) return;
+    await context.workspaceState.update(OFFERED, true);
+    const a = await vscode.window.showInformationMessage(
+      "Turn on Populr for this site? It fixes the site's SEO in your code — titles, structured data, llms.txt — and keeps it fixed as the site grows.",
+      "Turn on", "Not now");
+    if (a === "Turn on") await vscode.commands.executeCommand("populr.turnOn");
+  };
+  const offerTimer = setTimeout(() => void offerTurnOn(), 4000);
+  context.subscriptions.push({ dispose: () => clearTimeout(offerTimer) });
+
   void refreshStatus();
 }
 

@@ -42,8 +42,8 @@ describe("the protocol", () => {
     const { autopilot } = await setup();
     const r = await handle({ jsonrpc: "2.0", id: 1, method: "tools/list" }, "ws-a", { autopilot }) as { result: { tools: { name: string; inputSchema: object; annotations: { readOnlyHint: boolean } }[] } };
     const names = r.result.tools.map((t) => t.name);
-    expect(names).toEqual(["seo_status", "setup_site", "set_business_details", "get_seo_fixes", "get_structured_data", "audit_page", "draft_page_fix", "approve_page_fix", "generate_llms_txt", "verify_page"]);
-    expect(r.result.tools.filter((t) => !t.annotations.readOnlyHint).map((t) => t.name)).toEqual(["setup_site", "set_business_details", "draft_page_fix", "approve_page_fix"]);
+    expect(names).toEqual(["seo_status", "turn_on", "setup_site", "set_business_details", "get_seo_fixes", "get_structured_data", "audit_page", "draft_page_fix", "approve_page_fix", "generate_llms_txt", "verify_page"]);
+    expect(r.result.tools.filter((t) => !t.annotations.readOnlyHint).map((t) => t.name)).toEqual(["turn_on", "setup_site", "set_business_details", "draft_page_fix", "approve_page_fix"]);
   });
 
   it("rejects unknown methods, unknown tools and missing arguments as protocol errors", async () => {
@@ -155,7 +155,7 @@ describe("POST /api/mcp", () => {
     expect(resources.status).toBe(200);
     expect((await resources.json()).result).toEqual({ resources: [] });
     const prompts = await POST(req(null, { jsonrpc: "2.0", id: 4, method: "prompts/list" }));
-    expect((await prompts.json()).result.prompts.map((p: { name: string }) => p.name)).toEqual(["set_up_seo", "apply_seo_fixes", "seo_audit"]);
+    expect((await prompts.json()).result.prompts.map((p: { name: string }) => p.name)).toEqual(["turn_on", "set_up_seo", "apply_seo_fixes", "seo_audit"]);
     const unknown = await POST(req(null, { jsonrpc: "2.0", id: 5, method: "triggers/list" }));
     expect(unknown.status).toBe(200);
     expect((await unknown.json()).error.code).toBe(-32601);
@@ -423,8 +423,8 @@ describe("setting up from the editor", () => {
 
   it("marks the tools that change settings as needing the user's say-so", () => {
     const writes = TOOLS.filter((t) => !t.annotations.readOnlyHint).map((t) => t.name).sort();
-    expect(writes).toEqual(["approve_page_fix", "draft_page_fix", "set_business_details", "setup_site"]);
-    for (const n of ["approve_page_fix", "set_business_details"]) expect(TOOLS.find((t) => t.name === n)!.annotations.destructiveHint).toBe(true);
+    expect(writes).toEqual(["approve_page_fix", "draft_page_fix", "set_business_details", "setup_site", "turn_on"]);
+    for (const n of ["approve_page_fix", "set_business_details", "turn_on"]) expect(TOOLS.find((t) => t.name === n)!.annotations.destructiveHint).toBe(true);
   });
 
   it("offers a prompt that walks an agent through the whole setup", async () => {

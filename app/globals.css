@@ -5110,6 +5110,12 @@ a.hk-more:hover{color:#15171a;text-decoration:underline}
 .appui .ap-pill.wait{color:var(--amberr);border-color:color-mix(in srgb,var(--amberr) 40%,transparent)}
 .appui .ap-switch{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
 .appui .ap-switch input{accent-color:var(--green-ink)}
+.appui .ap-auto{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:13px;color:var(--dim)}
+.appui .ap-auto p{margin:0;line-height:1.5}
+.appui .ap-auto b{color:var(--text,inherit);font-weight:600}
+.appui .ap-auto.on{border-color:color-mix(in srgb,var(--green-ink) 35%,transparent);background:color-mix(in srgb,var(--green-ink) 6%,transparent)}
+.appui .ap-auto .ap-switch{flex:none}
+.appui .ap-page.declined{opacity:.75}
 .appui .ap-lede,.appui .ap-hint{margin:0;font-size:13px;color:var(--dim);line-height:1.5}
 .appui .ap-fine{margin:0;font-size:12px;color:var(--dim)}
 .appui .ap-note{margin:0;font-size:13px;color:var(--fg)}
