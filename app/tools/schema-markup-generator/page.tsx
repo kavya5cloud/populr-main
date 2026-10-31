@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { findFreeTool } from "@/lib/tools/catalog";
 import ToolPage, { type Faq } from "../_components/ToolPage";
 import SchemaGenerator from "./SchemaGenerator";
+import { OG_DEFAULTS } from "@/lib/seo";
 
 const tool = findFreeTool("schema-markup-generator")!;
 
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
   title: tool.title,
   description: tool.description,
   alternates: { canonical: "/tools/schema-markup-generator" },
-  openGraph: { title: tool.title, description: tool.description, url: "/tools/schema-markup-generator", type: "website" },
+  openGraph: { ...OG_DEFAULTS, title: tool.title, description: tool.description, url: "/tools/schema-markup-generator", type: "website" },
 };
 
 const FAQ: Faq[] = [

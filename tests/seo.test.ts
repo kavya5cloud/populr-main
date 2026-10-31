@@ -78,7 +78,7 @@ describe("per-page metadata", () => {
   // state this site was actually in — every page inherited the root title — so it is worth
   // asserting rather than eyeballing.
   async function collect() {
-    const [root, ea, privacy, terms, dev, devDocs, check, tools, crawlers, llms, schema, serp, research] = await Promise.all([
+    const [root, ea, privacy, terms, dev, devDocs, check, tools, crawlers, llms, schema, serp, research, linkPreview, robotsGen] = await Promise.all([
       import("@/app/layout"),
       import("@/app/early-access/layout"),
       import("@/app/privacy/page"),
@@ -92,6 +92,8 @@ describe("per-page metadata", () => {
       import("@/app/tools/schema-markup-generator/page"),
       import("@/app/tools/serp-preview/page"),
       import("@/app/research/ai-crawlers-india/page"),
+      import("@/app/tools/link-preview-checker/page"),
+      import("@/app/tools/robots-txt-generator/page"),
     ]);
     const title = (m: { title?: unknown }) =>
       typeof m.title === "string" ? m.title : String((m.title as { default?: string })?.default ?? "");
@@ -109,6 +111,8 @@ describe("per-page metadata", () => {
       { path: "/tools/schema-markup-generator", title: title(schema.metadata), meta: schema.metadata },
       { path: "/tools/serp-preview", title: title(serp.metadata), meta: serp.metadata },
       { path: "/research/ai-crawlers-india", title: title(research.metadata), meta: research.metadata },
+      { path: "/tools/link-preview-checker", title: title(linkPreview.metadata), meta: linkPreview.metadata },
+      { path: "/tools/robots-txt-generator", title: title(robotsGen.metadata), meta: robotsGen.metadata },
     ];
   }
 

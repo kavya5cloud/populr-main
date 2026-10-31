@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { allGuides } from "@/lib/guides";
-import { SITE_NAME, url } from "@/lib/seo";
+import { SITE_NAME, url, OG_DEFAULTS } from "@/lib/seo";
 
 // The guides index.
 //
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   description:
     "Practical guides on marketing without a marketing team — what agencies cost, how to be cited by AI assistants, and why AI writing tools invent statistics.",
   alternates: { canonical: url("/guides"), types: { "application/rss+xml": "/guides/feed.xml" } },
-  openGraph: {
+  openGraph: { ...OG_DEFAULTS,
     type: "website",
     title: `Guides — ${SITE_NAME}`,
     description: "Practical guides on marketing without a marketing team.",

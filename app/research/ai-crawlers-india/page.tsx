@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { url } from "@/lib/seo";
+import { url, OG_DEFAULTS } from "@/lib/seo";
 import { pct, STUDY, STUDY_PATH, studyStats } from "@/lib/research/ai-crawlers-india";
 import { CRAWLERS } from "@/lib/tools/robots";
 import { ToolFooter, ToolHeader } from "@/app/tools/_components/ToolPage";
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: { canonical: STUDY_PATH },
-  openGraph: { title: TITLE, description: DESCRIPTION, url: STUDY_PATH, type: "article", publishedTime: PUBLISHED },
+  openGraph: { ...OG_DEFAULTS, title: TITLE, description: DESCRIPTION, url: STUDY_PATH, type: "article", publishedTime: PUBLISHED },
 };
 
 const s = studyStats();

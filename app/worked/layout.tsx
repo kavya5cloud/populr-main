@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { OG_DEFAULTS } from "@/lib/seo";
 
 // Client page, so metadata lives here — see app/early-access/layout.tsx.
 
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
   // Product surface, not a landing page — see lib/seo.ts. follow stays on so the links on
   // it still pass through; only the page itself stays out of results.
   robots: { index: false, follow: true },
-  openGraph: {
+  openGraph: { ...OG_DEFAULTS,
     title: "What actually worked — Populr",
     description:
       "The marketing actions Populr took, and what each one actually did — measured against real outcomes.",

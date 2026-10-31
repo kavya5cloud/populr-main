@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { DOMAIN_RE, type Check } from "@/lib/check/checks";
 import { checkStore } from "@/lib/check/store";
 import { CheckForm, CopySnippet, RunCheck, ShareBar } from "../CheckClient";
+import { OG_DEFAULTS } from "@/lib/seo";
 
 // /check/<domain> — one site's result, made to be shared: a score with every point
 // explained, a share bar, and a way to fix it. Not indexed: these are pages about other
@@ -31,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description,
     robots: { index: false, follow: true },
     alternates: { canonical: `/check/${domain}` },
-    openGraph: { title, description, url: `/check/${domain}`, type: "website" },
+    openGraph: { ...OG_DEFAULTS, title, description, url: `/check/${domain}`, type: "website" },
     twitter: { card: "summary_large_image", title, description },
   };
 }

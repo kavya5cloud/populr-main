@@ -23,7 +23,7 @@ export type PageFacts = {
   robots: string | null;
   h1Count: number;
   viewport: boolean;
-  og: { title: string | null; description: string | null; image: string | null };
+  og: { title: string | null; description: string | null; image: string | null; siteName: string | null };
   twitterCard: string | null;
   jsonld: { ok: boolean; types: string[] }[];
   imagesWithoutAlt: number;
@@ -83,7 +83,7 @@ export function readPageFacts(html: string, url: string): PageFacts {
     robots: meta("robots"),
     h1Count: (html.match(/<h1\b/gi) ?? []).length,
     viewport: meta("viewport") !== null,
-    og: { title: meta("og:title"), description: meta("og:description"), image: meta("og:image") },
+    og: { title: meta("og:title"), description: meta("og:description"), image: meta("og:image"), siteName: meta("og:site_name") },
     twitterCard: meta("twitter:card"),
     jsonld,
     imagesWithoutAlt: tags(html, "img").filter((i) => i.alt === undefined).length,
@@ -113,6 +113,7 @@ export function pageIssues(f: PageFacts): Issue[] {
   if (f.h1Count === 0) add("error", "h1", "No <h1>.");
   else if (f.h1Count > 1) add("warning", "h1", `${f.h1Count} <h1> elements — one says clearly what the page is.`);
   if (!f.og.title || !f.og.description || !f.og.image) add("warning", "open-graph", `Missing ${[!f.og.title && "og:title", !f.og.description && "og:description", !f.og.image && "og:image"].filter(Boolean).join(", ")} — link previews will be bare.`);
+  if (!f.og.siteName) add("warning", "open-graph", "No og:site_name — Slack, Discord and Facebook show the bare domain instead of the name.");
   if (!f.twitterCard) add("warning", "twitter-card", "No twitter:card — X shows a plain link.");
   if (!f.jsonld.length) add("warning", "structured-data", "No JSON-LD structured data.");
   if (f.jsonld.some((j) => !j.ok)) add("error", "structured-data", "A JSON-LD block doesn't parse — search engines ignore all of it.");

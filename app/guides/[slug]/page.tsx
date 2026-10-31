@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { allGuides, guideBySlug, wordsIn, type Block, type Guide } from "@/lib/guides";
-import { SITE_NAME, url } from "@/lib/seo";
+import { SITE_NAME, url, OG_DEFAULTS } from "@/lib/seo";
 
 // One guide.
 //
@@ -33,7 +33,7 @@ export async function generateMetadata(
     title: guide.title,
     description: guide.description,
     alternates: { canonical, types: { "application/rss+xml": "/guides/feed.xml" } },
-    openGraph: {
+    openGraph: { ...OG_DEFAULTS,
       type: "article",
       title: guide.title,
       description: guide.description,

@@ -119,3 +119,15 @@ describe("structured data a validator will accept", () => {
     for (const u of urls) expect(u).toMatch(/^https:\/\/[^/]+\/(.+\/)?trypopulr$/);
   });
 });
+
+describe("every page that sets its own share settings keeps the site name", () => {
+  // Next merges metadata one level deep: a page's openGraph replaces the layout's, and
+  // og:site_name went missing on sixteen pages before anyone noticed.
+  it("spreads OG_DEFAULTS into each openGraph", () => {
+    const walk = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap((d) => d.isDirectory() ? walk(join(dir, d.name)) : /\.(tsx|ts)$/.test(d.name) ? [join(dir, d.name)] : []);
+    const offenders = walk(join(process.cwd(), "app"))
+      .filter((f) => !f.endsWith(join("app", "layout.tsx")))
+      .filter((f) => { const src = readFileSync(f, "utf8"); return /openGraph:\s*\{/.test(src) && !/openGraph:\s*\{\s*\.\.\.OG_DEFAULTS/.test(src); });
+    expect(offenders).toEqual([]);
+  });
+});

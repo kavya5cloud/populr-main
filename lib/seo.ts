@@ -41,6 +41,13 @@ export const SITE_NAME = "Populr";
 export const SITE_DESCRIPTION =
   "Populr is your AI CMO. It reads your site, runs SEO, AI-search visibility, Reddit and content daily, and sends you only what is worth approving.";
 
+/**
+ * Open Graph fields every page shares. A page that sets its own `openGraph` replaces the
+ * layout's whole object (Next merges metadata one level deep), so it spreads these in —
+ * without og:site_name, Slack, Discord and Facebook show the bare domain instead of "Populr".
+ */
+export const OG_DEFAULTS = { siteName: SITE_NAME } as const;
+
 export const url = (path = "/") => `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 
 /**
@@ -67,6 +74,8 @@ export const PUBLIC_ROUTES: { path: string; priority: number; changeFrequency: "
   { path: "/tools/llms-txt-generator", priority: 0.8, changeFrequency: "monthly" },
   { path: "/tools/schema-markup-generator", priority: 0.8, changeFrequency: "monthly" },
   { path: "/tools/serp-preview", priority: 0.8, changeFrequency: "monthly" },
+  { path: "/tools/link-preview-checker", priority: 0.8, changeFrequency: "monthly" },
+  { path: "/tools/robots-txt-generator", priority: 0.8, changeFrequency: "monthly" },
   // Original research: what other sites cite and link to.
   { path: "/research/ai-crawlers-india", priority: 0.9, changeFrequency: "monthly" },
   { path: "/developers", priority: 0.8, changeFrequency: "monthly" },

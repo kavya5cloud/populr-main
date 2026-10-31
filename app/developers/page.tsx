@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { TOOLS } from "@/lib/mcp/tools";
 import { cursorInstallUrl, installTabs, MCP_URL, VSCODE_INSTALL_URL } from "@/lib/mcp/install";
 import { CopyBlock, InstallTabs, SessionDemo } from "./DevClient";
+import { OG_DEFAULTS } from "@/lib/seo";
 
 // Where Populr's MCP server, extension and plugin are published.
 const LISTINGS = [
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
   title: "SEO fixes in your code editor — MCP server",
   description: "Connect Claude Code, Cursor, VS Code or Windsurf to Populr. Your coding assistant applies your SEO fixes — titles, descriptions, structured data — in code.",
   alternates: { canonical: "/developers" },
-  openGraph: {
+  openGraph: { ...OG_DEFAULTS,
     type: "website", url: "/developers",
     title: "Populr MCP server — ship approved SEO fixes from your editor",
     description: "One line of config. Your AI coding assistant gets the fixes your team approved, applies them in code, and verifies they're live.",

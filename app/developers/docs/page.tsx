@@ -3,6 +3,7 @@ import { TOOLS } from "@/lib/mcp/tools";
 import { SUPPORTED_VERSIONS } from "@/lib/mcp/server";
 import { cursorInstallUrl, MCP_URL, VSCODE_INSTALL_URL, installTabs } from "@/lib/mcp/install";
 import { CopyBlock, InstallTabs } from "../DevClient";
+import { OG_DEFAULTS } from "@/lib/seo";
 
 // The developer documentation. The tools reference is generated from the server's own tool
 // definitions, so the docs can't describe a tool the server doesn't have or miss one it does.
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
   title: "MCP server docs",
   description: "Set up Populr's MCP server in Claude Code, Cursor, VS Code or Windsurf: sign-in or access keys, every tool, the apply-and-verify workflow, and limits.",
   alternates: { canonical: "/developers/docs" },
-  openGraph: { type: "article", url: "/developers/docs", title: "Populr MCP server — documentation", description: "Setup, tools reference, workflow, security and troubleshooting." },
+  openGraph: { ...OG_DEFAULTS, type: "article", url: "/developers/docs", title: "Populr MCP server — documentation", description: "Setup, tools reference, workflow, security and troubleshooting." },
   twitter: { card: "summary_large_image", title: "Populr MCP docs", description: "Setup, tools reference, workflow and troubleshooting." },
 };
 

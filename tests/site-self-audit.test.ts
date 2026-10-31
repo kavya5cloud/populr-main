@@ -9,7 +9,7 @@ const good = (path: string, extra = "") => `<!doctype html><html lang="en"><head
 <meta name="description" content="Order birthday and wedding cakes baked fresh every morning in Koregaon Park, with same-day pickup and delivery within 5 km.">
 <meta name="viewport" content="width=device-width">
 <link rel="canonical" href="https://x.in${path}">
-<meta property="og:title" content="Cakes"><meta property="og:description" content="Cakes"><meta property="og:image" content="https://x.in/og.png">
+<meta property="og:title" content="Cakes"><meta property="og:description" content="Cakes"><meta property="og:image" content="https://x.in/og.png"><meta property="og:site_name" content="Rao's">
 <meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization"},{"@type":"WebSite"}]}</script>
 ${extra}</head><body><h1>Cakes</h1><a href="/menu">Menu</a><a href="https://other.in/x">x</a><a href="#top">top</a><a href="mailto:a@b.c">mail</a><img src="a.png" alt=""></body></html>`;

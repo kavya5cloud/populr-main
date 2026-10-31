@@ -196,3 +196,64 @@ describe("the free tools on the site", () => {
     expect(llms).toContain("FREE_TOOLS");
   });
 });
+
+describe("image sizes, read from the first bytes", () => {
+  it("reads PNG, GIF, JPEG and WebP headers", async () => {
+    const { imageSize } = await import("@/lib/tools/image-size");
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52, 0, 0, 4, 0xb0, 0, 0, 2, 0x76]);
+    expect(imageSize(png)).toEqual({ width: 1200, height: 630, format: "png" });
+    const gif = new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x2c, 0x01, 0xc8, 0x00]);
+    expect(imageSize(gif)).toEqual({ width: 300, height: 200, format: "gif" });
+    // SOI, an APP0 segment to skip, then SOF0 with height 630, width 1200.
+    const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x04, 0x00, 0x00, 0xff, 0xc0, 0x00, 0x11, 0x08, 0x02, 0x76, 0x04, 0xb0, 0x03, 0, 0, 0, 0]);
+    expect(imageSize(jpeg)).toEqual({ width: 1200, height: 630, format: "jpeg" });
+    const webp = new Uint8Array([...Array.from("RIFF", (c) => c.charCodeAt(0)), 0, 0, 0, 0, ...Array.from("WEBPVP8X", (c) => c.charCodeAt(0)), 10, 0, 0, 0, 0, 0, 0, 0, 0xaf, 0x04, 0x00, 0x75, 0x02, 0x00]);
+    expect(imageSize(webp)).toEqual({ width: 1200, height: 630, format: "webp" });
+    expect(imageSize(new Uint8Array([1, 2, 3]))).toBeNull();
+  });
+});
+
+describe("the link preview checker", () => {
+  const html = `<html><head><title>Cakes — Rao's</title><meta name="description" content="Fresh cakes daily.">
+    <meta property="og:title" content="Custom cakes in Pune"><meta property="og:image" content="/og/cakes.jpg">
+    <link rel="icon" href="/favicon.png"></head></html>`;
+
+  it("reads the tags apps read, with the same fallbacks", async () => {
+    const { readPreviewMeta } = await import("@/lib/tools/link-preview");
+    const m = readPreviewMeta(html, "https://raos.example/cakes");
+    expect(m).toMatchObject({ title: "Custom cakes in Pune", description: "Fresh cakes daily.", image: "https://raos.example/og/cakes.jpg", favicon: "https://raos.example/favicon.png", ogTitle: true, ogDescription: false, siteName: null, twitterCard: null });
+  });
+
+  it("says what to fix, and what's fine", async () => {
+    const { previewChecks, readPreviewMeta } = await import("@/lib/tools/link-preview");
+    const m = readPreviewMeta(html, "https://raos.example/cakes");
+    const good = { url: m.image!, status: 200, type: "image/jpeg", bytes: 120_000, size: { width: 1200, height: 630, format: "jpeg" as const } };
+    const levels = (img: Parameters<typeof previewChecks>[1]) => Object.fromEntries(previewChecks(m, img).map((c) => [c.id, c.level]));
+    expect(levels(good)).toMatchObject({ title: "good", description: "warn", image: "good", twitter: "warn", "site-name": "warn" });
+    expect(levels({ ...good, bytes: 900_000 })["image-weight"]).toBe("warn");
+    expect(levels({ ...good, size: { width: 400, height: 400, format: "jpeg" } }).image).toBe("warn");
+    expect(levels({ ...good, type: "image/svg+xml" }).image).toBe("bad");
+    expect(levels({ ...good, status: 404 }).image).toBe("bad");
+    expect(levels(null).image).toBe("bad");
+  });
+});
+
+describe("the robots.txt generator", () => {
+  it("does what each preset says, checked by reading the file back", async () => {
+    const { buildRobots } = await import("@/app/tools/robots-txt-generator/RobotsGenerator");
+    const { CRAWLERS } = await import("@/lib/tools/robots");
+    const training = new Set(CRAWLERS.filter((c) => c.kind === "training").map((c) => c.agent));
+    const text = buildRobots(training, ["/admin", "/cart"], "https://raos.example/sitemap.xml");
+    const groups = parseRobots(text);
+    expect(verdictFor(groups, "GPTBot", "/").allowed).toBe(false);
+    expect(verdictFor(groups, "OAI-SearchBot", "/").allowed).toBe(true);
+    expect(verdictFor(groups, "Googlebot", "/").allowed).toBe(true);
+    // Private paths apply to everyone who's let in.
+    expect(verdictFor(groups, "Googlebot", "/admin/users").allowed).toBe(false);
+    expect(verdictFor(groups, "PerplexityBot", "/cart").allowed).toBe(false);
+    expect(text).toMatch(/^Sitemap: https:\/\/raos\.example\/sitemap\.xml$/m);
+    // Open to everyone, with nothing private: no rules that block anything.
+    const open = parseRobots(buildRobots(new Set(), [], ""));
+    expect(CRAWLERS.every((c) => verdictFor(open, c.agent, "/").allowed)).toBe(true);
+  });
+});

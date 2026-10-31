@@ -40,6 +40,20 @@ export const FREE_TOOLS: FreeTool[] = [
     blurb: "JSON-LD for your business — address, hours, phone, FAQs — ready to paste into your site.",
   },
   {
+    slug: "link-preview-checker",
+    name: "Link preview checker",
+    title: "Link Preview Checker for WhatsApp & LinkedIn",
+    description: "See how your link looks when it's shared on WhatsApp, LinkedIn, X and Slack — and fix a missing image, a cut-off title or a broken preview. Free.",
+    blurb: "How your link looks on WhatsApp, LinkedIn, X and Slack — and what to fix when the picture's missing.",
+  },
+  {
+    slug: "robots-txt-generator",
+    name: "robots.txt generator",
+    title: "robots.txt Generator with AI Crawler Rules",
+    description: "Build a robots.txt in seconds: let AI search crawlers in, keep training crawlers out, block private paths — and see what each crawler will do. Free.",
+    blurb: "Let AI search in, keep training out, block private paths — and see what each crawler will do.",
+  },
+  {
     slug: "serp-preview",
     name: "Google result preview",
     title: "SERP Preview & Title Length Checker",

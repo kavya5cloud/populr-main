@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { OG_DEFAULTS } from "@/lib/seo";
 
 // page.tsx is a client component, so it cannot export metadata. This layout carries it —
 // without it the page inherited the home page's title and had no canonical of its own,
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
   description:
     "Join the Populr early access programme. Get your marketing run daily by AI agents, and help shape what ships next.",
   alternates: { canonical: "/early-access" },
-  openGraph: {
+  openGraph: { ...OG_DEFAULTS,
     title: "Early access — Populr",
     description:
       "Join the Populr early access programme. Get your marketing run daily by AI agents, and help shape what ships next.",

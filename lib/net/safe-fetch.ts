@@ -70,6 +70,43 @@ export type SafeFetchOptions = {
   headers?: Record<string, string>;
 };
 
+/**
+ * The first bytes of a public URL — enough to read an image's dimensions from its header
+ * without downloading the image. Same guard as safeFetchText: every hop re-checked as public.
+ * Stops reading at `prefixBytes` instead of failing; `size` is the declared length, if any.
+ */
+export async function safeFetchPrefix(raw: string, opts: SafeFetchOptions & { prefixBytes?: number } = {}): Promise<{ url: string; status: number; type: string; size: number | null; bytes: Uint8Array }> {
+  const deadline = AbortSignal.timeout(opts.timeoutMs ?? 8_000);
+  const limit = opts.prefixBytes ?? 256_000;
+  let current = raw;
+  for (let hop = 0; hop <= (opts.maxRedirects ?? 3); hop++) {
+    const u = await assertPublic(current);
+    const res = await fetch(u, { redirect: "manual", signal: deadline, headers: { "User-Agent": "Mozilla/5.0 (compatible; PopulrResearch/1.0; +https://www.trypopulr.in)", ...opts.headers } });
+    if (res.status >= 300 && res.status < 400) {
+      const next = res.headers.get("location");
+      if (!next) throw new UnsafeUrlError("redirect without a location");
+      current = new URL(next, u).toString();
+      continue;
+    }
+    const declared = Number(res.headers.get("content-length"));
+    const reader = res.body?.getReader();
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    while (reader && total < limit) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      total += value.byteLength;
+    }
+    await reader?.cancel().catch(() => undefined);
+    const bytes = new Uint8Array(Math.min(total, limit));
+    let off = 0;
+    for (const c of chunks) { const n = Math.min(c.byteLength, bytes.length - off); bytes.set(c.subarray(0, n), off); off += n; if (off >= bytes.length) break; }
+    return { url: u.toString(), status: res.status, type: res.headers.get("content-type") ?? "", size: Number.isFinite(declared) && declared > 0 ? declared : null, bytes };
+  }
+  throw new UnsafeUrlError("too many redirects");
+}
+
 /** Fetch a public URL and return its body as text. Throws on anything unsafe or oversized. */
 export async function safeFetchText(raw: string, opts: SafeFetchOptions = {}): Promise<{ url: string; status: number; text: string }> {
   const timeoutMs = opts.timeoutMs ?? 6_000;

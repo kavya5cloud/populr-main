@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { LANDING, LANDING_LOCALES, homeAlternates, type LandingLocale } from "@/lib/i18n/landing";
-import { SITE_NAME, url } from "@/lib/seo";
+import { SITE_NAME, url, OG_DEFAULTS } from "@/lib/seo";
 
 // The landing page in another language: /hi, /mr, /fr, /de, /es, /pt, /it, /nl, /pl.
 //
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     title: { absolute: c.title },
     description: c.description,
     alternates: { canonical: `/${locale}`, languages: homeAlternates() },
-    openGraph: {
+    openGraph: { ...OG_DEFAULTS,
       type: "website", siteName: SITE_NAME, url: url(`/${locale}`),
       title: c.title, description: c.description, locale: c.hreflang.replace("-", "_"),
     },

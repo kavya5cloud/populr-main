@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { findFreeTool } from "@/lib/tools/catalog";
 import ToolPage, { type Faq } from "../_components/ToolPage";
 import CrawlerChecker from "./CrawlerChecker";
+import { OG_DEFAULTS } from "@/lib/seo";
 
 const tool = findFreeTool("ai-crawler-checker")!;
 
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
   title: tool.title,
   description: tool.description,
   alternates: { canonical: "/tools/ai-crawler-checker" },
-  openGraph: { title: tool.title, description: tool.description, url: "/tools/ai-crawler-checker", type: "website" },
+  openGraph: { ...OG_DEFAULTS, title: tool.title, description: tool.description, url: "/tools/ai-crawler-checker", type: "website" },
 };
 
 const FAQ: Faq[] = [

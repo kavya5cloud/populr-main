@@ -112,3 +112,54 @@
   .tl-hide-sm{display:none}
   .ck-links{gap:12px}
 }
+
+/* Link preview checker: the cards are approximations of each app's layout, not copies. */
+.lp-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.lp-card{margin:0;display:flex;flex-direction:column;gap:6px}
+.lp-card figcaption{font:500 11px/1 'Geist Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--dv-dim)}
+.lp-noimg{display:flex;align-items:center;justify-content:center;background:#eef0ea;color:#8a8f93;font-size:12px}
+.lp-wa-bubble{background:#d9fdd3;border-radius:10px;padding:4px 4px 8px;box-shadow:0 1px 1px rgba(0,0,0,.08);max-width:330px}
+.lp-wa-preview{background:#c6eebe;border-radius:7px;overflow:hidden}
+.lp-wa-img{display:block;width:100%;aspect-ratio:1.91;object-fit:cover}
+.lp-wa-text{display:flex;flex-direction:column;gap:2px;padding:7px 9px;font-family:Arial,sans-serif}
+.lp-wa-text b{font-size:13.5px;color:#111b21;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lp-wa-text span{font-size:12.5px;color:#54656f;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lp-wa-text small{font-size:12px;color:#667781}
+.lp-wa-link{margin:6px 6px 0;font-size:13px;color:#027eb5;word-break:break-all;font-family:Arial,sans-serif}
+.lp-li-box{border:1px solid #e0dfdc;border-radius:8px;overflow:hidden;background:#fff;font-family:-apple-system,system-ui,sans-serif}
+.lp-li-img{display:block;width:100%;aspect-ratio:1.91;object-fit:cover}
+.lp-li-text{display:flex;flex-direction:column;gap:3px;padding:10px 12px;background:#eef3f8}
+.lp-li-text b{font-size:14px;color:#000000e6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lp-li-text small{font-size:12px;color:#00000099}
+.lp-x-large{position:relative;border:1px solid #cfd9de;border-radius:16px;overflow:hidden}
+.lp-x-img{display:block;width:100%;aspect-ratio:1.91;object-fit:cover}
+.lp-x-domain{position:absolute;left:10px;bottom:10px;padding:1px 6px;border-radius:4px;background:rgba(0,0,0,.77);color:#fff;font-size:12px;font-family:-apple-system,system-ui,sans-serif}
+.lp-x-small{display:flex;border:1px solid #cfd9de;border-radius:16px;overflow:hidden;font-family:-apple-system,system-ui,sans-serif}
+.lp-x-thumb{width:110px;height:110px;object-fit:cover;flex:none;border-right:1px solid #cfd9de}
+.lp-x-small>div{display:flex;flex-direction:column;gap:2px;padding:10px 12px;min-width:0}
+.lp-x-small small{font-size:12.5px;color:#536471}
+.lp-x-small b{font-size:14px;color:#0f1419}
+.lp-x-small span{font-size:13px;color:#536471;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lp-sl-box{display:flex;flex-direction:column;gap:3px;border-left:4px solid #dddddd;padding:2px 0 2px 12px;font-family:-apple-system,system-ui,sans-serif}
+.lp-sl-box small{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#1d1c1d}
+.lp-sl-fav{width:16px;height:16px;border-radius:3px;object-fit:contain}
+.lp-sl-box small .lp-noimg{display:none}
+.lp-sl-box b{font-size:14px;color:#1264a3}
+.lp-sl-box span{font-size:13.5px;color:#1d1c1d}
+.lp-sl-img{margin-top:6px;max-width:100%;max-height:200px;border-radius:6px;object-fit:cover;align-self:flex-start}
+.lp-checks b{color:var(--dv-fg)}
+
+/* robots.txt generator */
+.rb-presets{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.rb-preset{display:flex;flex-direction:column;gap:4px;text-align:left;padding:12px 14px;border:1px solid var(--dv-line);border-radius:14px;background:#fff;cursor:pointer;font:inherit;color:var(--dv-fg)}
+.rb-preset b{font-size:14.5px}
+.rb-preset span{font-size:12.5px;color:var(--dv-dim);line-height:1.45}
+.rb-preset.on{border-color:var(--dv-ink);box-shadow:0 0 0 3px rgba(61,90,30,.12)}
+.rb-group{border:1px solid var(--dv-line);border-radius:12px;padding:6px 12px 8px;margin:0}
+.rb-group legend{padding:0 6px;font-size:12.5px;font-weight:600;color:var(--dv-dim)}
+.tl-form .rb-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--dv-line);flex-direction:row;font-weight:400}
+.tl-form .rb-row:first-of-type{border-top:0}
+.rb-row code{font:600 12.5px 'Geist Mono',monospace}
+.rb-row small{display:block;font-size:12px;color:var(--dv-dim);line-height:1.4}
+.rb-row input{accent-color:#3d5a1e}
+.rb-row em{font-style:normal}

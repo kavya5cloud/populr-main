@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { url } from "@/lib/seo";
+import { url, OG_DEFAULTS } from "@/lib/seo";
 import { FREE_TOOLS, toolPath } from "@/lib/tools/catalog";
 import { ToolFooter, ToolHeader } from "./_components/ToolPage";
 
@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "Free SEO & AI Search Tools",
   description: "Free tools to get found on Google and in ChatGPT, Claude and Perplexity: an SEO check, AI crawler checker, llms.txt and schema generators. No sign-up.",
   alternates: { canonical: "/tools" },
-  openGraph: { title: "Free SEO & AI Search Tools", url: "/tools", type: "website" },
+  openGraph: { ...OG_DEFAULTS, title: "Free SEO & AI Search Tools", url: "/tools", type: "website" },
 };
 
 const ALL = [

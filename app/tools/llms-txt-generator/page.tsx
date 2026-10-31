@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { findFreeTool } from "@/lib/tools/catalog";
 import ToolPage, { type Faq } from "../_components/ToolPage";
 import LlmsGenerator from "./LlmsGenerator";
+import { OG_DEFAULTS } from "@/lib/seo";
 
 const tool = findFreeTool("llms-txt-generator")!;
 
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
   title: tool.title,
   description: tool.description,
   alternates: { canonical: "/tools/llms-txt-generator" },
-  openGraph: { title: tool.title, description: tool.description, url: "/tools/llms-txt-generator", type: "website" },
+  openGraph: { ...OG_DEFAULTS, title: tool.title, description: tool.description, url: "/tools/llms-txt-generator", type: "website" },
 };
 
 const FAQ: Faq[] = [

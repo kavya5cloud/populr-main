@@ -30,6 +30,11 @@ const csp = [
   ...(isDev ? [] : ["upgrade-insecure-requests"]),
 ].join("; ");
 
+// The link preview checker shows a site's own share image — from that site, wherever it's
+// hosted — so that one page allows images from any https origin. Nothing else changes: no
+// script, frame or connection is loosened, and every other page keeps the policy above.
+const previewCsp = csp.replace(/img-src [^;]+/, "img-src 'self' data: blob: https:");
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   async redirects() {
@@ -68,6 +73,8 @@ const nextConfig: NextConfig = {
           { key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=()" },
         ],
       },
+      // Later rules win for the same header, so this replaces the policy on one page only.
+      { source: "/tools/link-preview-checker", headers: [{ key: "Content-Security-Policy", value: previewCsp }] },
     ];
   },
 };
