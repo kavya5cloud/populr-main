@@ -13,7 +13,7 @@ const UA = "PopulrSelfAudit/1.0 (+https://www.trypopulr.in)";
 const issues: Issue[] = [];
 const add = (level: Issue["level"], url: string, check: string, detail: string) => issues.push({ level, url, check, detail });
 
-async function get(url: string, redirect: RequestRedirect = "manual") {
+async function getOnce(url: string, redirect: RequestRedirect) {
   const t0 = Date.now();
   try {
     const r = await fetch(url, { redirect, headers: { "User-Agent": UA }, signal: AbortSignal.timeout(20_000) });
@@ -24,6 +24,20 @@ async function get(url: string, redirect: RequestRedirect = "manual") {
   }
 }
 
+// A dropped connection or a 5xx during a deploy is the network, not the site. Asked again
+// after a pause, a real problem is still there; a blip isn't — and an alarm that cries wolf
+// every few days is one people stop reading.
+async function get(url: string, redirect: RequestRedirect = "manual") {
+  let r = await getOnce(url, redirect);
+  for (const wait of [1_500, 5_000]) {
+    if (r.status !== 0 && r.status < 500) break;
+    await new Promise((res) => setTimeout(res, wait));
+    r = await getOnce(url, redirect);
+  }
+  return r;
+}
+const answered = (r: { status: number; error?: string }) => (r.status ? `answers ${r.status}` : "didn't answer (tried three times)");
+
 async function pool<T, R>(items: T[], n: number, fn: (t: T) => Promise<R>): Promise<R[]> {
   const out: R[] = new Array(items.length);
   let i = 0;
@@ -33,13 +47,13 @@ async function pool<T, R>(items: T[], n: number, fn: (t: T) => Promise<R>): Prom
 
 // ── robots.txt and the sitemap ─────────────────────────────────────────────────────────
 const robots = await get(`${origin}/robots.txt`);
-if (robots.status !== 200) add("error", `${origin}/robots.txt`, "robots", `robots.txt answered ${robots.status}.`);
+if (robots.status !== 200) add("error", `${origin}/robots.txt`, "robots", `robots.txt ${answered(robots)}.`);
 const groups = parseRobots(robots.body);
 const named = [...robots.body.matchAll(/^\s*sitemap\s*:\s*(\S+)/gim)].map((m) => m[1]);
 if (!named.includes(`${origin}/sitemap.xml`)) add("error", `${origin}/robots.txt`, "robots", "robots.txt doesn't point to /sitemap.xml.");
 
 const sitemap = await get(`${origin}/sitemap.xml`);
-if (sitemap.status !== 200) { add("error", `${origin}/sitemap.xml`, "sitemap", `sitemap.xml answered ${sitemap.status}.`); }
+if (sitemap.status !== 200) { add("error", `${origin}/sitemap.xml`, "sitemap", `sitemap.xml ${answered(sitemap)}.`); }
 const urls = sitemapUrls(sitemap.body);
 if (!urls.length) add("error", `${origin}/sitemap.xml`, "sitemap", "The sitemap lists no pages.");
 for (const m of sitemap.body.matchAll(/<lastmod>([^<]+)<\/lastmod>/g)) {
@@ -80,7 +94,7 @@ await pool(links, 6, async (link) => {
   const r = await get(link);
   const from = linkSources.get(link)!;
   if (r.status >= 300 && r.status < 400) add("warning", from, "links", `Links to ${link}, which redirects to ${r.location}. Link to the final URL.`);
-  else if (r.status !== 200) add("error", from, "links", `Links to ${link}, which answers ${r.status}.`);
+  else if (r.status !== 200) add("error", from, "links", `Links to ${link}, which ${answered(r)}.`);
 });
 
 const llms = await get(`${origin}/llms.txt`);
