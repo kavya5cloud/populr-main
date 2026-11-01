@@ -212,8 +212,8 @@ export default function Landing() {
                 Paste your website. In ten seconds you&apos;ll see what Google and ChatGPT can&apos;t read on
                 it — then Populr fixes it and builds today&apos;s plan.
               </p>
-              {/* With JavaScript, the address runs the free check right here and the result
-                  appears in the panel beside it, with the way into Populr. Without it, this is
+              {/* With JavaScript, the address runs the free check — the panel beside it shows it
+                  working — and opens the full report at /check/<domain>. Without it, this is
                   still a plain GET form: /app reads ?url= and starts on arrival. type="text"
                   because type="url" rejects "linear.app" for lacking a scheme, and nobody types
                   https://. */}
@@ -228,7 +228,7 @@ export default function Landing() {
                   if (!field.value) return;
                   e.preventDefault();
                   if (heroCheck.state.kind !== "checking") void heroCheck.run(field.value);
-                  // On a phone the panel sits below the form: bring the result into view.
+                  // On a phone the panel sits below the form: bring the progress into view.
                   if (window.innerWidth < 960) {
                     requestAnimationFrame(() => document.querySelector(".hc-checkpanel")?.scrollIntoView({ behavior: "smooth", block: "start" }));
                   }
@@ -246,7 +246,7 @@ export default function Landing() {
           </div>
 
           {/* What Populr finds, shown before anyone signs up: an example until the visitor
-              types their address, then their real result. The founder's photograph stays as
+              types their address, then the check running. The founder's photograph stays as
               the light behind the whole frame. */}
           <div className="hc-media hc-checkpanel">
             <HeroCheckCard state={heroCheck.state} onFocusInput={() => heroInput.current?.focus()} />

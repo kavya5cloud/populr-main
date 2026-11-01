@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
 // The hero's right-hand panel: what Populr finds on a website, before anyone signs up.
@@ -7,31 +8,32 @@ import { useCallback, useState } from "react";
 // Until a visitor types their address it shows an example, labelled as one and tied to no
 // real domain — a made-up score next to a real business's name would be exactly the kind of
 // claim this site refuses to make. When they type theirs, the hero form runs the real free
-// check (/api/check, the same one as /check) and this card shows their actual result, with
-// the way into Populr: fix what failed.
+// check (/api/check, the same one as /check), this card shows it working, and the visitor
+// lands on their full report at /check/<domain> — the page with every check explained, the
+// share bar and the way into Populr.
 
 type Check = { id: string; label: string; passed: boolean; detail: string; points: number };
-type Result = { domain: string; score: number; checks: Check[] };
 
 export type HeroCheckState =
   | { kind: "example" }
   | { kind: "checking"; site: string }
-  | { kind: "result"; result: Result }
   | { kind: "error"; site: string; message: string };
 
 export function useHeroCheck() {
+  const router = useRouter();
   const [state, setState] = useState<HeroCheckState>({ kind: "example" });
   const run = useCallback(async (site: string) => {
     setState({ kind: "checking", site });
     try {
       const r = await fetch("/api/check", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: site }) });
       const d = await r.json().catch(() => ({}));
-      if (r.ok && d.result) setState({ kind: "result", result: d.result });
+      // Stays on "checking" while the report loads, so the card never flashes a half-result.
+      if (r.ok && d.result?.domain) router.push(`/check/${d.result.domain}`);
       else setState({ kind: "error", site, message: d.message ?? "The check didn't finish." });
     } catch {
       setState({ kind: "error", site, message: "The check didn't finish." });
     }
-  }, []);
+  }, [router]);
   return { state, run };
 }
 
@@ -102,24 +104,6 @@ export function HeroCheckCard({ state, onFocusInput }: { state: HeroCheckState; 
         <div className="hk-head"><span className="hk-label">Couldn&apos;t check</span><b className="hk-domain">{state.site}</b></div>
         <p className="hk-note">{state.message}</p>
         <a className="hk-cta" href={`/app?url=${encodeURIComponent(state.site)}`}>Start with Populr anyway →</a>
-      </div>
-    );
-  }
-
-  if (state.kind === "result") {
-    const { result } = state;
-    const failed = result.checks.filter((c) => !c.passed);
-    return (
-      <div className="hk-card" aria-live="polite">
-        <div className="hk-head">
-          <div><span className="hk-label">Your site</span><b className="hk-domain">{result.domain}</b></div>
-          <Ring score={result.score} />
-        </div>
-        <Rows checks={pick(result.checks)} />
-        <a className="hk-cta" href={`/app?url=${encodeURIComponent(result.domain)}`}>
-          {failed.length ? `Fix ${failed.length === 1 ? "it" : `all ${failed.length}`} with Populr →` : "Everything passes — keep it that way →"}
-        </a>
-        <a className="hk-more" href={`/check/${result.domain}`}>See the full report</a>
       </div>
     );
   }
