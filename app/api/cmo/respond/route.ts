@@ -15,6 +15,7 @@ import { buildTransformPrompt } from "@/lib/services/transformation-engine";
 import { generateText } from "@/lib/services/llm";
 import { projectBusinessGraph } from "@/lib/business-graph";
 import { fingerprint, persistGraph, persistDecision, appendDecisionEvent, readCachedCmoResponse, writeCachedCmoResponse } from "@/lib/cmo/store";
+import { aiGate } from "@/lib/billing/meter";
 
 export const runtime = "nodejs";
 
@@ -24,6 +25,8 @@ export async function POST(req: NextRequest) {
   if (!limit.allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429, headers: { "Retry-After": String(limit.retryAfter) } });
   const sql = db();
   if (!sql) return NextResponse.json({ error: "no_database" }, { status: 503 });
+  const denied = await aiGate(req);
+  if (denied) return denied;
   let body: CmoRequest;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "bad_request" }, { status: 400 }); }
   const question = String(body.question || "").trim().slice(0, 2000);

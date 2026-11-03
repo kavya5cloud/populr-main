@@ -82,6 +82,8 @@ export default function Privacy() {
 
       <h2>6. Security</h2>
       <p>
+        To apply the free limit for visitors without an account, we set a cookie holding a random id and store a one-way
+        hash of the network address, kept for about two months. Neither is used for anything else.
         Passwords are hashed with bcrypt, sessions are signed and stored in secure HTTP-only cookies, connections use
         HTTPS, and access tokens are stored in our database. No system is perfectly secure, but we take reasonable
         measures to protect your data.

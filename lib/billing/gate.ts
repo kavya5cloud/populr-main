@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db, ensureSchema } from "@/lib/db";
 import { bonusDaysFor } from "@/lib/referrals-store";
 import { accessFor, ACCESS_MESSAGE, type Access } from "./access";
+import { trialDaysFor } from "./plans";
 import { subscriptionRepo } from "./store";
 
 // The single question every gated route asks.
@@ -11,21 +12,23 @@ import { subscriptionRepo } from "./store";
 // while nobody is paying — and the day someone does, a paying customer gets told their trial
 // ended. This is the question; lib/billing/access.ts is the answer's logic, kept pure.
 
-const TRIAL_DAYS = Number(process.env.TRIAL_DAYS || 30);
 const DAY = 86_400_000;
 
 /** When this account's free trial ends, including referral bonus days. Null if unknown. */
-async function trialEndsAt(userId: string): Promise<number | null> {
+export async function trialEndsAt(userId: string): Promise<number | null> {
   const sql = db();
   if (!sql) return null;
   try {
     await ensureSchema(sql);
-    const rows = (await sql`SELECT created_at FROM users WHERE id = ${userId}`) as { created_at: string }[];
+    const rows = (await sql`
+      SELECT created_at, EXISTS (SELECT 1 FROM referrals WHERE referred_user_id = ${userId}) AS referred
+      FROM users WHERE id = ${userId}`) as { created_at: string; referred: boolean }[];
     if (!rows[0]) return null;
     // Bonus days stay derived from referral rows rather than written back, so the trial
     // length cannot drift from the rows that justify it.
     const bonus = await bonusDaysFor(userId).catch(() => 0);
-    return new Date(rows[0].created_at).getTime() + (TRIAL_DAYS + bonus) * DAY;
+    const created = new Date(rows[0].created_at).getTime();
+    return created + (trialDaysFor(created, Boolean(rows[0].referred)) + bonus) * DAY;
   } catch {
     return null;
   }

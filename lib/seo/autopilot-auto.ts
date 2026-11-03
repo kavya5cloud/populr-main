@@ -24,6 +24,8 @@ export type AutoDeps = {
   fetch?: (url: string) => Promise<{ status: number; text: string; url?: string }>;
   suggest?: typeof suggestFix;
   now?: () => number;
+  /** Whether this workspace's plan includes new automatic fixes. Absent means yes. */
+  allowed?: (workspace: string) => Promise<boolean>;
 };
 
 const get = (deps: AutoDeps) => deps.fetch ?? ((url: string) => safeFetchText(url, { maxBytes: 1_500_000, timeoutMs: 10_000 }));
@@ -155,6 +157,7 @@ export async function autoFixNewPage(store: AutopilotStore, siteKey: string, pat
   const day = new Date(clock(deps)).toISOString().slice(0, 10);
   const used = c.autoDay?.day === day ? c.autoDay.count : 0;
   if (used >= AUTO_PER_DAY) return null;
+  if (deps.allowed && !(await deps.allowed(c.workspace).catch(() => true))) return null;
   // Spend the budget before the work, so pages arriving together can't all get past the check.
   await store.save({ ...c, autoDay: { day, count: used + 1 } });
 

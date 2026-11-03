@@ -21,11 +21,13 @@ import EditorAccess from "./_components/EditorAccess";
 import Section from "@/app/components/Section";
 import DocSkeleton from "@/app/components/DocSkeleton";
 import { DELIVERABLE_RULES } from "@/lib/cmo/quality-rules";
-import { ai, hostOf } from "./_lib/ai";
+import { ai, hostOf, PLAN_REFUSED } from "./_lib/ai";
 import { streamAi } from "./_lib/stream";
 import { SOURCES, SOURCE_LABEL, canonicalSource, type SourceType } from "./_lib/sources";
 import { logRecBatch, logRecEvent } from "./_lib/telemetry";
 import { trialSnapshot } from "./_lib/trial";
+import { PRICE } from "@/lib/billing/plans";
+import type { PlanSnapshot } from "@/lib/billing/meter";
 import { buildFallbackFeed, normalizeFeed, withHonestSummaries } from "./_lib/feed";
 import { AGENTS, DOCS, buildTermLines, normalizeProfile } from "./_lib/catalog";
 import { CHART, buildEstData } from "./_lib/chart-data";
@@ -109,6 +111,9 @@ export default function AppPage() {
   const [accountsEnabled, setAccountsEnabled] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [trial, setTrial] = useState<{ active: boolean; daysLeft: number; endsAt: string } | null>(null);
+  const [plan, setPlan] = useState<PlanSnapshot | null>(null);
+  const [payment, setPayment] = useState<"waiting" | "late" | "done" | null>(null);
+  const [planStripHidden, setPlanStripHidden] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [nowTick, setNowTick] = useState(() => Date.now());
   const [mtab, setMtab] = useState<"company" | "analytics" | "agents" | "chat">("company");
@@ -225,13 +230,57 @@ export default function AppPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entered, progress]);
 
-  useEffect(() => {
-    fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((d) => { setAuthUser(d.user?.email || null); setAccountsEnabled(!!d.accountsEnabled); setTrial(d.trial || null); })
-      .catch(() => {})
-      .finally(() => setAuthReady(true));
+  const loadMe = useCallback(async () => {
+    const d = await fetch("/api/auth/me").then((r) => r.json());
+    setAuthUser(d.user?.email || null); setAccountsEnabled(!!d.accountsEnabled); setTrial(d.trial || null); setPlan(d.plan || null);
+    return d as { plan?: PlanSnapshot };
   }, []);
+
+  useEffect(() => {
+    loadMe().catch(() => {}).finally(() => setAuthReady(true));
+  }, [loadMe]);
+
+  // The server just refused an AI request, so what the screen says about the plan is out of
+  // date. A visitor who has had their free look is asked to sign up, not shown an error.
+  useEffect(() => {
+    const onRefused = (e: Event) => {
+      if ((e as CustomEvent<string>).detail === "sign_in_required") setAuthOpen(true);
+      loadMe().catch(() => {});
+    };
+    window.addEventListener(PLAN_REFUSED, onRefused);
+    return () => window.removeEventListener(PLAN_REFUSED, onRefused);
+  }, [loadMe]);
+
+  // Back from checkout. Polar's confirmation arrives on its own schedule, usually seconds later
+  // but not always, and it's the only proof of payment. Until it lands this account still reads
+  // as unpaid, so someone who just paid must not be asked to subscribe again.
+  useEffect(() => {
+    if (!new URLSearchParams(window.location.search).has("subscribed")) return;
+    setPayment("waiting");
+    // Cleared only once there's an answer: taking it off the address straight away stops the
+    // check for good if this effect runs twice, which React does in development.
+    const finish = () => {
+      clearInterval(poll);
+      const clean = new URL(window.location.href);
+      clean.searchParams.delete("subscribed");
+      window.history.replaceState({}, "", clean.toString());
+    };
+    let tries = 0;
+    let hide: ReturnType<typeof setTimeout> | undefined;
+    const poll = setInterval(async () => {
+      tries++;
+      const d = await loadMe().catch(() => null);
+      if (d?.plan?.tier === "paid") {
+        finish();
+        setPayment("done");
+        hide = setTimeout(() => setPayment(null), 6000);
+      } else if (tries >= 8) {
+        finish();
+        setPayment("late");
+      }
+    }, 2000);
+    return () => { clearInterval(poll); if (hide) clearTimeout(hide); };
+  }, [loadMe]);
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
@@ -845,40 +894,44 @@ Output ONLY this JSON, nothing else: {"impressions":<integer>,"clicks":<integer>
   // seconds. A progress list says "it is working"; it never says "here is what you are
   // getting", and that is the question a person has ten seconds after pasting a URL.
   /**
-   * The returning-customer wall.
+   * Where an account stands once nobody is paying, and the way to change it.
    *
-   * Built once and rendered in every branch, because it used to live only in the dashboard
-   * return — and a customer coming back after their month is exactly the person who does not
-   * reach it. With no workspace in local storage the page takes the `!entered` early return,
-   * shows "What are we growing?", and the first thing they learn about their expired trial
-   * is a 402 in the console after they paste a URL and wait.
+   * This was a full-screen wall reading "Your free month has ended", back when the end of a
+   * trial meant the end of access. There is a free plan now, and a wall would stop someone
+   * reading their own drafts to tell them they can still use the product. It renders in every
+   * branch because a returning customer often has no workspace in local storage, and takes the
+   * new-visitor screen rather than the dashboard.
    *
-   * An overlay rather than a replacement screen, so the sentence about their work being safe
-   * is visibly true: the dashboard sits behind it where there is one.
+   * Everything in it comes from the server, including whether the allowance is really used up.
    */
-  const expiredLock = authUser && liveTrial && !liveTrial.active ? (
-    <div className="trial-lock">
-      <div className="trial-lock-card">
-        <span className="app-wordmark app-wordmark-lg">Populr.</span>
-        <h2>Your free month has ended</h2>
-        <p>Subscribe to keep your AI CMO running. Your workspace, drafts, and connections are safe.</p>
-        {/* A link, not a fetch: /api/billing/checkout reads the session, builds the
-            checkout server-side and redirects on to Polar. It used to be a mailto saying
-            card payments were not self-serve, which was true when it was written and is
-            the kind of sentence nobody remembers to delete. */}
-        <a
-          className="acct-btn pri"
-          style={{ marginTop: 18, display: "inline-block", textDecoration: "none" }}
-          href="/api/billing/checkout"
-        >
-          Subscribe — $15/mo
-        </a>
-        <div className="trial-lock-foot">
-          <a href="/account">Account</a>
-          <span> · </span>
-          <button onClick={logout}>Log out</button>
-        </div>
-      </div>
+  const planStrip = payment ? (
+    <div className="plan-strip" role="status">
+      <span>
+        {payment === "waiting" ? "Confirming your payment…"
+          : payment === "done" ? "You're subscribed. Thank you."
+          : "Your payment hasn't reached us yet. If you were charged, it should appear within a minute or two, so refresh to check."}
+      </span>
+    </div>
+  ) : authUser && plan?.tier === "free" && (plan.exhausted || !planStripHidden) ? (
+    <div className="plan-strip" role="status">
+      <span>
+        {plan.exhausted
+          ? `You've used this month's ${plan.aiLimit} free AI actions. They reset on ${new Date(plan.resetsAt).toLocaleDateString("en-GB", { day: "numeric", month: "long" })}.`
+          : `You're on the free plan: ${plan.aiLimit - plan.aiUsed} of ${plan.aiLimit} AI actions left this month.`}
+      </span>
+      <span className="plan-strip-acts">
+        {/* Links, not fetches: the checkout route reads the session, builds the checkout on the
+            server and redirects on to Polar. */}
+        {plan.canSubscribe ? (
+          <>
+            <a className="acct-btn pri" href="/api/billing/checkout">Subscribe — ${PRICE.monthly}/mo</a>
+            {plan.canSubscribeYearly && <a className="acct-btn" href="/api/billing/checkout?plan=yearly">${PRICE.yearly}/yr</a>}
+          </>
+        ) : (
+          <a className="acct-btn" href="/account">Your plan</a>
+        )}
+        {!plan.exhausted && <button className="plan-strip-x" aria-label="Hide" onClick={() => setPlanStripHidden(true)}><Icon name="close" size={13} /></button>}
+      </span>
     </div>
   ) : null;
 
@@ -890,7 +943,7 @@ Output ONLY this JSON, nothing else: {"impressions":<integer>,"clicks":<integer>
     return (
       <div className="appui">
         <DashboardSkeleton steps={steps} progress={progress} />
-        {expiredLock}
+        {planStrip}
       </div>
     );
   }
@@ -905,10 +958,7 @@ Output ONLY this JSON, nothing else: {"impressions":<integer>,"clicks":<integer>
           <span className="who" style={{ position: "fixed", top: 18, right: 18, zIndex: 5 }}><span className="whoemail">{authUser}</span><button className="lo" onClick={logout}>logout</button></span>
         )}
         {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
-        {/* The branch a returning customer actually lands on. Without this the first thing
-            they learned about their expired month was a 402, after pasting a URL and waiting
-            for an analysis that was never going to run. */}
-        {expiredLock}
+        {planStrip}
         <div className="onboard">
           <canvas className="dots" ref={dotsRef} aria-hidden="true" />
           <div className="ob-in">
@@ -1029,7 +1079,8 @@ Output ONLY this JSON, nothing else: {"impressions":<integer>,"clicks":<integer>
                 )}
               </button>
             )}
-            {authUser && liveTrial?.active && <a href="/account" className="trialchip">{liveTrial.daysLeft}d left</a>}
+            {authUser && plan?.tier === "trial" && liveTrial && <a href="/account" className="trialchip">{liveTrial.daysLeft}d left</a>}
+            {authUser && plan?.tier === "free" && <a href="/account" className="trialchip">Free plan</a>}
             {authUser ? (
               <span className="who"><span className="whoemail">{authUser}</span><button className="lo" onClick={logout}>logout</button></span>
             ) : accountsEnabled ? (
@@ -1052,7 +1103,7 @@ Output ONLY this JSON, nothing else: {"impressions":<integer>,"clicks":<integer>
                     Publish reminders: {pushStatus.subscribed ? "on" : "off"}
                   </button>
                 )}
-                <span className="tb-drop-status">{cloud ? "cloud" : "local"}{liveTrial?.active ? ` · ${liveTrial.daysLeft}d trial left` : ""}</span>
+                <span className="tb-drop-status">{cloud ? "cloud" : "local"}{plan?.tier === "trial" && liveTrial ? ` · ${liveTrial.daysLeft}d trial left` : ""}</span>
                 {authUser ? (
                   <button role="menuitem" onClick={() => { setNavOpen(false); logout(); }}>Log out</button>
                 ) : accountsEnabled ? (
@@ -1577,7 +1628,7 @@ Output ONLY this JSON, nothing else: {"impressions":<integer>,"clicks":<integer>
         </div>
       )}
       {authOpen && <AuthModal onClose={() => { if (!mustSignIn) setAuthOpen(false); }} forced={mustSignIn} />}
-      {expiredLock}
+      {planStrip}
       {toast && <div className="toast">{toast}</div>}
     </div>
   );

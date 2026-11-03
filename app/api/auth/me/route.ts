@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db, ensureSchema } from "@/lib/db";
 import { bonusDaysFor } from "@/lib/referrals-store";
-import { accessForUser } from "@/lib/billing/gate";
+import { accessForUser, trialEndsAt } from "@/lib/billing/gate";
+import { planFor } from "@/lib/billing/meter";
 
 export const runtime = "nodejs";
 
-const TRIAL_DAYS = Number(process.env.TRIAL_DAYS || 30);
 const DAY = 86_400_000;
 
-// This route decides whether the browser shows the "your free month has ended" lock.
+// This route decides what the browser says about the account's plan.
 //
 // It computed that from created_at alone and knew nothing about subscriptions, so a paying
 // account was let through by /api/generate and locked out by the interface in front of it.
@@ -37,7 +37,7 @@ export async function GET() {
       if (rows[0]) {
         createdAt = new Date(rows[0].created_at).toISOString();
         const bonus = await bonusDaysFor(session.userId).catch(() => 0);
-        const trialEnd = new Date(rows[0].created_at).getTime() + (TRIAL_DAYS + bonus) * DAY;
+        const trialEnd = (await trialEndsAt(session.userId)) ?? Date.now();
         // Count down to whatever is actually keeping them in — a subscription period when
         // there is one, the trial otherwise. Showing "0d left" to a subscriber is the same
         // bug in a smaller font.
@@ -61,5 +61,6 @@ export async function GET() {
     trial,
     // Why they are in, so the UI can say "subscription" rather than implying a trial.
     access: { allowed: access.allowed, reason: access.reason, until: access.until },
+    plan: await planFor(session.userId, access),
   });
 }

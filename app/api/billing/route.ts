@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { rateLimit, requestKey } from "@/lib/throttle";
 import { accessForUser, accessMessage } from "@/lib/billing/gate";
+import { planFor } from "@/lib/billing/meter";
 import { billingConfig } from "@/lib/billing/polar";
 import { subscriptionRepo } from "@/lib/billing/store";
 import { SITE_URL } from "@/lib/seo";
@@ -45,10 +46,12 @@ export async function GET(req: NextRequest) {
       return {
         server: c.server,
         productId: c.productId ? `${c.productId.slice(0, 8)}…` : null,
+        yearlyProductId: c.yearlyProductId ? `${c.yearlyProductId.slice(0, 8)}…` : null,
         hasToken: Boolean(c.token),
         hasWebhookSecret: Boolean(c.webhookSecret),
       };
     })(),
+    plan: await planFor(session.userId, access),
     subscribed: Boolean(sub && sub.status !== "revoked"),
     // A comped subscription has no Polar customer behind it, so the portal would open on
     // nothing. Offering "Manage billing" for a row we wrote by hand is a button that cannot

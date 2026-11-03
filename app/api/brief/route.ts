@@ -3,7 +3,8 @@ import { getSession } from "@/lib/auth";
 import { rateLimit, requestKey } from "@/lib/throttle";
 import { workspaceKey } from "@/lib/intel";
 import { assembleBrief } from "@/lib/brief/assemble";
-import { writeSummary } from "@/lib/brief/summary";
+import { deterministicSummary, writeSummary } from "@/lib/brief/summary";
+import { backgroundAllowed } from "@/lib/billing/meter";
 import { isFresh, readCache, writeCache, invalidate } from "@/lib/brief/cache";
 
 export const runtime = "nodejs";
@@ -40,7 +41,11 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const { summary, source } = await writeSummary(brief);
+    // The summary is a model call nobody pressed a button for, so it's part of the paid plan.
+    // Everyone else gets the same facts in the plain version.
+    const { summary, source } = (await backgroundAllowed(tenant).catch(() => true))
+      ? await writeSummary(brief)
+      : { summary: deterministicSummary(brief), source: "deterministic" as const };
     const full = { ...brief, summary, summarySource: source };
     writeCache(tenant, full, now);
     return NextResponse.json({ ok: true, cached: false, brief: full });

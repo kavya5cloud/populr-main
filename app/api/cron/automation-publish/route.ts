@@ -10,6 +10,7 @@ import { db } from "@/lib/db";
 import { recordGeneration } from "@/lib/content/generation-log";
 import { recordHeartbeat } from "@/lib/autopilot/heartbeat";
 import type { Automation, QueueItem } from "@/lib/automation/types";
+import { backgroundAllowed } from "@/lib/billing/meter";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -105,9 +106,9 @@ async function runPass(phases: Phases): Promise<NextResponse> {
     // the same answer is worse than none: it costs a query per tenant per run and reads like a
     // rule someone has to keep in mind.
     //
-    // Whether a tenant is entitled to anything at all is still decided — by accessFor, which
-    // owns the trial, the grace period after a failed payment, and the period a cancelled
-    // customer already paid for. That is the only question with a real answer.
+    // Whether a tenant is entitled to anything at all is decided per tenant in the loop below,
+    // by backgroundAllowed, which asks accessFor: it owns the trial, the grace period after a
+    // failed payment, and the period a cancelled customer already paid for.
     // One deadline for the whole request, not one per tenant.
     //
     // A per-tenant budget still overruns: ten tenants with forty seconds each is four
@@ -121,6 +122,7 @@ async function runPass(phases: Phases): Promise<NextResponse> {
     phases.stage = "tenants";
     for (const tenant of tenants) {
       if (Date.now() > deadline) { skippedTenants++; continue; }
+      if (!(await backgroundAllowed(tenant).catch(() => true))) continue;
       phases.tenantsStarted++;
       const automations = await repo.listAutomations(tenant);
       let queue = await repo.listQueue(tenant);

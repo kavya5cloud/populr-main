@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Icon from "./Icon";
+import { PRICE, YEARLY_MONTHS_FREE } from "@/lib/billing/plans";
 
 // Subscribing, and managing it afterwards.
 //
@@ -32,6 +33,7 @@ type Status = {
   manageable: boolean;
   status: string | null;
   daysLeft: number | null;
+  plan?: { tier: string; aiUsed: number; aiLimit: number; canSubscribeYearly: boolean };
 };
 
 /**
@@ -44,6 +46,7 @@ type Status = {
  */
 const BILLING_ERROR: Record<string, string> = {
   not_configured: "Subscriptions aren't switched on yet. Nothing was charged.",
+  yearly_unavailable: "Yearly billing isn't open yet. Nothing was charged.",
   rate_limited: "Too many attempts in a row. Wait a minute and try again.",
   checkout_failed: "We couldn't open checkout. Nothing was charged — try again shortly.",
   portal_unavailable: "The billing portal isn't available for this account yet.",
@@ -108,9 +111,9 @@ export default function Billing() {
   // Both are plain navigations into server routes that redirect on to Polar. No fetch, no
   // URL handed to the browser to act on — the identity of the customer is decided on the
   // server and never travels through the client.
-  const go = useCallback((action: "checkout" | "portal") => {
+  const go = useCallback((action: "checkout" | "portal", yearly = false) => {
     setBusy(action); setErr(null);
-    window.location.href = `/api/billing/${action}`;
+    window.location.href = `/api/billing/${action}${yearly ? "?plan=yearly" : ""}`;
   }, []);
 
   if (!s) return null;
@@ -121,16 +124,16 @@ export default function Billing() {
   // second parallel notion of "what is going on" is how a panel starts contradicting itself.
   const badge =
     s.reason === "subscription" ? { text: "Active", tone: "ok" as const }
-    : s.reason === "trial" ? { text: "Free month", tone: "ok" as const }
+    : s.reason === "trial" ? { text: "Free trial", tone: "ok" as const }
     : s.reason === "grace" ? { text: "Grace period", tone: "warn" as const }
     : s.reason === "period_remaining" ? { text: "Ending", tone: "warn" as const }
     : s.reason === "payment_failed" ? { text: "Payment failed", tone: "bad" as const }
-    : { text: "Ended", tone: "bad" as const };
+    : { text: "Free plan", tone: "warn" as const };
 
   // What the countdown is counting down to. The date alone is ambiguous — "12 September"
   // means opposite things for a renewal and an expiry.
   const untilLabel =
-    s.reason === "trial" ? "Free month ends"
+    s.reason === "trial" ? "Free trial ends"
     : s.reason === "grace" ? "Access pauses"
     : s.reason === "period_remaining" ? "Access ends"
     : "Renews";
@@ -142,8 +145,8 @@ export default function Billing() {
           thing they read — and it disappeared entirely once they subscribed. */}
       <div className="bill-head">
         <div className="bill-plan">
-          <span className="bill-amt">$15</span>
-          <span className="bill-per">/month</span>
+          <span className="bill-amt">${PRICE.monthly}</span>
+          <span className="bill-per">/month{s.plan?.canSubscribeYearly ? ` or $${PRICE.yearly}/year` : ""}</span>
         </div>
         <span className={"bill-badge bill-" + badge.tone}>
           <i aria-hidden="true" />
@@ -163,6 +166,13 @@ export default function Billing() {
             {until}
             {s.daysLeft != null && ` · ${s.daysLeft} day${s.daysLeft === 1 ? "" : "s"} left`}
           </span>
+        </p>
+      )}
+
+      {s.plan?.tier === "free" && (
+        <p className="bill-until">
+          <span className="bill-until-k">AI actions this month</span>
+          <span className="bill-until-v">{s.plan.aiUsed} of {s.plan.aiLimit} used</span>
         </p>
       )}
 
@@ -202,9 +212,16 @@ export default function Billing() {
             </p>
           </>
         ) : s.canSubscribe ? (
-          <button className="bill-btn bill-pri" onClick={() => go("checkout")} disabled={busy !== null}>
-            {busy === "checkout" ? <span className="btn-spin" aria-label="Starting" /> : "Subscribe — $15/month"}
-          </button>
+          <>
+            <button className="bill-btn bill-pri" onClick={() => go("checkout")} disabled={busy !== null}>
+              {busy === "checkout" ? <span className="btn-spin" aria-label="Starting" /> : `Subscribe — $${PRICE.monthly}/month`}
+            </button>
+            {s.plan?.canSubscribeYearly && (
+              <button className="bill-btn" onClick={() => go("checkout", true)} disabled={busy !== null}>
+                Yearly — ${PRICE.yearly}, {YEARLY_MONTHS_FREE} months free
+              </button>
+            )}
+          </>
         ) : (
           // Billing is not switched on. Say so rather than showing a button that fails after
           // the click.

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { accessForUser, accessMessage } from "@/lib/billing/gate";
 import { rateLimit, requestKey } from "@/lib/throttle";
 import { runCitationCheck, summarize, reportToItems, FAILURE_HINT } from "@/lib/geo/check";
 import { citationRepo } from "@/lib/geo/store";
+import { aiGate } from "@/lib/billing/meter";
 
 export const runtime = "nodejs";
 
@@ -51,10 +51,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const access = await accessForUser(session.userId);
-  if (!access.allowed) {
-    return NextResponse.json({ error: access.reason, hint: accessMessage(access) }, { status: 402 });
-  }
+  const denied = await aiGate(req, { cost: 4 });
+  if (denied) return denied;
 
   let body: { brand?: string; host?: string; category?: string; audience?: string };
   try {

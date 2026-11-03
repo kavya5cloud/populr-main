@@ -10,6 +10,7 @@ import { creativeContext, creativeJobs } from "@/lib/creative/shared";
 import { submit } from "@/lib/creative/lifecycle";
 import { seedanceConfigured } from "@/lib/creative/providers/seedance";
 import { storageConfigured } from "@/lib/creative/storage";
+import { aiGate } from "@/lib/billing/meter";
 
 export const runtime = "nodejs";
 
@@ -26,6 +27,9 @@ export async function POST(req: NextRequest) {
   if (!limit.allowed) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429, headers: { "Retry-After": String(limit.retryAfter) } });
   }
+
+  const denied = await aiGate(req, { paidOnly: true });
+  if (denied) return denied;
 
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "bad_request" }, { status: 400 }); }

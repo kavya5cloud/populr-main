@@ -41,9 +41,10 @@ export default function Terms() {
 
       <h2>3. Free trial &amp; billing</h2>
       <p>
-        New accounts include a free trial period (currently 30 days). After the trial, continued use of paid features
-        requires a subscription (currently $15/month). Pricing and trial length may change with notice. You may stop using
-        the Service at any time.
+        New accounts include a free trial period (currently 14 days, or 30 days through a referral link). After the trial,
+        an account moves to a free plan with a limited monthly allowance, and paid features require a subscription
+        (currently $15/month or $150/year). Fixes already live on your site keep working on the free plan. Pricing, limits
+        and trial length may change with notice. You may stop using the Service at any time.
       </p>
 
       <h2>4. Acceptable use</h2>

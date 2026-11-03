@@ -1,0 +1,36 @@
+name: Trial reminders
+
+# The emails that tell someone their trial is ending, and that it has ended.
+#
+# Vercel Hobby's two daily crons are both spent, so this lives here like the publishing job.
+# It needs the CRON_SECRET secret that job already uses. With no secret it skips and stays
+# green rather than failing every day.
+#
+# A green run doesn't mean an email went out: most days nobody's trial is ending. Read the
+# JSON body, which has counts only. `failed` above zero usually means RESEND_API_KEY isn't set
+# in Vercel; those emails are retried on the next run.
+
+on:
+  schedule:
+    - cron: "23 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    env:
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      SITE_URL: ${{ vars.SITE_URL || 'https://www.trypopulr.in' }}
+    steps:
+      - name: Send trial reminders
+        if: env.CRON_SECRET != ''
+        run: |
+          set -uo pipefail
+          status=$(curl -sS -o /tmp/reminders.json -w '%{http_code}' \
+            --max-time 90 -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${SITE_URL}/api/cron/trial-reminders")
+          echo "status: ${status}"; cat /tmp/reminders.json || true; echo
+          if [ "${status}" != "200" ]; then echo "::warning::Trial reminders returned ${status}."; fi

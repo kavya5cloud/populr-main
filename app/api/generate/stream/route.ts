@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { accessForUser, accessMessage } from "@/lib/billing/gate";
 import { isSafePublicUrl, rateLimit, requestKey } from "@/lib/throttle";
 import { streamText } from "@/lib/services/llm-stream";
+import { aiGate } from "@/lib/billing/meter";
 
 export const runtime = "nodejs";
 
@@ -26,13 +26,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (session) {
-    const access = await accessForUser(session.userId);
-    if (!access.allowed) {
-      return NextResponse.json({ error: access.reason, hint: accessMessage(access) }, { status: 402 });
-    }
-  }
-
   let payload: { prompt?: string; url?: string };
   try {
     payload = await req.json();
@@ -48,6 +41,9 @@ export async function POST(req: NextRequest) {
   if (payload.url && !isSafePublicUrl(payload.url)) {
     return NextResponse.json({ error: "unsafe_url", hint: "Use a public http(s) website URL." }, { status: 400 });
   }
+
+  const denied = await aiGate(req);
+  if (denied) return denied;
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({

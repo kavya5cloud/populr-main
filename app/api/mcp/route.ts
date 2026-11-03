@@ -8,6 +8,7 @@ import { ACCESS_PREFIX, issuerFor, wwwAuthenticate } from "@/lib/oauth/core";
 import { workspaceForAccessToken } from "@/lib/oauth/service";
 import { oauthStore } from "@/lib/oauth/store";
 import { autopilotStore } from "@/lib/seo/autopilot-store";
+import { checkTool } from "@/lib/billing/meter";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -103,6 +104,13 @@ export async function POST(req: NextRequest) {
   // The rest — the tool and prompt lists, ping — still answers, for directories that read
   // them without connecting.
   if (!workspace && (NEEDS_KEY.has(msg.method) || msg.method === "initialize")) return unauthorized(MISSING_KEY, undefined, issuer);
+
+  // Only the tools that spend AI ask, and the answer goes back the way any tool's result does,
+  // so the assistant in the editor can tell the person why.
+  if (msg.method === "tools/call") {
+    const refused = await checkTool(workspace ?? "", (msg.params as { name?: unknown } | undefined)?.name).catch(() => null);
+    if (refused) return NextResponse.json({ jsonrpc: "2.0", id: msg.id ?? null, result: { content: [{ type: "text", text: refused }], isError: true } }, { headers: JSON_HEADERS });
+  }
 
   const res = await handle(msg, workspace ?? "", { autopilot: autopilotStore() });
   // Counted after the response is sent, so it never slows a call or fails one.

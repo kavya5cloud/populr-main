@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { accessForUser, accessMessage } from "@/lib/billing/gate";
 import { isSafePublicUrl, rateLimit, requestKey } from "@/lib/throttle";
 import { generateText } from "@/lib/services/llm";
+import { aiGate } from "@/lib/billing/meter";
 
 export const runtime = "nodejs";
 
@@ -27,25 +27,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "bad_request", hint: "The request was malformed — reload the page and try again." }, { status: 400 });
   }
 
-  // Trial OR subscription — one question, asked in one place. This used to call
-  // isTrialActive directly, which meant a paying customer would have been told their trial
-  // had ended. Anonymous/no-DB usage stays open as a demo.
-  if (session) {
-    const access = await accessForUser(session.userId);
-    if (!access.allowed) {
-      return NextResponse.json(
-        { error: access.reason, hint: accessMessage(access) },
-        { status: 402 },
-      );
-    }
-  }
-
   const rawPrompt = (payload.prompt || "").trim();
   if (rawPrompt.length > 10_000) return NextResponse.json({ error: "prompt_too_large", hint: "That request is too long — shorten it and try again." }, { status: 413 });
   if (!rawPrompt) return NextResponse.json({ error: "empty_prompt", hint: "Nothing was sent to generate from." }, { status: 400 });
   if (payload.url && !isSafePublicUrl(payload.url)) {
     return NextResponse.json({ error: "unsafe_url", hint: "use a public http(s) website URL" }, { status: 400 });
   }
+
+  // Trial, subscription, free plan or one look with no account: one question, asked in one place.
+  const denied = await aiGate(req, { siteUrl: payload.url });
+  if (denied) return denied;
 
   const result = await generateText({ prompt: rawPrompt, url: payload.url || null });
   if (result.ok) {

@@ -11,6 +11,7 @@ import { DEFAULT_LANGUAGE, isLanguageCode } from "@/lib/i18n/languages";
 import { recordGeneration } from "@/lib/content/generation-log";
 import type { SocialPlatform } from "@/lib/social/types";
 import { readAssets } from "@/lib/social/api-helpers";
+import { aiGate } from "@/lib/billing/meter";
 
 export const runtime = "nodejs";
 
@@ -24,6 +25,9 @@ export async function POST(req: NextRequest) {
   const session = await getSession();
   const limit = rateLimit(requestKey(req.headers, session?.userId), session ? 40 : 12, 60_000);
   if (!limit.allowed) return NextResponse.json({ error: "rate_limited" }, { status: 429, headers: { "Retry-After": String(limit.retryAfter) } });
+
+  const denied = await aiGate(req);
+  if (denied) return denied;
 
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "bad_request" }, { status: 400 }); }

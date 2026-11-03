@@ -8,6 +8,7 @@ import { captureReferral } from "@/lib/referral-client";
 // hardcoded one is a claim with an expiry date nobody sees pass.
 import { LANGUAGE_CODES } from "@/lib/i18n/languages";
 import { EMITTED_REFUSAL_REASONS } from "@/lib/refusals/types";
+import { FREE_AI_ACTIONS, PRICE, TRIAL_DAYS, YEARLY_MONTHS_FREE } from "@/lib/billing/plans";
 
 const INDIAN_LANGUAGES = LANGUAGE_CODES.filter((c) => c.endsWith("-IN")).length;
 
@@ -241,7 +242,7 @@ export default function Landing() {
                     until its placeholder read "yourcompany.con". */}
                 <button type="submit">Analyze<span className="hc-btn-more"> my site</span></button>
               </form>
-              <p className="hc-under">The check is free, no sign-up · Populr is free for a month, no card</p>
+              <p className="hc-under">The check is free, no sign-up · Populr is free for {TRIAL_DAYS} days, no card</p>
             </div>
           </div>
 
@@ -503,13 +504,24 @@ export default function Landing() {
       <section id="pricing">
         <div className="wrap">
           <p className="label">Pricing</p>
-          <h2 style={{ marginTop: 14 }}>One plan. <em>First month free.</em></h2>
-          <div className="price">
-            <div>
-              <div className="amt"><span className="was">$49</span>$15<small> /mo after your free month</small></div>
-              <p className="inc">all channels · unlimited drafts · cancel anytime</p>
+          <h2 style={{ marginTop: 14 }}>One price. <em>{TRIAL_DAYS} days free.</em></h2>
+          <div className="price-grid">
+            <div className="price">
+              <div>
+                <div className="amt">${PRICE.monthly}<small> /mo after your free trial</small></div>
+                <p className="price-year">or ${PRICE.yearly} a year, {YEARLY_MONTHS_FREE} months free</p>
+                <p className="inc">publishing · automatic SEO fixes · images and video · cancel anytime</p>
+              </div>
+              <a href="/app" className="btn btn-lg">Try free for {TRIAL_DAYS} days</a>
             </div>
-            <a href="/app" className="btn btn-lg">Try free for a month</a>
+            <div className="price price-free">
+              <div>
+                <div className="amt">$0<small> /mo, for as long as you like</small></div>
+                <p className="price-year">When a trial ends, you stay on the free plan</p>
+                <p className="inc">one site · {FREE_AI_ACTIONS} AI actions a month · free tools and site checks</p>
+              </div>
+              <a href="/tools" className="price-link">See the free tools</a>
+            </div>
           </div>
         </div>
       </section>

@@ -1,4 +1,5 @@
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, url } from "@/lib/seo";
+import { FREE_AI_ACTIONS, PRICE, TRIAL_DAYS } from "@/lib/billing/plans";
 
 // Structured data for the public site.
 //
@@ -40,9 +41,9 @@ const website = {
 };
 
 /**
- * The product itself. Price mirrors the pricing section exactly: $15/month after a free
- * first month. If that copy changes, this has to change with it — a mismatch between
- * markup and the visible page is a structured-data violation, not a rounding error.
+ * The product itself. Prices mirror the pricing section exactly, from the same constants: a
+ * mismatch between markup and the visible page is a structured-data violation, not a rounding
+ * error.
  */
 const software = {
   "@type": "SoftwareApplication",
@@ -53,14 +54,35 @@ const software = {
   url: SITE_URL,
   description: SITE_DESCRIPTION,
   publisher: { "@id": url("/#organization") },
-  offers: {
-    "@type": "Offer",
-    price: "15",
-    priceCurrency: "USD",
-    url: url("/"),
-    availability: "https://schema.org/InStock",
-    description: "First month free, then $15/month. Cancel anytime.",
-  },
+  offers: [
+    {
+      "@type": "Offer",
+      name: "Monthly",
+      price: String(PRICE.monthly),
+      priceCurrency: PRICE.currency,
+      url: url("/"),
+      availability: "https://schema.org/InStock",
+      description: `${TRIAL_DAYS} days free, then $${PRICE.monthly}/month. Cancel anytime.`,
+    },
+    {
+      "@type": "Offer",
+      name: "Yearly",
+      price: String(PRICE.yearly),
+      priceCurrency: PRICE.currency,
+      url: url("/"),
+      availability: "https://schema.org/InStock",
+      description: `${TRIAL_DAYS} days free, then $${PRICE.yearly}/year. Cancel anytime.`,
+    },
+    {
+      "@type": "Offer",
+      name: "Free",
+      price: "0",
+      priceCurrency: PRICE.currency,
+      url: url("/"),
+      availability: "https://schema.org/InStock",
+      description: `One site and ${FREE_AI_ACTIONS} AI actions a month, after the trial.`,
+    },
+  ],
 };
 
 const graph = { "@context": "https://schema.org", "@graph": [organization, website, software] };

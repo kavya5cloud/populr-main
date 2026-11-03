@@ -7,6 +7,7 @@ import { pagePath, snippetTag, type AutopilotConfig } from "@/lib/seo/autopilot"
 import { business, originOf, str } from "@/lib/seo/autopilot-input";
 import { autopilotStore } from "@/lib/seo/autopilot-store";
 import { suggestFix } from "@/lib/seo/autopilot-suggest";
+import { aiGate } from "@/lib/billing/meter";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -80,6 +81,9 @@ export async function POST(req: NextRequest) {
   if (!c) return NextResponse.json({ error: "not_configured" }, { status: 404 });
   const path = pagePath(String(b.path ?? "/"));
   if (Object.keys(c.pages).length >= 50 && !c.pages[path]) return NextResponse.json({ error: "too_many_pages" }, { status: 400 });
+
+  const denied = await aiGate(req);
+  if (denied) return denied;
 
   const s = await suggestFix(c.site, path, c.business?.name || new URL(c.site).hostname);
   if (!s.ok) return NextResponse.json({ error: "suggest_failed", detail: s.error }, { status: 422 });

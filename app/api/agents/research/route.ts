@@ -5,6 +5,7 @@ import { workspaceKey } from "@/lib/intel";
 import { marketPlatform } from "@/lib/market/shared";
 import { scrubIdentity } from "@/lib/cmo/identity";
 import { runResearch, type ResearchEvent } from "@/lib/agents/live/research";
+import { aiGate } from "@/lib/billing/meter";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -23,6 +24,9 @@ export async function POST(req: NextRequest) {
   if (!limit.allowed) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429, headers: { "Retry-After": String(limit.retryAfter) } });
   }
+
+  const denied = await aiGate(req);
+  if (denied) return denied;
 
   let body: { wsid?: string; question?: string; profile?: { name?: string; oneLiner?: string; audience?: string; competitors?: string[] } };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "bad_request" }, { status: 400 }); }

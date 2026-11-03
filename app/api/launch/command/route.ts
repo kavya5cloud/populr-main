@@ -8,6 +8,7 @@ import { COMMAND_EXAMPLES, parseCommand, type ParsedCommand } from "@/lib/launch
 import { resolvePlan, workspaceStateRepo } from "@/lib/launch/shared";
 import { applyItemAction, campaignProgress, statusOf, workspaceSummary, type WorkspaceState } from "@/lib/launch/workspace";
 import type { LaunchPlan } from "@/lib/launch/types";
+import { aiGate } from "@/lib/billing/meter";
 
 export const runtime = "nodejs";
 
@@ -51,6 +52,9 @@ export async function POST(req: NextRequest) {
 
   const parsed: ParsedCommand = parseCommand(text);
   if (body.preview) return NextResponse.json({ ok: true, parsed, executed: false });
+
+  const denied = await aiGate(req);
+  if (denied) return denied;
   if (parsed.intent === "unknown") return NextResponse.json({ ok: true, parsed, executed: false, examples: COMMAND_EXAMPLES });
 
   const tenant = (await workspaceKey((body.wsid as string) ?? null)) ?? "default";

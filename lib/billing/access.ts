@@ -104,8 +104,8 @@ export const ACCESS_MESSAGE: Record<AccessReason, string> = {
   subscription: "Your subscription is active.",
   grace: "We couldn't take your last payment. Update your card to avoid losing access.",
   period_remaining: "Your subscription is cancelled but paid up — access continues until the end of the period.",
-  trial_ended: "Your free month has ended. Subscribe to continue, or refer 3 people from Settings to add another 30 days.",
-  payment_failed: "Your last payment failed, so access is paused. Update your card to restore it.",
+  trial_ended: "Your free trial has ended, so you're on the free plan. Subscribe to get everything back, or refer 3 people from Settings to add another 30 days.",
+  payment_failed: "Your last payment failed, so you're on the free plan for now. Update your card to restore everything.",
 };
 
 /** Statuses a provider webhook may set. Anything unrecognised is treated as revoked. */

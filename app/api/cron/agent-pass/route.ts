@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { backgroundAllowed } from "@/lib/billing/meter";
 import { automationRepo } from "@/lib/automation/shared";
 import { loadCanonicalProfile } from "@/lib/services/cmo-context";
 import { createLaunch } from "@/lib/launch/engine";
@@ -61,6 +62,8 @@ export async function GET(req: NextRequest) {
 
       // Once a day, and the check is per workspace rather than global so one slow tenant
       // cannot consume another's turn.
+      if (!(await backgroundAllowed(tenant).catch(() => true))) continue;
+
       const last = await lastAgentPass(tenant);
       if (last && dayOf(last) === dayOf(now)) continue;
 

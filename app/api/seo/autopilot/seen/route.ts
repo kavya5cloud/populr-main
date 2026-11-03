@@ -2,6 +2,7 @@ import { after, NextRequest } from "next/server";
 import { rateLimit, requestKey } from "@/lib/throttle";
 import { autopilotStore } from "@/lib/seo/autopilot-store";
 import { autoFixNewPage } from "@/lib/seo/autopilot-auto";
+import { backgroundAllowed } from "@/lib/billing/meter";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
     const store = autopilotStore();
     const added = await store.seen(k, p, Date.now()).catch(() => false);
     if (added) {
-      const work = () => autoFixNewPage(store, k, p).catch(() => null);
+      const work = () => autoFixNewPage(store, k, p, { allowed: backgroundAllowed }).catch(() => null);
       try { after(work); } catch { void work(); } // after() needs a request scope; tests have none
     }
   }

@@ -12,6 +12,7 @@ import { buildTransformPrompt } from "@/lib/services/transformation-engine";
 import { buildAnalysisPrompt } from "@/lib/services/analysis-engine";
 import { generateText } from "@/lib/services/llm";
 import { sanitizeCmoText } from "@/lib/cmo/renderer";
+import { aiGate } from "@/lib/billing/meter";
 
 export const runtime = "nodejs";
 
@@ -27,6 +28,9 @@ export async function POST(req: NextRequest) {
   }
   const sql = db();
   if (!sql) return NextResponse.json({ enabled: false });
+
+  const denied = await aiGate(req);
+  if (denied) return denied;
 
   let body: {
     wsid?: string; url?: string; profile?: CmoProfile; question?: string;

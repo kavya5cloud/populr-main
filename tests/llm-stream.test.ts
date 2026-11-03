@@ -59,7 +59,7 @@ describe("the streaming route is gated exactly like the blocking one", () => {
 
   it("checks rate limit, access and URL safety", () => {
     // A streaming endpoint that skips these is the old endpoint with the checks removed.
-    for (const guard of ["rateLimit", "accessForUser", "isSafePublicUrl"]) {
+    for (const guard of ["rateLimit", "aiGate", "isSafePublicUrl"]) {
       expect(route(), `missing ${guard}`).toMatch(new RegExp(guard));
     }
   });

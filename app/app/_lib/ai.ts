@@ -11,6 +11,14 @@
 // sitting there forever with no error.
 export const AI_TIMEOUT_MS = 60_000;
 
+/** Fired when the server refuses an AI request on plan grounds. The detail is the reason. */
+export const PLAN_REFUSED = "populr:plan-refused";
+
+export function reportPlanRefusal(status: number, code: unknown) {
+  if (status !== 401 && status !== 402) return;
+  window.dispatchEvent(new CustomEvent(PLAN_REFUSED, { detail: String(code ?? "") }));
+}
+
 export async function ai(prompt: string, url?: string): Promise<string> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
@@ -32,6 +40,7 @@ export async function ai(prompt: string, url?: string): Promise<string> {
   }
   const d = await r.json().catch(() => ({}));
   if (!r.ok || d.error) {
+    reportPlanRefusal(r.status, d.error);
     // Prefer the server's `hint`, which is written for a person.
     //
     // This used to join every diagnostic field it could find, so a founder whose free month

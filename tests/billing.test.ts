@@ -228,7 +228,9 @@ describe("the customer is decided by the server, never the caller", () => {
     const src = code("app/api/billing/checkout/route.ts");
     expect(src).toMatch(/url\.search = ""/);
     expect(src).toMatch(/customerExternalId", session\.userId/);
-    expect(src).toMatch(/products", cfg\.productId/);
+    expect(src).toMatch(/products", yearly \? cfg\.yearlyProductId : cfg\.productId/);
+    // Which plan is the only thing the caller picks, and it can only name these two.
+    expect(src).toMatch(/searchParams\.get\("plan"\) === "yearly"/);
   });
 
   it("the portal takes its customer from the session, not the request", () => {

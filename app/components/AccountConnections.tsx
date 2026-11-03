@@ -229,8 +229,8 @@ export default function AccountConnections({ variant = "compact" }: { variant?: 
           any price yet. */}
       {full && (
         <p className="conn-note">
-          Publishing and scheduling are part of the $15/mo plan, and free for your first
-          month. Populr writes your posts either way.
+          Publishing and scheduling are part of the $15/mo plan, and free during your trial.
+          Populr writes your posts either way.
         </p>
       )}
       {rows.some((r) => stateOf(r, hasPlan) === "soon") && (

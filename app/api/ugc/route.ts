@@ -6,6 +6,7 @@ import { socialEngine } from "@/lib/social/shared";
 import { SOCIAL_PLATFORMS, type SocialPlatform } from "@/lib/social/types";
 import { decideVersion, editVersion } from "@/lib/ugc/engine";
 import { generateUgcWithAi } from "@/lib/ugc/ai";
+import { aiGate } from "@/lib/billing/meter";
 import { recordGeneration } from "@/lib/content/generation-log";
 import { ugcRepo } from "@/lib/ugc/shared";
 import {
@@ -75,6 +76,8 @@ export async function POST(req: NextRequest) {
     if (op === "generate") {
       const brief = readBrief(body);
       if ("error" in brief) return NextResponse.json(brief, { status: 422 });
+      const denied = await aiGate(req, { paidOnly: true });
+      if (denied) return denied;
       // Scripts come from the existing multi-provider LLM orchestration; the built-in
       // engine is the floor when no provider is configured or a response can't be used.
       const generation = await generateUgcWithAi(tenant, brief, {

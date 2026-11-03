@@ -182,7 +182,7 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
 
         <div className="g-cta">
           <p>Populr is an AI CMO for founders without a marketing hire. Paste your website and it builds the plan.</p>
-          <Link className="btn" href="/app">Try it free for a month</Link>
+          <Link className="btn" href="/app">Try it free for 14 days</Link>
         </div>
       </article>
     </div>

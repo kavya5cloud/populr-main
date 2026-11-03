@@ -1,3 +1,5 @@
+import { reportPlanRefusal } from "./ai";
+
 // Reading a generation as it arrives.
 //
 // The counterpart to /api/generate/stream. Kept beside ai.ts rather than inside a component
@@ -38,6 +40,7 @@ export async function streamAi(
 
   if (!res.ok || !res.body) {
     const d = await res.json().catch(() => ({}));
+    reportPlanRefusal(res.status, d.error);
     // The server's hint is written for a person; the status code is not.
     throw new Error(d.hint || d.error || `Request failed (${res.status})`);
   }

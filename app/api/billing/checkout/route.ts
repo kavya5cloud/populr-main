@@ -46,10 +46,14 @@ export async function GET(req: NextRequest) {
   const cfg = billingConfig();
   if (!cfg.configured) return back("not_configured");
 
-  // Rebuilt from scratch. Whatever arrived in the query string is dropped.
+  // The one thing the caller may choose, and only between these two.
+  const yearly = req.nextUrl.searchParams.get("plan") === "yearly";
+  if (yearly && !cfg.yearlyProductId) return back("yearly_unavailable");
+
+  // Rebuilt from scratch. Whatever else arrived in the query string is dropped.
   const url = new URL(req.url);
   url.search = "";
-  url.searchParams.set("products", cfg.productId);
+  url.searchParams.set("products", yearly ? cfg.yearlyProductId : cfg.productId);
   // externalCustomerId is Polar's own field for "your id for this person". Using it rather
   // than metadata alone means Polar links its customer to our user natively, which is what
   // makes the billing portal resolvable later without storing a second id.

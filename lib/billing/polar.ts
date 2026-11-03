@@ -11,6 +11,8 @@
 export type BillingConfig = {
   token: string;
   productId: string;
+  /** The yearly plan, a separate product in Polar. Empty means yearly isn't offered. */
+  yearlyProductId: string;
   webhookSecret: string;
   /** Polar keeps sandbox and production entirely separate, down to the tokens. */
   server: "sandbox" | "production";
@@ -33,5 +35,7 @@ export function billingConfig(): BillingConfig {
     ? "production" as const
     : "sandbox" as const;
 
-  return { token, productId, webhookSecret, server, configured: Boolean(token && productId) };
+  const yearlyProductId = process.env.POLAR_PRODUCT_ID_YEARLY || "";
+
+  return { token, productId, yearlyProductId, webhookSecret, server, configured: Boolean(token && productId) };
 }
